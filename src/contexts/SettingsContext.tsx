@@ -19,6 +19,14 @@ const DEFAULT_SETTINGS: GameSettings = {
   headshotLineEnabled: false,
   headshotLineRow: 10,
   gamePreset: 'custom',
+  // P2: 移动速度配置
+  enemyMoveSpeed: 1.0,
+  enemyMovePattern: 'linear',
+  // P2: 敌人渲染模式
+  enemyRenderMode: 'text',
+  // P1: 关卡进度
+  unlockedLevels: [1], // 初始解锁第1关
+  credits: 0,
 };
 
 interface SettingsContextType {
@@ -27,6 +35,10 @@ interface SettingsContextType {
   updateSettings: (newSettings: Partial<GameSettings>) => void;
   applyPreset: (preset: GamePreset) => void;
   resetSettings: () => void;
+  // P1: 关卡进度管理
+  unlockLevel: (level: number) => void;
+  addCredits: (amount: number) => void;
+  isLevelUnlocked: (level: number) => boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -76,8 +88,42 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setSettings(DEFAULT_SETTINGS);
   }, []);
 
+  // P1: 解锁关卡
+  const unlockLevel = useCallback((level: number) => {
+    setSettings(prev => {
+      const currentLevels = prev.unlockedLevels ?? [1];
+      if (currentLevels.includes(level)) return prev;
+      return {
+        ...prev,
+        unlockedLevels: [...currentLevels, level].sort((a, b) => a - b),
+      };
+    });
+  }, []);
+
+  // P1: 添加积分
+  const addCredits = useCallback((amount: number) => {
+    setSettings(prev => ({
+      ...prev,
+      credits: (prev.credits ?? 0) + amount,
+    }));
+  }, []);
+
+  // P1: 检查关卡是否解锁
+  const isLevelUnlocked = useCallback((level: number) => {
+    return (settings.unlockedLevels ?? [1]).includes(level);
+  }, [settings.unlockedLevels]);
+
   return (
-    <SettingsContext.Provider value={{ settings, updateSetting, updateSettings, applyPreset, resetSettings }}>
+    <SettingsContext.Provider value={{ 
+      settings, 
+      updateSetting, 
+      updateSettings, 
+      applyPreset, 
+      resetSettings,
+      unlockLevel,
+      addCredits,
+      isLevelUnlocked,
+    }}>
       {children}
     </SettingsContext.Provider>
   );

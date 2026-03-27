@@ -1,0 +1,22 @@
+
+/* ==================== P0: 部位敌人样式 ==================== */
+.part-enemy {
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.part-enemy:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}

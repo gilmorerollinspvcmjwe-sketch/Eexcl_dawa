@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import type { Target } from '../types';
-
-import type { HitEffect } from '../types';
+import type { Target, HitEffect } from '../types';
+import { generateColLetters } from '../utils/gridUtils';
+import { playHitSound, playMissSound } from '../utils/soundUtils';
 
 interface ExcelGridProps {
   targets: Target[];
@@ -29,76 +29,6 @@ interface ExcelGridProps {
   soundEnabled?: boolean;
 }
 
-// 音效生成器
-const createAudioContext = () => {
-  return new (window.AudioContext || (window as any).webkitAudioContext)();
-};
-
-let audioContext: AudioContext | null = null;
-
-const playHitSound = (isHeadshot: boolean, combo: number, soundEnabled: boolean) => {
-  // 检查音效开关
-  if (!soundEnabled) return;
-  
-  try {
-    if (!audioContext) audioContext = createAudioContext();
-    
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    // 不同命中类型不同音效
-    if (isHeadshot) {
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5
-      oscillator.frequency.exponentialRampToValueAtTime(1760, audioContext.currentTime + 0.1);
-    } else if (combo >= 10) {
-      oscillator.frequency.setValueAtTime(660, audioContext.currentTime); // E5
-      oscillator.frequency.exponentialRampToValueAtTime(1320, audioContext.currentTime + 0.08);
-    } else {
-      oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-    }
-    
-    oscillator.type = 'sine';
-    
-    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.15);
-  } catch {
-    // 音频播放失败，静默处理
-  }
-};
-
-const playMissSound = (soundEnabled: boolean) => {
-  // 检查音效开关
-  if (!soundEnabled) return;
-  
-  try {
-    if (!audioContext) audioContext = createAudioContext();
-    
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.1);
-    oscillator.type = 'sawtooth';
-    
-    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.15);
-  } catch {
-    // 静默处理
-  }
-};
-
 export const ExcelGrid: React.FC<ExcelGridProps> = ({
   targets,
   selectedCell,
@@ -119,16 +49,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
 
   // 生成列字母 B-AD (30列)
   const colLetters = React.useMemo(() => {
-    return Array.from({ length: COLS }, (_, i) => {
-      let result = '';
-      let n = i + 2; // 从 B 列开始
-      while (n > 0) {
-        n--;
-        result = String.fromCharCode(65 + (n % 26)) + result;
-        n = Math.floor(n / 26);
-      }
-      return result;
-    });
+    return generateColLetters(COLS);
   }, [COLS]);
 
   const getTargetAt = useCallback((row: number, col: number) => {

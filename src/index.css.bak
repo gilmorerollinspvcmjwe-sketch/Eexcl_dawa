@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-/* ==================== Excel å˜é‡å®šä¹‰ ==================== */
+/* ==================== Excel Ö÷Ìâ±äÁ¿ ==================== */
 :root {
-  /* Excel ç»¿è‰²ä¸»é¢˜ */
+  /* Excel ÅäÉ«·½°¸ */
   --excel-green: #107c41;
   --excel-green-hover: #0e6b38;
   --excel-green-light: #e6f4ea;
@@ -15,13 +15,13 @@
   --excel-row-header-bg: #f8f8f8;
   --excel-cell-bg: #ffffff;
   
-  /* å­—ä½“ */
+  /* ×ÖÌå */
   --excel-font: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   --excel-font-size: 11px;
   --excel-font-size-sm: 10px;
   --excel-font-size-lg: 14px;
   
-  /* å°ºå¯¸ */
+  /* ³ß´ç */
   --excel-cell-width: 64px;
   --excel-cell-height: 20px;
   --excel-row-header-width: 24px;
@@ -49,7 +49,7 @@ body {
   height: 100vh;
 }
 
-/* ==================== Excel æ ‡é¢˜æ  ==================== */
+/* ==================== Excel ±êÌâÀ¸ ==================== */
 .excel-titlebar {
   background: linear-gradient(180deg, #107c41 0%, #0d6a38 100%);
   height: 30px;
@@ -114,7 +114,7 @@ body {
   background: #e81123;
 }
 
-/* ==================== Excel èœå•æ  ==================== */
+/* ==================== Excel Ribbon ²Ëµ¥À¸ ==================== */
 .excel-menubar {
   background: var(--excel-header-bg);
   height: 27px;
@@ -143,7 +143,7 @@ body {
   color: var(--excel-green);
 }
 
-/* ==================== Excel åŠŸèƒ½åŒº ==================== */
+/* ==================== Excel Ribbon ¹¤¾ßÀ¸ ==================== */
 .excel-ribbon {
   background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
   border-bottom: 1px solid var(--excel-border);
@@ -246,7 +246,7 @@ body {
   font-size: var(--excel-font-size-sm);
 }
 
-/* ==================== Excel å…¬å¼æ  ==================== */
+/* ==================== Excel ¹«Ê½À¸ ==================== */
 .excel-formula-bar {
   display: flex;
   align-items: center;
@@ -312,7 +312,7 @@ body {
   border-color: var(--excel-selected-green);
 }
 
-/* ==================== Excel ç½‘æ ¼å®¹å™¨ ==================== */
+/* ==================== Excel Íø¸ñÇøÓò ==================== */
 .excel-grid-container {
   flex: 1;
   display: flex;
@@ -328,7 +328,7 @@ body {
   background: white;
 }
 
-/* è‡ªå®šä¹‰æ»šåŠ¨æ¡ */
+/* ×Ô¶¨Òå¹ö¶¯Ìõ */
 .excel-grid-wrapper::-webkit-scrollbar {
   width: var(--excel-scrollbar-size);
   height: var(--excel-scrollbar-size);
@@ -353,14 +353,14 @@ body {
   background: #f0f0f0;
 }
 
-/* Excel è¡¨æ ¼ */
+/* Excel ±í¸ñ */
 .excel-table {
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
 }
 
-/* åˆ—å¤´ */
+/* ÁĞÍ· */
 .excel-col-header {
   background: var(--excel-header-bg);
   background-image: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
@@ -391,7 +391,7 @@ body {
   color: var(--excel-green);
 }
 
-/* è¡Œå¤´ */
+/* ĞĞÍ· */
 .excel-row-header {
   background: var(--excel-header-bg);
   background-image: linear-gradient(90deg, #f8f8f8 0%, #e8e8e8 100%);
@@ -416,7 +416,7 @@ body {
   color: var(--excel-green);
 }
 
-/* å•å…ƒæ ¼ */
+/* µ¥Ôª¸ñ */
 .excel-cell {
   min-width: var(--excel-cell-width);
   width: var(--excel-cell-width);
@@ -442,7 +442,7 @@ body {
   background: rgba(33, 115, 70, 0.03);
 }
 
-/* å·¦ä¸Šè§’å•å…ƒæ ¼ï¼ˆå…¨é€‰æŒ‰é’®ï¼‰ */
+/* ×óÉÏ½Çµ¥Ôª¸ñ£¨È«Ñ¡°´Å¥£© */
 .excel-corner-cell {
   background: var(--excel-header-bg);
   background-image: linear-gradient(135deg, #f8f8f8 0%, #e0e0e0 100%);
@@ -457,7 +457,7 @@ body {
   cursor: pointer;
 }
 
-/* ==================== ç›®æ ‡æ ·å¼ ==================== */
+/* ==================== Ä¿±êÑùÊ½ ==================== */
 .target {
   position: absolute;
   top: 50%;
@@ -548,13 +548,13 @@ body {
   text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 
-/* çˆ†å¤´çº¿ç›®æ ‡ */
+/* ±¬Í·ÏßÄ¿±ê */
 .target-headshot-line {
   border: 2px solid #ff0000;
   box-shadow: 0 0 8px rgba(255,0,0,0.5), inset 0 0 4px rgba(255,0,0,0.3);
 }
 
-/* ==================== å‘½ä¸­ç‰¹æ•ˆ ==================== */
+/* ==================== ÃüÖĞĞ§¹û ==================== */
 @keyframes hitExplosion {
   0% {
     transform: translate(-50%, -50%) scale(1);
@@ -619,7 +619,7 @@ body {
   text-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 10px rgba(220, 38, 38, 0.5);
 }
 
-/* ==================== Miss æ•ˆæœ ==================== */
+/* ==================== Miss Ğ§¹û ==================== */
 @keyframes missShake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-3px); }
@@ -639,7 +639,7 @@ body {
   animation: missFlash 0.2s ease-in-out;
 }
 
-/* ==================== Excel å·¥ä½œè¡¨æ ‡ç­¾ ==================== */
+/* ==================== Excel ¹¤×÷±í±êÇ© ==================== */
 .excel-sheet-bar {
   display: flex;
   background: #f3f3f3;
@@ -726,7 +726,7 @@ body {
   color: var(--excel-green);
 }
 
-/* ==================== Excel çŠ¶æ€æ  ==================== */
+/* ==================== Excel ×´Ì¬À¸ ==================== */
 .excel-statusbar {
   display: flex;
   align-items: center;
@@ -774,7 +774,7 @@ body {
   background: rgba(255,255,255,0.15);
 }
 
-/* ==================== æ¸¸æˆ HUD ==================== */
+/* ==================== ÓÎÏ· HUD ==================== */
 .game-hud {
   position: absolute;
   top: 0;
@@ -795,6 +795,7 @@ body {
   pointer-events: auto;
 }
 
+/* ÓÎÏ·×¼ĞÇ - ²»×èµ²µã»÷ */
 .game-crosshair {
   pointer-events: none !important;
   user-select: none;
@@ -842,15 +843,15 @@ body {
 
 .game-stat-value.time.warning {
   color: #fca5a5;
-  animation: pulseAnim 1s infinite;
+  animation: pulse 1s infinite;
 }
 
-@keyframes pulseAnim {
+@keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
 }
 
-/* ==================== è®¾ç½®é¡µ ==================== */
+/* ==================== ÉèÖÃÃæ°å£¨Excel Sheet ·ç¸ñ£© ==================== */
 .settings-sheet {
   flex: 1;
   overflow: auto;
@@ -939,7 +940,7 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-/* ==================== ç»Ÿè®¡é¡µ ==================== */
+/* ==================== Í³¼ÆÃæ°å£¨Excel Sheet ·ç¸ñ£© ==================== */
 .stats-sheet {
   flex: 1;
   overflow: auto;
@@ -947,6 +948,7 @@ body {
   padding: 20px;
 }
 
+/* ĞŞ¸´ StatsPanel ºÍ SettingsPanel ÏÔÊ¾ÎÊÌâ */
 .excel-grid-container .excel-grid-wrapper {
   min-height: 100%;
   overflow-y: auto;
@@ -958,12 +960,14 @@ body {
   min-width: 100%;
 }
 
+/* È·±£Ãæ°å×é¼şÕıÈ·ÏÔÊ¾ */
 .excel-grid-container > div {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
+/* StatsPanel ÌØ¶¨ÑùÊ½ */
 .stats-panel-container {
   background: white;
 }
@@ -976,6 +980,7 @@ body {
   table-layout: auto !important;
 }
 
+/* SettingsPanel ÌØ¶¨ÑùÊ½ */
 .settings-panel-container {
   background: white;
 }
@@ -1040,7 +1045,7 @@ body {
   color: #333;
 }
 
-/* ==================== éšè—çŠ¶æ€ ==================== */
+/* ==================== Òş²Ø×´Ì¬ ==================== */
 .hidden-overlay {
   position: fixed;
   inset: 0;
@@ -1078,7 +1083,7 @@ body {
   font-size: 14px;
 }
 
-/* ==================== è¿å‡»åŠ¨ç”» ==================== */
+/* ==================== Á¬»÷¶¯»­ ==================== */
 @keyframes comboPop {
   0% {
     transform: scale(0.8);
@@ -1097,7 +1102,7 @@ body {
   animation: comboPop 0.3s ease-out;
 }
 
-/* ==================== æ¸¸æˆæ¨¡å¼é¢„è®¾ ==================== */
+/* ==================== ÓÎÏ·Ä£°åÔ¤Éè ==================== */
 .game-presets {
   display: flex;
   gap: 8px;
@@ -1126,7 +1131,7 @@ body {
   font-weight: 500;
 }
 
-/* ==================== çˆ†å¤´çº¿æŒ‡ç¤ºå™¨ ==================== */
+/* ==================== ±¬Í·ÏßÖ¸Ê¾Æ÷ ==================== */
 .headshot-line-indicator {
   position: absolute;
   left: 0;
@@ -1158,7 +1163,7 @@ body {
   border-left-color: rgba(255, 0, 0, 0.7);
 }
 
-/* ==================== Crosshair å‡†æ˜Ÿç»„ä»¶ ==================== */
+/* ==================== Crosshair ×¼ĞÇ¹â±ê ==================== */
 .crosshair-cursor {
   cursor: crosshair;
 }
@@ -1211,135 +1216,37 @@ body {
 .custom-crosshair-line.bottom {
   top: 6px;
 }
-
-/* ==================== P0: éƒ¨ä½æ•Œäººæ ·å¼ ==================== */
-.part-enemy {
-  position: relative;
-  transition: all 0.15s ease;
-}
-
-.part-enemy:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
-}
-
-/* ==================== P2: æ–‡å­—æ•Œäººæ ·å¼ ==================== */
-.text-enemy-container {
-  position: absolute;
-  pointer-events: none;
-}
-
-.text-enemy-part {
-  transition: all 0.15s ease;
-  pointer-events: auto;
-}
-
-.text-enemy-part:hover {
-  transform: scale(1.1);
-  filter: brightness(1.1);
-}
-
-.text-enemy-part.moving {
-  animation: enemyMove 0.5s ease-in-out infinite;
-}
-
-.text-enemy-part.hit {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.text-part-cell {
-  cursor: crosshair;
-}
-
-.text-part-cell:hover {
-  transform: scale(1.1);
-}
-
-.text-part-cell.moving {
-  animation: pulse 0.8s ease-in-out infinite;
-}
-
-.text-part-cell.hit {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* æ•Œäººç§»åŠ¨åŠ¨ç”» */
-@keyframes enemyMove {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(3px);
-  }
-}
-
-/* æ‹è§’å°„å‡» - æ¢å¤´åŠ¨ç”» */
-@keyframes peekIn {
-  0% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes peekOut {
-  0% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-}
-
-.peek-enemy {
-  animation: peekIn 0.3s ease-out forwards;
-}
-
-.peek-enemy.hiding {
-  animation: peekOut 0.3s ease-in forwards;
-}
-
-/* å…³å¡å®Œæˆ/å¤±è´¥å¼¹çª— */
-.level-complete-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.level-complete-modal {
-  background: white;
-  padding: 32px 48px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.level-complete-modal.success {
-  border: 3px solid #107c41;
-}
-
-.level-complete-modal.failure {
-  border: 3px solid #dc2626;
-}
+ / *   = = = = = = = = = = = = = = = = = = = =   P 0 :   ?MOLe?N7h_  = = = = = = = = = = = = = = = = = = = =   * / 
+ . p a r t - e n e m y   { 
+     p o s i t i o n :   r e l a t i v e ; 
+     t r a n s i t i o n :   a l l   0 . 1 5 s   e a s e ; 
+ } 
+ 
+ . p a r t - e n e m y : h o v e r   { 
+     t r a n s f o r m :   s c a l e ( 1 . 1 ) ; 
+     b o x - s h a d o w :   0   4 p x   1 2 p x   r g b a ( 0 , 0 , 0 , 0 . 3 ) ; 
+ } 
+ 
+ @ k e y f r a m e s   p u l s e   { 
+     0 % ,   1 0 0 %   { 
+         t r a n s f o r m :   s c a l e ( 1 ) ; 
+         o p a c i t y :   1 ; 
+     } 
+     5 0 %   { 
+         t r a n s f o r m :   s c a l e ( 1 . 0 5 ) ; 
+         o p a c i t y :   0 . 9 ; 
+     } 
+ } 
+ 
+ @ k e y f r a m e s   s c o r e P o p u p   { 
+     0 %   { 
+         o p a c i t y :   1 ; 
+         t r a n s f o r m :   t r a n s l a t e Y ( 0 )   s c a l e ( 1 ) ; 
+     } 
+     1 0 0 %   { 
+         o p a c i t y :   0 ; 
+         t r a n s f o r m :   t r a n s l a t e Y ( - 3 0 p x )   s c a l e ( 1 . 2 ) ; 
+     } 
+ } 
+  
+ 

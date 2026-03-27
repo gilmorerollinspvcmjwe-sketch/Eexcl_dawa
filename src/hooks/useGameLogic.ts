@@ -2,9 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Target, GameState, GameStats, GameMode, TimedDuration, TargetType, GameHistoryEntry, ModeStat, HitEffect } from '../types';
 import { TARGET_SCORES, TARGET_PROBS, DIFFICULTY_SETTINGS, COMBO_MULTIPLIERS } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
-
-const COLS = 30; // B to AD (30 columns)
-const ROWS = 50; // 1 to 50
+import { COLS, ROWS, DEFAULT_TARGET_DURATION_MS, TARGET_DURATION_FACTOR, TARGET_DURATION_LEVELS, INITIAL_SPAWN_DELAY_MS, CLEANUP_INTERVAL_MS, HIT_EFFECT_DURATION_MS, CORNER_HIDE_DELAY_MS } from '../constants';
 
 // 默认模式统计
 const DEFAULT_MODE_STAT: ModeStat = {
@@ -101,7 +99,7 @@ export function useGameLogic() {
   // 计算目标持续时间（基于设置）
   const getTargetDuration = useCallback(() => {
     // 频率越高，持续时间越短
-    return 1000 + (11 - settings.targetDuration) * 300;
+    return DEFAULT_TARGET_DURATION_MS + (TARGET_DURATION_LEVELS - settings.targetDuration) * TARGET_DURATION_FACTOR;
   }, [settings.targetDuration]);
 
   // 生成目标
@@ -167,8 +165,8 @@ export function useGameLogic() {
       });
 
       // 清理命中特效
-      setHitEffects(prev => prev.filter(e => now - e.createdAt < 600));
-    }, 100);
+      setHitEffects(prev => prev.filter(e => now - e.createdAt < HIT_EFFECT_DURATION_MS));
+    }, CLEANUP_INTERVAL_MS);
 
     return () => clearInterval(cleanup);
   }, [gameState.isPlaying, gameState.mode]);
@@ -238,7 +236,7 @@ export function useGameLogic() {
         spawnTarget();
         scheduleNextSpawn();
       }
-    }, 500);
+    }, INITIAL_SPAWN_DELAY_MS);
 
     return () => {
       if (spawnTimerRef.current) {
@@ -440,7 +438,7 @@ export function useGameLogic() {
     cornerTimerRef.current = setTimeout(() => {
       setIsHidden(true);
       setHoverCorner(false);
-    }, 3000);
+    }, CORNER_HIDE_DELAY_MS);
   }, []);
 
   const handleCornerLeave = useCallback(() => {

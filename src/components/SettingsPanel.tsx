@@ -1,12 +1,14 @@
 import React from 'react';
 import type { GameSettings, GamePreset, CrosshairStyle } from '../types';
 import { GAME_PRESETS } from '../types';
+import { getAvailableLevels } from '../levelGenerator';
+import { generateSimpleColLetters } from '../utils/gridUtils';
 
 interface SettingsPanelProps {
   settings: GameSettings;
   onUpdateSettings: <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => void;
   onApplyPreset: (preset: GamePreset) => void;
-  onStartGame: (mode: 'timed' | 'endless' | 'zen' | 'headshot', duration?: 30 | 60 | 120) => void;
+  onStartGame: (mode: 'timed' | 'endless' | 'zen' | 'headshot' | 'part_training' | 'peek_shot' | 'moving_target', duration?: 30 | 60 | 120, level?: number) => void;
 }
 
 const CROSSHAIR_STYLES: { id: CrosshairStyle; name: string; preview: string }[] = [
@@ -34,7 +36,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   // 列字母
-  const colLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
+  const colLetters = React.useMemo(() => generateSimpleColLetters(15), []);
 
   // 准星预览渲染
   const renderCrosshairPreview = () => {
@@ -251,6 +253,65 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell" />
               <td className="excel-cell" />
               <td className="excel-cell" />
+            </tr>
+
+            {/* P2: 移动速度配置 */}
+            <tr>
+              <td className="excel-row-header">7.5</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>移动速度</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="0.5"
+                  max="3"
+                  step="0.1"
+                  value={settings.enemyMoveSpeed || 1.0}
+                  onChange={(e) => updateSetting('enemyMoveSpeed', parseFloat(e.target.value))}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#107c41' }}>{(settings.enemyMoveSpeed || 1.0).toFixed(1)} 格/秒</strong>
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>移动模式</td>
+              <td className="excel-cell" colSpan={2}>
+                <select
+                  className="settings-cell-select"
+                  value={settings.enemyMovePattern || 'linear'}
+                  onChange={(e) => updateSetting('enemyMovePattern', e.target.value as 'linear' | 'sine' | 'bounce')}
+                >
+                  <option value="linear">直线</option>
+                  <option value="sine">正弦波</option>
+                  <option value="bounce">弹跳</option>
+                </select>
+              </td>
+            </tr>
+
+            {/* P2: 敌人渲染模式 */}
+            <tr>
+              <td className="excel-row-header">7.6</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>敌人显示</td>
+              <td className="excel-cell" colSpan={3}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className={`game-preset-btn ${(settings.enemyRenderMode || 'text') === 'text' ? 'active' : ''}`}
+                    onClick={() => updateSetting('enemyRenderMode', 'text')}
+                    style={{ background: (settings.enemyRenderMode || 'text') === 'text' ? '#107c41' : '#e5e7eb', color: (settings.enemyRenderMode || 'text') === 'text' ? 'white' : '#333' }}
+                  >
+                    文字模式
+                  </button>
+                  <button
+                    className={`game-preset-btn ${settings.enemyRenderMode === 'icon' ? 'active' : ''}`}
+                    onClick={() => updateSetting('enemyRenderMode', 'icon')}
+                    style={{ background: settings.enemyRenderMode === 'icon' ? '#107c41' : '#e5e7eb', color: settings.enemyRenderMode === 'icon' ? 'white' : '#333' }}
+                  >
+                    图标模式
+                  </button>
+                </div>
+              </td>
+              <td className="excel-cell" colSpan={2} style={{ color: '#888', fontSize: 10 }}>
+                文字：显示中文部位名称
+              </td>
             </tr>
 
             {/* 空行 */}
@@ -600,15 +661,132 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </td>
             </tr>
 
-            {/* 操作说明 */}
+            {/* 空行 */}
             <tr>
               <td className="excel-row-header">25</td>
               {Array.from({ length: 7 }).map((_, i) => (
                 <td key={i} className="excel-cell" />
               ))}
             </tr>
+
+            {/* P1: 关卡系统区标题 */}
             <tr>
               <td className="excel-row-header">26</td>
+              <td 
+                className="excel-cell" 
+                colSpan={7} 
+                style={{ 
+                  background: '#7c3aed', 
+                  color: 'white', 
+                  fontWeight: 'bold',
+                  paddingLeft: 8,
+                }}
+              >
+                📚 关卡挑战模式
+              </td>
+            </tr>
+
+            {/* 关卡选择 */}
+            <tr>
+              <td className="excel-row-header">27</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>选择关卡</td>
+              <td className="excel-cell" colSpan={5}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4 }}>
+                  {getAvailableLevels().map(({ level, name, difficulty }) => (
+                    <button
+                      key={level}
+                      onClick={() => onStartGame('part_training', undefined, level)}
+                      className="game-preset-btn"
+                      style={{ 
+                        background: level <= 3 ? '#107c41' : level <= 6 ? '#2563eb' : level <= 9 ? '#f59e0b' : '#dc2626',
+                        color: 'white',
+                        fontSize: 10,
+                        padding: '4px 2px',
+                      }}
+                      title={`${difficulty} - ${name}`}
+                    >
+                      Lv.{level}
+                    </button>
+                  ))}
+                </div>
+              </td>
+            </tr>
+
+            {/* 关卡难度说明 */}
+            <tr>
+              <td className="excel-row-header">28</td>
+              <td className="excel-cell" colSpan={7} style={{ color: '#888', fontSize: 9, paddingLeft: 8 }}>
+                🟢 新手 (1-3) | 🔵 进阶 (4-6) | 🟡 熟练 (7-9) | 🔴 专家 (10-12) - 完成所有目标条件即可过关
+              </td>
+            </tr>
+
+            {/* 空行 */}
+            <tr>
+              <td className="excel-row-header">29</td>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <td key={i} className="excel-cell" />
+              ))}
+            </tr>
+
+            {/* P2: 特殊模式区标题 */}
+            <tr>
+              <td className="excel-row-header">30</td>
+              <td 
+                className="excel-cell" 
+                colSpan={7} 
+                style={{ 
+                  background: '#ea580c', 
+                  color: 'white', 
+                  fontWeight: 'bold',
+                  paddingLeft: 8,
+                }}
+              >
+                🎯 特殊训练模式
+              </td>
+            </tr>
+
+            {/* 特殊模式选择 */}
+            <tr>
+              <td className="excel-row-header">31</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>拐角射击</td>
+              <td className="excel-cell" colSpan={2}>
+                <button
+                  onClick={() => onStartGame('peek_shot')}
+                  className="game-preset-btn"
+                  style={{ background: '#ea580c', color: 'white', borderColor: '#ea580c', width: '100%' }}
+                >
+                  Peek Shot
+                </button>
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>移动目标</td>
+              <td className="excel-cell" colSpan={2}>
+                <button
+                  onClick={() => onStartGame('moving_target')}
+                  className="game-preset-btn"
+                  style={{ background: '#0891b2', color: 'white', borderColor: '#0891b2', width: '100%' }}
+                >
+                  Moving Target
+                </button>
+              </td>
+            </tr>
+
+            {/* 特殊模式说明 */}
+            <tr>
+              <td className="excel-row-header">32</td>
+              <td className="excel-cell" colSpan={7} style={{ color: '#888', fontSize: 9, paddingLeft: 8 }}>
+                🔸 拐角射击：目标从格子边缘探头出现 | 🔸 移动目标：目标在网格中随机移动
+              </td>
+            </tr>
+
+            {/* 操作说明 */}
+            <tr>
+              <td className="excel-row-header">33</td>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <td key={i} className="excel-cell" />
+              ))}
+            </tr>
+            <tr>
+              <td className="excel-row-header">34</td>
               <td 
                 className="excel-cell" 
                 colSpan={7} 
@@ -619,7 +797,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   paddingLeft: 8,
                 }}
               >
-                📝 操作说明：Esc = 紧急隐藏 | F5 = 恢复游戏 | 点击目标进行射击 | 左上角悬停 3 秒 = 快速隐藏
+                📝 操作说明：Esc = 紧急隐藏 | F5 = 恢复游戏 | P = 暂停 | 点击目标进行射击 | 左上角悬停 3 秒 = 快速隐藏
               </td>
             </tr>
           </tbody>
