@@ -1,0 +1,1208 @@
+@import "tailwindcss";
+
+/* ==================== Excel 主题变量 ==================== */
+:root {
+  /* Excel 配色方案 */
+  --excel-green: #107c41;
+  --excel-green-hover: #0e6b38;
+  --excel-green-light: #e6f4ea;
+  --excel-selected-green: #217346;
+  --excel-border: #d4d4d4;
+  --excel-border-light: #e1e1e1;
+  --excel-header-bg: #f3f3f3;
+  --excel-header-border: #c4c4c4;
+  --excel-gridline: #d4d4d4;
+  --excel-row-header-bg: #f8f8f8;
+  --excel-cell-bg: #ffffff;
+  
+  /* 字体 */
+  --excel-font: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --excel-font-size: 11px;
+  --excel-font-size-sm: 10px;
+  --excel-font-size-lg: 14px;
+  
+  /* 尺寸 */
+  --excel-cell-width: 64px;
+  --excel-cell-height: 20px;
+  --excel-row-header-width: 24px;
+  --excel-col-header-height: 20px;
+  --excel-scrollbar-size: 17px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--excel-font);
+  font-size: var(--excel-font-size);
+  background-color: #f3f3f3;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ==================== Excel 标题栏 ==================== */
+.excel-titlebar {
+  background: linear-gradient(180deg, #107c41 0%, #0d6a38 100%);
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  user-select: none;
+}
+
+.excel-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.excel-titlebar-logo {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #21a366 0%, #107c41 100%);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+}
+
+.excel-titlebar-title {
+  color: white;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+.excel-titlebar-controls {
+  display: flex;
+  height: 100%;
+}
+
+.excel-titlebar-btn {
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  transition: background 0.1s;
+}
+
+.excel-titlebar-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.excel-titlebar-btn.close:hover {
+  background: #e81123;
+}
+
+/* ==================== Excel Ribbon 菜单栏 ==================== */
+.excel-menubar {
+  background: var(--excel-header-bg);
+  height: 27px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--excel-border-light);
+  user-select: none;
+}
+
+.excel-menu-item {
+  padding: 4px 10px;
+  font-size: var(--excel-font-size);
+  color: #444;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.1s;
+}
+
+.excel-menu-item:hover {
+  background: rgba(16, 124, 65, 0.1);
+}
+
+.excel-menu-item.active {
+  background: rgba(16, 124, 65, 0.15);
+  color: var(--excel-green);
+}
+
+/* ==================== Excel Ribbon 工具栏 ==================== */
+.excel-ribbon {
+  background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
+  border-bottom: 1px solid var(--excel-border);
+  padding: 2px 4px 4px;
+  user-select: none;
+}
+
+.excel-ribbon-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 2px;
+}
+
+.excel-ribbon-tab {
+  padding: 3px 12px;
+  font-size: var(--excel-font-size);
+  color: #444;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: transparent;
+  position: relative;
+  top: 1px;
+}
+
+.excel-ribbon-tab:hover {
+  background: rgba(16, 124, 65, 0.05);
+}
+
+.excel-ribbon-tab.active {
+  background: white;
+  border-color: var(--excel-border);
+  border-top: 2px solid var(--excel-green);
+  font-weight: 500;
+}
+
+.excel-ribbon-content {
+  display: flex;
+  background: white;
+  border: 1px solid var(--excel-border);
+  border-top: none;
+  padding: 4px 8px;
+  gap: 2px;
+}
+
+.excel-ribbon-group {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px;
+  border-right: 1px solid var(--excel-border-light);
+}
+
+.excel-ribbon-group:last-child {
+  border-right: none;
+}
+
+.excel-ribbon-group-label {
+  font-size: 9px;
+  color: #888;
+  text-align: center;
+  margin-top: 2px;
+}
+
+.excel-ribbon-buttons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.excel-ribbon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.1s;
+}
+
+.excel-ribbon-btn:hover {
+  background: var(--excel-green-light);
+  border-color: var(--excel-green);
+}
+
+.excel-ribbon-btn-icon {
+  font-size: 14px;
+  width: 20px;
+  text-align: center;
+}
+
+.excel-ribbon-btn-text {
+  font-size: var(--excel-font-size);
+  color: #444;
+}
+
+.excel-ribbon-btn-small {
+  padding: 2px 4px;
+  font-size: var(--excel-font-size-sm);
+}
+
+/* ==================== Excel 公式栏 ==================== */
+.excel-formula-bar {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-bottom: 1px solid var(--excel-border);
+  height: 24px;
+  padding: 0 4px;
+  gap: 4px;
+}
+
+.excel-name-box {
+  width: 100px;
+  height: 18px;
+  border: 1px solid var(--excel-border);
+  background: white;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-size: var(--excel-font-size);
+  color: #333;
+}
+
+.excel-name-box:focus-within {
+  border-color: var(--excel-selected-green);
+}
+
+.excel-formula-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--excel-border);
+  margin: 0 4px;
+}
+
+.excel-function-btn {
+  width: 20px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.excel-function-btn:hover {
+  background: var(--excel-green-light);
+}
+
+.excel-formula-input {
+  flex: 1;
+  height: 18px;
+  border: 1px solid var(--excel-border);
+  background: white;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-size: var(--excel-font-size);
+}
+
+.excel-formula-input:focus-within {
+  border-color: var(--excel-selected-green);
+}
+
+/* ==================== Excel 网格区域 ==================== */
+.excel-grid-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f3f3f3;
+  overflow: hidden;
+}
+
+.excel-grid-wrapper {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: white;
+}
+
+/* 自定义滚动条 */
+.excel-grid-wrapper::-webkit-scrollbar {
+  width: var(--excel-scrollbar-size);
+  height: var(--excel-scrollbar-size);
+}
+
+.excel-grid-wrapper::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-left: 1px solid var(--excel-border);
+  border-top: 1px solid var(--excel-border);
+}
+
+.excel-grid-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border: 1px solid #f0f0f0;
+}
+
+.excel-grid-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.excel-grid-wrapper::-webkit-scrollbar-corner {
+  background: #f0f0f0;
+}
+
+/* Excel 表格 */
+.excel-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+/* 列头 */
+.excel-col-header {
+  background: var(--excel-header-bg);
+  background-image: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+  min-width: var(--excel-cell-width);
+  width: var(--excel-cell-width);
+  height: var(--excel-col-header-height);
+  border: 1px solid var(--excel-header-border);
+  border-top: none;
+  font-size: var(--excel-font-size);
+  font-weight: 400;
+  color: #333;
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.excel-col-header:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 30;
+}
+
+.excel-col-header.highlighted {
+  background: var(--excel-green-light);
+  color: var(--excel-green);
+}
+
+/* 行头 */
+.excel-row-header {
+  background: var(--excel-header-bg);
+  background-image: linear-gradient(90deg, #f8f8f8 0%, #e8e8e8 100%);
+  min-width: var(--excel-row-header-width);
+  width: var(--excel-row-header-width);
+  height: var(--excel-cell-height);
+  border: 1px solid var(--excel-header-border);
+  border-left: none;
+  font-size: var(--excel-font-size-sm);
+  font-weight: 400;
+  color: #333;
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+
+.excel-row-header.highlighted {
+  background: var(--excel-green-light);
+  color: var(--excel-green);
+}
+
+/* 单元格 */
+.excel-cell {
+  min-width: var(--excel-cell-width);
+  width: var(--excel-cell-width);
+  height: var(--excel-cell-height);
+  border-right: 1px dotted var(--excel-gridline);
+  border-bottom: 1px dotted var(--excel-gridline);
+  background: var(--excel-cell-bg);
+  padding: 0 2px;
+  font-size: var(--excel-font-size);
+  vertical-align: middle;
+  position: relative;
+  cursor: crosshair;
+}
+
+.excel-cell.selected {
+  outline: 2px solid var(--excel-selected-green);
+  outline-offset: -1px;
+  z-index: 5;
+  background: rgba(33, 115, 70, 0.05);
+}
+
+.excel-cell:hover {
+  background: rgba(33, 115, 70, 0.03);
+}
+
+/* 左上角单元格（全选按钮） */
+.excel-corner-cell {
+  background: var(--excel-header-bg);
+  background-image: linear-gradient(135deg, #f8f8f8 0%, #e0e0e0 100%);
+  min-width: var(--excel-row-header-width);
+  width: var(--excel-row-header-width);
+  height: var(--excel-col-header-height);
+  border: 1px solid var(--excel-header-border);
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  cursor: pointer;
+}
+
+/* ==================== 目标样式 ==================== */
+.target {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  cursor: crosshair;
+  animation: targetSpawn 0.15s ease-out;
+  z-index: 15;
+}
+
+@keyframes targetSpawn {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.target-head {
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle at 30% 30%, #ff6b6b 0%, #dc2626 60%, #991b1b 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.3);
+  position: relative;
+}
+
+.target-head::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  width: 5px;
+  height: 3px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 50%;
+}
+
+.target-head-value {
+  font-size: 9px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.target-body {
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 50%, #c2410c 100%);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.2);
+}
+
+.target-body-value {
+  font-size: 9px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+}
+
+.target-feet {
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 22px solid #3b82f6;
+  position: relative;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+}
+
+.target-feet-value {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+}
+
+/* 爆头线目标 */
+.target-headshot-line {
+  border: 2px solid #ff0000;
+  box-shadow: 0 0 8px rgba(255,0,0,0.5), inset 0 0 4px rgba(255,0,0,0.3);
+}
+
+/* ==================== 命中效果 ==================== */
+@keyframes hitExplosion {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+.hit-explosion {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 124, 65, 0.6) 0%, transparent 70%);
+  animation: hitExplosion 0.3s ease-out forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes scorePopup {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -70%) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -120%) scale(1);
+    opacity: 0;
+  }
+}
+
+.score-popup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--excel-green);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 10px rgba(16, 124, 65, 0.5);
+  animation: scorePopup 0.6s ease-out forwards;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.score-popup.combo {
+  color: #f97316;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 10px rgba(249, 115, 22, 0.5);
+}
+
+.score-popup.headshot {
+  color: #dc2626;
+  font-size: 16px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 10px rgba(220, 38, 38, 0.5);
+}
+
+/* ==================== Miss 效果 ==================== */
+@keyframes missShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.miss-shake {
+  animation: missShake 0.15s ease-in-out;
+}
+
+@keyframes missFlash {
+  0%, 100% { background: transparent; }
+  50% { background: rgba(220, 38, 38, 0.1); }
+}
+
+.miss-flash {
+  animation: missFlash 0.2s ease-in-out;
+}
+
+/* ==================== Excel 工作表标签 ==================== */
+.excel-sheet-bar {
+  display: flex;
+  background: #f3f3f3;
+  border-top: 1px solid var(--excel-border);
+  height: 24px;
+  align-items: center;
+  user-select: none;
+}
+
+.excel-sheet-tabs {
+  display: flex;
+  height: 100%;
+  align-items: flex-end;
+}
+
+.excel-sheet-tab {
+  padding: 2px 12px;
+  background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
+  border: 1px solid var(--excel-border);
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  font-size: var(--excel-font-size);
+  color: #444;
+  cursor: pointer;
+  margin-right: -1px;
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  transition: all 0.1s;
+}
+
+.excel-sheet-tab:hover {
+  background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+}
+
+.excel-sheet-tab.active {
+  background: white;
+  border-bottom: 1px solid white;
+  margin-bottom: -1px;
+  height: 21px;
+  color: var(--excel-green);
+  font-weight: 500;
+}
+
+.excel-sheet-add {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  cursor: pointer;
+  margin-left: 4px;
+  font-size: 14px;
+  border-radius: 2px;
+}
+
+.excel-sheet-add:hover {
+  background: var(--excel-green-light);
+}
+
+.excel-sheet-nav {
+  display: flex;
+  margin-left: auto;
+  padding-right: 8px;
+  gap: 2px;
+}
+
+.excel-sheet-nav-btn {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  cursor: pointer;
+  font-size: 10px;
+  border-radius: 2px;
+}
+
+.excel-sheet-nav-btn:hover {
+  background: var(--excel-green-light);
+  color: var(--excel-green);
+}
+
+/* ==================== Excel 状态栏 ==================== */
+.excel-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #107c41 0%, #0d6a38 100%);
+  height: 22px;
+  padding: 0 8px;
+  color: white;
+  font-size: var(--excel-font-size-sm);
+  user-select: none;
+}
+
+.excel-statusbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.excel-statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.excel-statusbar-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.excel-statusbar-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255,255,255,0.3);
+}
+
+.excel-statusbar-btn {
+  padding: 2px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: var(--excel-font-size-sm);
+}
+
+.excel-statusbar-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* ==================== 游戏 HUD ==================== */
+.game-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, rgba(16, 124, 65, 0.95) 0%, rgba(13, 106, 56, 0.9) 100%);
+  color: white;
+  font-size: var(--excel-font-size);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.game-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.game-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.game-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.game-stat-label {
+  opacity: 0.8;
+  font-size: 10px;
+}
+
+.game-stat-value {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.game-stat-value.score {
+  color: #a7f3d0;
+}
+
+.game-stat-value.combo {
+  color: #fcd34d;
+}
+
+.game-stat-value.time {
+  color: white;
+}
+
+.game-stat-value.time.warning {
+  color: #fca5a5;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ==================== 设置面板（Excel Sheet 风格） ==================== */
+.settings-sheet {
+  flex: 1;
+  overflow: auto;
+  background: white;
+}
+
+.settings-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-table th {
+  background: var(--excel-header-bg);
+  border: 1px solid var(--excel-border);
+  padding: 8px 16px;
+  text-align: left;
+  font-weight: 500;
+  color: var(--excel-green);
+}
+
+.settings-table td {
+  border: 1px solid var(--excel-border);
+  padding: 8px 16px;
+}
+
+.settings-table tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.settings-section-header {
+  background: var(--excel-green) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.settings-cell-input {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 2px 4px;
+  font-family: var(--excel-font);
+  font-size: var(--excel-font-size);
+}
+
+.settings-cell-input:focus {
+  outline: none;
+  border-color: var(--excel-selected-green);
+  background: white;
+}
+
+.settings-cell-select {
+  width: 100%;
+  border: 1px solid var(--excel-border);
+  background: white;
+  padding: 4px 8px;
+  font-family: var(--excel-font);
+  font-size: var(--excel-font-size);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.settings-cell-select:focus {
+  outline: none;
+  border-color: var(--excel-selected-green);
+}
+
+.settings-cell-range {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  background: #e1e1e1;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.settings-cell-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--excel-green);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ==================== 统计面板（Excel Sheet 风格） ==================== */
+.stats-sheet {
+  flex: 1;
+  overflow: auto;
+  background: white;
+  padding: 20px;
+}
+
+/* 修复 StatsPanel 和 SettingsPanel 显示问题 */
+.excel-grid-container .excel-grid-wrapper {
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: auto;
+  flex: 1 1 auto;
+}
+
+.excel-grid-container .excel-table {
+  min-width: 100%;
+}
+
+/* 确保面板组件正确显示 */
+.excel-grid-container > div {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* StatsPanel 特定样式 */
+.stats-panel-container {
+  background: white;
+}
+
+.stats-panel-wrapper {
+  overflow: auto !important;
+}
+
+.stats-panel-container .excel-table {
+  table-layout: auto !important;
+}
+
+/* SettingsPanel 特定样式 */
+.settings-panel-container {
+  background: white;
+}
+
+.settings-panel-wrapper {
+  overflow: auto !important;
+}
+
+.settings-panel-container .excel-table {
+  table-layout: auto !important;
+}
+
+.stats-chart {
+  background: white;
+  border: 1px solid var(--excel-border);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.stats-chart-title {
+  font-size: var(--excel-font-size-lg);
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--excel-border-light);
+}
+
+.stats-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 120px;
+  padding-top: 8px;
+}
+
+.stats-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #21a366 0%, #107c41 100%);
+  border-radius: 2px 2px 0 0;
+  position: relative;
+  min-height: 4px;
+}
+
+.stats-bar-label {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.stats-bar-value {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* ==================== 隐藏状态 ==================== */
+.hidden-overlay {
+  position: fixed;
+  inset: 0;
+  background: white;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden-menu {
+  display: flex;
+  background: #f3f3f3;
+  border-bottom: 1px solid var(--excel-border);
+  padding: 4px 8px;
+  gap: 4px;
+}
+
+.hidden-menu-item {
+  padding: 4px 12px;
+  font-size: var(--excel-font-size);
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.hidden-menu-item:hover {
+  background: var(--excel-green-light);
+}
+
+.hidden-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* ==================== 连击动画 ==================== */
+@keyframes comboPop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.combo-pop {
+  animation: comboPop 0.3s ease-out;
+}
+
+/* ==================== 游戏模板预设 ==================== */
+.game-presets {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.game-preset-btn {
+  padding: 6px 12px;
+  background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+  border: 1px solid var(--excel-border);
+  border-radius: 3px;
+  font-size: var(--excel-font-size);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.game-preset-btn:hover {
+  background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+  border-color: var(--excel-green);
+}
+
+.game-preset-btn.active {
+  background: var(--excel-green-light);
+  border-color: var(--excel-green);
+  color: var(--excel-green);
+  font-weight: 500;
+}
+
+/* ==================== 爆头线指示器 ==================== */
+.headshot-line-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 0, 0, 0.5);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.headshot-line-indicator::before,
+.headshot-line-indicator::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border: 4px solid transparent;
+}
+
+.headshot-line-indicator::before {
+  left: -8px;
+  border-right-color: rgba(255, 0, 0, 0.7);
+}
+
+.headshot-line-indicator::after {
+  right: -8px;
+  border-left-color: rgba(255, 0, 0, 0.7);
+}
+
+/* ==================== Crosshair 准星光标 ==================== */
+.crosshair-cursor {
+  cursor: crosshair;
+}
+
+.custom-crosshair {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.custom-crosshair-dot {
+  width: 4px;
+  height: 4px;
+  background: #00ff00;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0, 255, 0, 0.5);
+}
+
+.custom-crosshair-line {
+  position: absolute;
+  background: #00ff00;
+}
+
+.custom-crosshair-line.horizontal {
+  width: 12px;
+  height: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.custom-crosshair-line.vertical {
+  width: 2px;
+  height: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.custom-crosshair-line.left {
+  right: 6px;
+}
+
+.custom-crosshair-line.right {
+  left: 6px;
+}
+
+.custom-crosshair-line.top {
+  bottom: 6px;
+}
+
+.custom-crosshair-line.bottom {
+  top: 6px;
+}
