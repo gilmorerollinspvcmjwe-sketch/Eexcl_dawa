@@ -5,3 +5,4 @@ export { TargetRenderer } from './TargetRenderer';
 export { HitEffectRenderer } from './HitEffectRenderer';
 export { GameHUD } from './GameHUD';
 export { PauseOverlay } from './PauseOverlay';
+export { MultiGridEnemyRenderer, MultiGridEnemies } from './MultiGridEnemyRenderer';

@@ -1,7 +1,7 @@
 // Excel 表格网格组件 - 整合各子组件
 
 import React from 'react';
-import type { Target, HitEffect } from '../types';
+import type { Target, HitEffect, MultiGridEnemy } from '../types';
 import { playHitSound, playMissSound } from '../utils/soundUtils';
 import { GridTable, HitEffectRenderer, GameHUD, PauseOverlay } from './grid';
 
@@ -29,6 +29,11 @@ interface ExcelGridProps {
   hitEffects?: HitEffect[];
   togglePause?: () => void;
   soundEnabled?: boolean;
+  // 多格敌人支持
+  multiGridEnemies?: MultiGridEnemy[];
+  enemyRenderMode?: 'text' | 'icon';
+  showEnemyPriority?: boolean;
+  showEnemyHp?: boolean;
 }
 
 export const ExcelGrid: React.FC<ExcelGridProps> = ({
@@ -46,6 +51,11 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   hitEffects = [],
   togglePause,
   soundEnabled = true,
+  // 多格敌人支持
+  multiGridEnemies = [],
+  enemyRenderMode = 'text',
+  showEnemyPriority = true,
+  showEnemyHp = true,
 }) => {
   // 处理 miss 音效
   const handleMiss = () => {
@@ -111,6 +121,11 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         targetSize={targetSize}
         targets={targets}
         onMiss={handleMiss}
+        // 多格敌人支持
+        multiGridEnemies={multiGridEnemies}
+        enemyRenderMode={enemyRenderMode}
+        showEnemyPriority={showEnemyPriority}
+        showEnemyHp={showEnemyHp}
       />
     </div>
   );

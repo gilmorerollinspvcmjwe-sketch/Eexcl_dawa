@@ -1,6 +1,17 @@
 // 游戏核心类型定义
 
-export type GameMode = 'timed' | 'endless' | 'zen' | 'headshot' | 'peek_shot' | 'moving_target' | 'part_training';
+export type GameMode = 
+  | 'timed' 
+  | 'endless' 
+  | 'zen' 
+  | 'headshot' 
+  | 'peek_shot' 
+  | 'moving_target' 
+  | 'part_training'
+  | 'motion_track'    // 移动射击训练
+  | 'switch_track'    // 目标切换训练
+  | 'reaction'        // 反应测试
+  | 'precision';      // 精准射击
 
 export type TimedDuration = 30 | 60 | 120;
 

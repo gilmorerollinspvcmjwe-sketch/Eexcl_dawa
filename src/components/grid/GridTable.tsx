@@ -1,9 +1,11 @@
 // 基础表格渲染组件
 
 import React, { useCallback, useState, useEffect } from 'react';
-import type { Target } from '../../types';
+import type { Target, MultiGridEnemy } from '../../types';
 import { generateColLetters } from '../../utils/gridUtils';
 import { TargetRenderer } from './TargetRenderer';
+import { MultiGridEnemies } from './MultiGridEnemyRenderer';
+import { CELL_WIDTH, CELL_HEIGHT } from '../../constants';
 
 interface GridTableProps {
   COLS: number;
@@ -18,6 +20,11 @@ interface GridTableProps {
   isHidden?: boolean;
   soundEnabled?: boolean;
   onMiss?: (row: number, col: number) => void;
+  // 多格敌人支持
+  multiGridEnemies?: MultiGridEnemy[];
+  enemyRenderMode?: 'text' | 'icon';
+  showEnemyPriority?: boolean;
+  showEnemyHp?: boolean;
 }
 
 export const GridTable: React.FC<GridTableProps> = ({
@@ -32,6 +39,11 @@ export const GridTable: React.FC<GridTableProps> = ({
   targets,
   isHidden = false,
   onMiss,
+  // 多格敌人支持
+  multiGridEnemies = [],
+  enemyRenderMode = 'text',
+  showEnemyPriority = true,
+  showEnemyHp = true,
 }) => {
   const [missEffects, setMissEffects] = useState<Set<string>>(new Set());
 
@@ -100,7 +112,7 @@ export const GridTable: React.FC<GridTableProps> = ({
   };
 
   return (
-    <div className="excel-grid-wrapper">
+    <div className="excel-grid-wrapper" style={{ position: 'relative' }}>
       <table className="excel-table">
         <thead>
           <tr>
@@ -174,6 +186,18 @@ export const GridTable: React.FC<GridTableProps> = ({
           })}
         </tbody>
       </table>
+
+      {/* 多格敌人渲染层 */}
+      {multiGridEnemies.length > 0 && (
+        <MultiGridEnemies
+          enemies={multiGridEnemies}
+          cellWidth={CELL_WIDTH}
+          cellHeight={CELL_HEIGHT}
+          renderMode={enemyRenderMode}
+          showPriority={showEnemyPriority}
+          showHp={showEnemyHp}
+        />
+      )}
     </div>
   );
 };

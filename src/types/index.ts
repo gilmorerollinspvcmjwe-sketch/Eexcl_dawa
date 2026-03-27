@@ -6,13 +6,40 @@ export type { GameState, CellPosition, HitEffect } from './game';
 export { DIFFICULTY_SETTINGS, COMBO_MULTIPLIERS } from './game';
 
 // 敌人类型
-export type { TargetType, PartType, Target, PartWeights, TextEnemyShape, PartPosition, FullEnemyShape } from './enemy';
+export type { 
+  TargetType, 
+  PartType, 
+  PartState,
+  EnemyState,
+  MovePattern,
+  PeekDirection,
+  PeekState,
+  PopState,
+  Priority,
+  Target, 
+  EnemyPart,
+  MultiGridEnemy,
+  MoveConfig,
+  PeekConfig,
+  PartHitResult,
+  PartWeights, 
+  TextEnemyShape, 
+  PartPosition, 
+  FullEnemyShape 
+} from './enemy';
 export { 
   TARGET_SCORES, 
   TARGET_PROBS, 
   PART_SCORES, 
   PART_COLORS, 
   PART_TEXTS, 
+  PART_MAX_HP,
+  PART_STATE_COLORS,
+  HUMANOID_PART_POSITIONS,
+  MOVE_SPEED_LEVELS,
+  PEEK_DURATION_LEVELS,
+  PRIORITY_CONFIG,
+  REACTION_RATINGS,
   DIFFICULTY_PART_WEIGHTS, 
   FULL_ENEMY_SHAPE 
 } from './enemy';
