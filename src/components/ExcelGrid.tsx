@@ -27,9 +27,6 @@ interface ExcelGridProps {
   hitEffects?: HitEffect[];
   togglePause?: () => void;
   soundEnabled?: boolean;
-  crosshairStyle?: string;
-  crosshairColor?: string;
-  crosshairSize?: number;
 }
 
 // 音效生成器
@@ -117,9 +114,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   hitEffects = [],
   togglePause,
   soundEnabled = true,
-  crosshairStyle = 'cross',
-  crosshairColor = '#00ff00',
-  crosshairSize = 12,
 }) => {
   const [missEffects, setMissEffects] = useState<Set<string>>(new Set());
 
@@ -200,81 +194,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     onCellClick(row, col);
   };
 
-  // 准星样式生成
-  const renderCrosshair = () => {
-    const color = crosshairColor;
-    const size = crosshairSize;
-    const strokeWidth = 2;
-    
-    const crosshairStyles: Record<string, React.ReactNode> = {
-      dot: (
-        <circle cx="12" cy="12" r={size / 3} fill={color} />
-      ),
-      cross: (
-        <>
-          <line x1="12" y1={12 - size / 2} x2="12" y2={12 + size / 2} stroke={color} strokeWidth={strokeWidth} />
-          <line x1={12 - size / 2} y1="12" x2={12 + size / 2} y2="12" stroke={color} strokeWidth={strokeWidth} />
-        </>
-      ),
-      circle: (
-        <circle cx="12" cy="12" r={size / 2} stroke={color} strokeWidth={strokeWidth} fill="none" />
-      ),
-      't-shape': (
-        <>
-          <line x1="4" y1="6" x2="20" y2="6" stroke={color} strokeWidth={strokeWidth} />
-          <line x1="12" y1="6" x2="12" y2="18" stroke={color} strokeWidth={strokeWidth} />
-        </>
-      ),
-      valorant: (
-        <>
-          <line x1="12" y1="4" x2="12" y2="9" stroke={color} strokeWidth={strokeWidth} />
-          <line x1="12" y1="15" x2="12" y2="20" stroke={color} strokeWidth={strokeWidth} />
-          <line x1="4" y1="12" x2="9" y2="12" stroke={color} strokeWidth={strokeWidth} />
-          <line x1="15" y1="12" x2="20" y2="12" stroke={color} strokeWidth={strokeWidth} />
-          <circle cx="12" cy="12" r="1.5" fill={color} />
-        </>
-      ),
-      cs2: (
-        <>
-          <line x1="12" y1="3" x2="12" y2="8" stroke={color} strokeWidth={strokeWidth} />
-          <line x1="12" y1="16" x2="12" y2="21" stroke={color} strokeWidth={strokeWidth} />
-          <line x1="3" y1="12" x2="8" y2="12" stroke={color} strokeWidth={strokeWidth} />
-          <line x1="16" y1="12" x2="21" y2="12" stroke={color} strokeWidth={strokeWidth} />
-          <circle cx="12" cy="12" r="2" fill={color} opacity="0.5" />
-        </>
-      ),
-      cf: (
-        <>
-          <line x1="12" y1="5" x2="12" y2="10" stroke={color} strokeWidth={strokeWidth + 1} />
-          <line x1="12" y1="14" x2="12" y2="19" stroke={color} strokeWidth={strokeWidth + 1} />
-          <line x1="5" y1="12" x2="10" y2="12" stroke={color} strokeWidth={strokeWidth + 1} />
-          <line x1="14" y1="12" x2="19" y2="12" stroke={color} strokeWidth={strokeWidth + 1} />
-        </>
-      ),
-    };
-
-    return (
-      <svg
-        className="custom-crosshair"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        style={{
-          position: 'fixed',
-          pointerEvents: 'none',
-          zIndex: 9999,
-        }}
-      >
-        {crosshairStyles[crosshairStyle] || crosshairStyles.cross}
-      </svg>
-    );
-  };
-
   return (
     <div className="excel-grid-container">
-      {/* 自定义准星 */}
-      {renderCrosshair()}
-      
       {/* 游戏 HUD */}
       {gameState.isPlaying && !gameState.isPaused && (
         <div className="game-hud">

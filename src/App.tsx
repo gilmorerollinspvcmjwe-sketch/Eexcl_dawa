@@ -1,14 +1,18 @@
+import { useEffect } from 'react';
 import { ExcelHeader } from './components/ExcelHeader';
 import { SheetTabs } from './components/SheetTabs';
 import { ExcelGrid } from './components/ExcelGrid';
 import { SettingsPanel } from './components/SettingsPanel';
 import { StatsPanel } from './components/StatsPanel';
 import { StatusBar } from './components/StatusBar';
+import { Crosshair } from './components/Crosshair';
 import { useGameLogic } from './hooks/useGameLogic';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
+import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 
 function AppContent() {
   const { settings, updateSetting, applyPreset } = useSettings();
+  const { mousePosition, isCrosshairVisible, setCrosshairVisible } = useCrosshair();
 
   const {
     gameState,
@@ -38,19 +42,41 @@ function AppContent() {
     }
   };
 
-  // 自定义光标样式
-  const cursorStyle = settings.customCursor ? {
-    cursor: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='4' x2='12' y2='10' stroke='${encodeURIComponent(settings.crosshairColor)}' stroke-width='2'/%3E%3Cline x1='12' y1='14' x2='12' y2='20' stroke='${encodeURIComponent(settings.crosshairColor)}' stroke-width='2'/%3E%3Cline x1='4' y1='12' x2='10' y2='12' stroke='${encodeURIComponent(settings.crosshairColor)}' stroke-width='2'/%3E%3Cline x1='14' y1='12' x2='20' y2='12' stroke='${encodeURIComponent(settings.crosshairColor)}' stroke-width='2'/%3E%3Ccircle cx='12' cy='12' r='2' fill='${encodeURIComponent(settings.crosshairColor)}'/%3E%3C/svg%3E") 12 12, crosshair`,
-  } : {};
+  // Control cursor visibility based on current sheet
+  useEffect(() => {
+    const shouldHideCursor = currentSheet === 'game' && settings.customCursor && !isHidden;
+    
+    if (shouldHideCursor) {
+      document.body.style.cursor = 'none';
+      setCrosshairVisible(true);
+    } else {
+      document.body.style.cursor = '';
+      setCrosshairVisible(false);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.cursor = '';
+    };
+  }, [currentSheet, settings.customCursor, isHidden, setCrosshairVisible]);
 
   return (
     <div 
       className="h-screen flex flex-col" 
       style={{ 
         fontFamily: "'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        ...cursorStyle,
       }}
     >
+      {/* Crosshair - rendered at top level for smooth tracking */}
+      <Crosshair
+        x={mousePosition.x}
+        y={mousePosition.y}
+        style={settings.crosshairStyle}
+        color={settings.crosshairColor}
+        size={settings.crosshairSize || 12}
+        visible={isCrosshairVisible}
+      />
+
       {/* 紧急隐藏触发区域 */}
       {!isHidden && (
         <div
@@ -177,10 +203,6 @@ function AppContent() {
               hitEffects={hitEffects}
               togglePause={togglePause}
               soundEnabled={settings.soundEnabled}
-              crosshairStyle={settings.crosshairStyle}
-              crosshairColor={settings.crosshairColor}
-              crosshairSize={settings.crosshairSize || 12}
-
             />
           ) : currentSheet === 'settings' ? (
             <SettingsPanel
@@ -214,7 +236,9 @@ function AppContent() {
 function App() {
   return (
     <SettingsProvider>
-      <AppContent />
+      <CrosshairProvider>
+        <AppContent />
+      </CrosshairProvider>
     </SettingsProvider>
   );
 }
