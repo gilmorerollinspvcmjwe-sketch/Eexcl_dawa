@@ -10,7 +10,7 @@
   font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.excel-sheet-wrapper {
+.excel-game-hub .excel-sheet-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -19,7 +19,7 @@
 }
 
 /* ==================== 列标识行 ==================== */
-.excel-col-headers-row {
+.excel-game-hub .excel-col-headers-row {
   display: flex;
   background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
   border-bottom: 1px solid #c4c4c4;
@@ -28,7 +28,7 @@
   z-index: 30;
 }
 
-.excel-corner-cell {
+.excel-game-hub .excel-corner-cell {
   width: 40px;
   min-width: 40px;
   height: 24px;
@@ -37,7 +37,7 @@
   border-top: none;
 }
 
-.excel-col-header {
+.excel-game-hub .excel-col-header {
   flex: 1;
   min-width: 120px;
   height: 24px;
@@ -56,18 +56,18 @@
 }
 
 /* ==================== Excel 行 ==================== */
-.excel-row {
+.excel-game-hub .excel-row {
   display: flex;
   min-height: 28px;
   border-bottom: 1px dotted #d4d4d4;
 }
 
-.excel-row:hover {
+.excel-game-hub .excel-row:hover {
   background: rgba(16, 124, 65, 0.02);
 }
 
 /* 行号 */
-.excel-row-header {
+.excel-game-hub .excel-row-header {
   width: 40px;
   min-width: 40px;
   height: 28px;
@@ -89,7 +89,7 @@
 }
 
 /* ==================== Excel 单元格 ==================== */
-.excel-cell {
+.excel-game-hub .excel-cell {
   flex: 1;
   min-width: 120px;
   height: 28px;
@@ -103,17 +103,17 @@
   cursor: default;
 }
 
-.excel-cell:hover {
+.excel-game-hub .excel-cell:hover {
   background: rgba(33, 115, 70, 0.03);
 }
 
 /* 空单元格 */
-.excel-empty-cell {
+.excel-game-hub .excel-empty-cell {
   background: #f9fafb;
 }
 
 /* ==================== 标题单元格 ==================== */
-.excel-title-cell {
+.excel-game-hub .excel-title-cell {
   background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
   color: white;
   font-size: 16px;
@@ -124,21 +124,21 @@
   cursor: default;
 }
 
-.excel-title-cell:hover {
+.excel-game-hub .excel-title-cell:hover {
   background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
 }
 
-.excel-title-icon {
+.excel-game-hub .excel-title-icon {
   font-size: 18px;
   margin-right: 8px;
 }
 
-.excel-title-text {
+.excel-game-hub .excel-title-text {
   font-weight: 600;
 }
 
 /* ==================== 区域标题单元格 ==================== */
-.excel-section-header {
+.excel-game-hub .excel-section-header {
   background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
   color: white;
   font-size: 13px;
@@ -152,20 +152,20 @@
   cursor: default;
 }
 
-.excel-section-header:hover {
+.excel-game-hub .excel-section-header:hover {
   background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
 }
 
-.excel-section-header .section-icon {
+.excel-game-hub .excel-section-header .section-icon {
   font-size: 14px;
 }
 
 /* ==================== 开始按钮单元格 ==================== */
-.excel-start-cell {
+.excel-game-hub .excel-start-cell {
   justify-content: center;
 }
 
-.excel-button {
+.excel-game-hub .excel-button {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: white;
   border: 1px solid #15803d;
@@ -180,34 +180,34 @@
   gap: 6px;
 }
 
-.excel-button:hover {
+.excel-game-hub .excel-button:hover {
   background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.excel-button:disabled {
+.excel-game-hub .excel-button:disabled {
   background: #d1d5db;
   color: #9ca3af;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-.excel-start-btn {
+.excel-game-hub .excel-start-btn {
   font-size: 14px;
   font-weight: 600;
   padding: 8px 24px;
 }
 
-.excel-start-btn .btn-icon {
+.excel-game-hub .excel-start-btn .btn-icon {
   font-size: 14px;
 }
 
-.excel-start-btn .btn-text {
+.excel-game-hub .excel-start-btn .btn-text {
   font-weight: 600;
 }
 
 /* ==================== Excel 下拉框 ==================== */
-.excel-select {
+.excel-game-hub .excel-select {
   font-family: 'Calibri', sans-serif;
   font-size: 12px;
   padding: 4px 8px;
@@ -218,37 +218,37 @@
   min-width: 120px;
 }
 
-.excel-select:hover {
+.excel-game-hub .excel-select:hover {
   border-color: #107c41;
 }
 
-.excel-select:focus {
+.excel-game-hub .excel-select:focus {
   outline: none;
   border-color: #107c41;
   box-shadow: 0 0 0 1px rgba(16, 124, 65, 0.2);
 }
 
 /* ==================== Excel 内联控制 ==================== */
-.excel-inline-control {
+.excel-game-hub .excel-inline-control {
   display: flex;
   align-items: center;
   gap: 8px;
   flex: 1;
 }
 
-.excel-label {
+.excel-game-hub .excel-label {
   font-size: 12px;
   color: #374151;
   font-weight: 500;
 }
 
-.excel-button-group {
+.excel-game-hub .excel-button-group {
   display: flex;
   gap: 4px;
 }
 
 /* Excel 小按钮 */
-.excel-mini-btn {
+.excel-game-hub .excel-mini-btn {
   padding: 4px 10px;
   background: white;
   border: 1px solid #d4d4d4;
@@ -259,31 +259,31 @@
   font-family: 'Calibri', sans-serif;
 }
 
-.excel-mini-btn:hover {
+.excel-game-hub .excel-mini-btn:hover {
   border-color: #107c41;
   background: #f0fdf4;
 }
 
-.excel-mini-btn.selected {
+.excel-game-hub .excel-mini-btn.selected {
   background: #107c41;
   color: white;
   border-color: #107c41;
 }
 
 /* ==================== 快捷入口按钮 ==================== */
-.excel-quick-access-cell {
+.excel-game-hub .excel-quick-access-cell {
   justify-content: center;
   padding: 6px 8px;
 }
 
-.excel-quick-buttons {
+.excel-game-hub .excel-quick-buttons {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
   justify-content: center;
 }
 
-.excel-quick-btn {
+.excel-game-hub .excel-quick-btn {
   padding: 6px 12px;
   border: 1px solid #d4d4d4;
   border-radius: 2px;
@@ -297,52 +297,52 @@
   font-family: 'Calibri', sans-serif;
 }
 
-.excel-quick-btn:hover {
+.excel-game-hub .excel-quick-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.excel-quick-btn.timed {
+.excel-game-hub .excel-quick-btn.timed {
   background: #fef3c7;
   border-color: #f59e0b;
   color: #92400e;
 }
 
-.excel-quick-btn.endless {
+.excel-game-hub .excel-quick-btn.endless {
   background: #dbeafe;
   border-color: #3b82f6;
   color: #1e40af;
 }
 
-.excel-quick-btn.zen {
+.excel-game-hub .excel-quick-btn.zen {
   background: #f3e8ff;
   border-color: #a855f7;
   color: #6b21a8;
 }
 
-.excel-quick-btn.headshot {
+.excel-game-hub .excel-quick-btn.headshot {
   background: #fee2e2;
   border-color: #dc2626;
   color: #991b1b;
 }
 
 /* ==================== 模式选择网格 ==================== */
-.excel-modes-row {
+.excel-game-hub .excel-modes-row {
   min-height: auto;
 }
 
-.excel-modes-cell {
+.excel-game-hub .excel-modes-cell {
   padding: 8px;
   min-height: auto;
 }
 
-.excel-mode-grid {
+.excel-game-hub .excel-mode-grid {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.excel-mode-btn {
+.excel-game-hub .excel-mode-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -356,38 +356,38 @@
   font-family: 'Calibri', sans-serif;
 }
 
-.excel-mode-btn:hover {
+.excel-game-hub .excel-mode-btn:hover {
   border-color: #107c41;
   background: #f0fdf4;
 }
 
-.excel-mode-btn.selected {
+.excel-game-hub .excel-mode-btn.selected {
   border-color: #107c41;
   background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
   color: white;
 }
 
-.excel-mode-btn .mode-icon {
+.excel-game-hub .excel-mode-btn .mode-icon {
   font-size: 18px;
 }
 
-.excel-mode-btn .mode-name {
+.excel-game-hub .excel-mode-btn .mode-name {
   font-size: 11px;
   font-weight: 500;
 }
 
 /* ==================== FPS 模式网格 ==================== */
-.excel-fps-cell {
+.excel-game-hub .excel-fps-cell {
   padding: 8px;
 }
 
-.excel-fps-grid {
+.excel-game-hub .excel-fps-grid {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
 }
 
-.excel-fps-btn {
+.excel-game-hub .excel-fps-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -401,74 +401,74 @@
   font-family: 'Calibri', sans-serif;
 }
 
-.excel-fps-btn:hover {
+.excel-game-hub .excel-fps-btn:hover {
   border-color: #107c41;
   background: #f0fdf4;
 }
 
-.excel-fps-btn.selected {
+.excel-game-hub .excel-fps-btn.selected {
   border-color: #107c41;
   background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
   color: white;
 }
 
-.excel-fps-btn .fps-icon {
+.excel-game-hub .excel-fps-btn .fps-icon {
   font-size: 16px;
 }
 
-.excel-fps-btn .fps-name {
+.excel-game-hub .excel-fps-btn .fps-name {
   font-size: 10px;
   font-weight: 500;
 }
 
 /* ==================== FPS 配置内联 ==================== */
-.excel-config-cell {
+.excel-game-hub .excel-config-cell {
   padding: 6px 8px;
   background: #f9fafb;
 }
 
-.excel-inline-config {
+.excel-game-hub .excel-inline-config {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.config-label {
+.excel-game-hub .config-label {
   font-size: 11px;
   color: #374151;
   font-weight: 500;
 }
 
-.config-label-right {
+.excel-game-hub .config-label-right {
   margin-left: 16px;
 }
 
 /* ==================== 挑战关卡分组 ==================== */
-.excel-challenge-group {
+.excel-game-hub .excel-challenge-group {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
 }
 
-.group-icon {
+.excel-game-hub .group-icon {
   font-size: 14px;
 }
 
-.group-title {
+.excel-game-hub .group-title {
   font-size: 12px;
   font-weight: 600;
   color: #374151;
 }
 
-.excel-level-buttons {
+.excel-game-hub .excel-level-buttons {
   display: flex;
   gap: 4px;
   margin-left: 8px;
 }
 
-.excel-level-btn {
+.excel-game-hub .excel-level-btn {
   width: 28px;
   height: 24px;
   display: flex;
@@ -484,53 +484,53 @@
   font-family: 'Calibri', sans-serif;
 }
 
-.excel-level-btn:hover {
+.excel-game-hub .excel-level-btn:hover {
   transform: scale(1.1);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.excel-level-btn.beginner {
+.excel-game-hub .excel-level-btn.beginner {
   border-color: #22c55e;
   color: #15803d;
 }
 
-.excel-level-btn.beginner:hover {
+.excel-game-hub .excel-level-btn.beginner:hover {
   background: #22c55e;
   color: white;
 }
 
-.excel-level-btn.intermediate {
+.excel-game-hub .excel-level-btn.intermediate {
   border-color: #2563eb;
   color: #1d4ed8;
 }
 
-.excel-level-btn.intermediate:hover {
+.excel-game-hub .excel-level-btn.intermediate:hover {
   background: #2563eb;
   color: white;
 }
 
-.excel-level-btn.expert {
+.excel-game-hub .excel-level-btn.expert {
   border-color: #dc2626;
   color: #b91c1c;
 }
 
-.excel-level-btn.expert:hover {
+.excel-game-hub .excel-level-btn.expert:hover {
   background: #dc2626;
   color: white;
 }
 
 /* ==================== 难度选择 ==================== */
-.excel-difficulty-cell {
+.excel-game-hub .excel-difficulty-cell {
   padding: 6px 8px;
 }
 
-.excel-difficulty-grid {
+.excel-game-hub .excel-difficulty-grid {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
 }
 
-.excel-difficulty-btn {
+.excel-game-hub .excel-difficulty-btn {
   padding: 6px 12px;
   background: white;
   border: 1px solid #d4d4d4;
@@ -542,19 +542,19 @@
   font-family: 'Calibri', sans-serif;
 }
 
-.excel-difficulty-btn:hover {
+.excel-game-hub .excel-difficulty-btn:hover {
   border-color: var(--diff-color);
   background: color-mix(in srgb, var(--diff-color) 10%, white);
 }
 
-.excel-difficulty-btn.selected {
+.excel-game-hub .excel-difficulty-btn.selected {
   background: var(--diff-color);
   color: white;
   border-color: var(--diff-color);
 }
 
 /* ==================== 快捷导航 ==================== */
-.excel-nav-cell {
+.excel-game-hub .excel-nav-cell {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -562,17 +562,17 @@
   background: #f9fafb;
 }
 
-.nav-hint {
+.excel-game-hub .nav-hint {
   font-size: 11px;
   color: #9ca3af;
 }
 
-.excel-nav-buttons {
+.excel-game-hub .excel-nav-buttons {
   display: flex;
   gap: 8px;
 }
 
-.excel-nav-btn {
+.excel-game-hub .excel-nav-btn {
   padding: 6px 14px;
   background: white;
   border: 1px solid #d4d4d4;
@@ -583,78 +583,78 @@
   font-family: 'Calibri', sans-serif;
 }
 
-.excel-nav-btn:hover {
+.excel-game-hub .excel-nav-btn:hover {
   border-color: #107c41;
   background: #f0fdf4;
 }
 
 /* ==================== 响应式布局 ==================== */
 @media (max-width: 768px) {
-  .excel-col-header {
+  .excel-game-hub .excel-col-header {
     min-width: 80px;
   }
 
-  .excel-cell {
+  .excel-game-hub .excel-cell {
     min-width: 80px;
     padding: 4px 6px;
   }
 
-  .excel-row-header {
+  .excel-game-hub .excel-row-header {
     width: 32px;
     min-width: 32px;
   }
 
-  .excel-corner-cell {
+  .excel-game-hub .excel-corner-cell {
     width: 32px;
     min-width: 32px;
   }
 
-  .excel-mode-grid {
+  .excel-game-hub .excel-mode-grid {
     gap: 4px;
   }
 
-  .excel-mode-btn {
+  .excel-game-hub .excel-mode-btn {
     padding: 6px 10px;
   }
 
-  .excel-fps-grid {
+  .excel-game-hub .excel-fps-grid {
     gap: 4px;
   }
 
-  .excel-fps-btn {
+  .excel-game-hub .excel-fps-btn {
     padding: 4px 8px;
   }
 
-  .excel-quick-buttons {
+  .excel-game-hub .excel-quick-buttons {
     gap: 4px;
   }
 
-  .excel-quick-btn {
+  .excel-game-hub .excel-quick-btn {
     padding: 4px 8px;
     font-size: 10px;
   }
 }
 
 @media (max-width: 480px) {
-  .excel-title-text {
+  .excel-game-hub .excel-title-text {
     font-size: 13px;
   }
 
-  .excel-section-header {
+  .excel-game-hub .excel-section-header {
     font-size: 11px;
     padding: 4px 8px;
   }
 
-  .excel-difficulty-grid {
+  .excel-game-hub .excel-difficulty-grid {
     gap: 2px;
   }
 
-  .excel-difficulty-btn {
+  .excel-game-hub .excel-difficulty-btn {
     padding: 4px 8px;
     font-size: 10px;
   }
 
-  .excel-level-btn {
+  .excel-game-hub .excel-level-btn {
     width: 24px;
     height: 20px;
     font-size: 10px;
