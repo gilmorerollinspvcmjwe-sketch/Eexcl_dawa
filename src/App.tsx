@@ -56,6 +56,9 @@ function AppContent() {
     level?: number,
     difficulty?: any
   ) => {
+    if (difficulty && difficulty !== settings.difficulty) {
+      updateSetting('difficulty', difficulty);
+    }
     if (mode === 'part_training' && level) {
       startGame(mode, duration, level);
     } else {

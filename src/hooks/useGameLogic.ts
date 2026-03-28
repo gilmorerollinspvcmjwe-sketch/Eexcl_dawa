@@ -179,12 +179,16 @@ export function useGameLogic() {
   }, [gameState.isPlaying, gameState.isPaused, isHidden, settings.difficulty, settings.spawnRate, spawnTarget]);
 
   // 开始游戏
-  const startGame = useCallback((mode: GameMode, duration?: TimedDuration) => {
+  const startGame = useCallback((mode: GameMode, duration?: TimedDuration, level?: number) => {
     gameStartTimeRef.current = Date.now();
     resetGameState(mode, duration, settings.headshotLineRow);
     clearTargets();
     setHitEffects([]);
     setCurrentSheet('game');
+    
+    if (level) {
+      console.log(`Starting level ${level} in ${mode} mode`);
+    }
   }, [resetGameState, clearTargets, settings.headshotLineRow]);
   
   // 开始 FPS 训练模式
