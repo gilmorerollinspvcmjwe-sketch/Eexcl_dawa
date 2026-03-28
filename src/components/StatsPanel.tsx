@@ -398,9 +398,153 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({ stats, onReset }) => {
                 </div>
               </td>
             </tr>
+
+            <tr>
+              <td className="excel-row-header">30</td>
+              {Array.from({ length: 11 }).map((_, i) => (
+                <td key={i} className="excel-cell" />
+              ))}
+            </tr>
+
+            <tr>
+              <td className="excel-row-header">31</td>
+              <td className="excel-cell" colSpan={11}>
+                <ShareButton stats={stats} />
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
   );
 };
+
+const ShareButton: React.FC<{ stats: GameStats }> = ({ stats }) => {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleShare = async () => {
+    const shareText = generateShareText({
+      score: stats.gamesHistory.length > 0 ? stats.gamesHistory[stats.gamesHistory.length - 1].score : 0,
+      accuracy: stats.accuracy,
+      headshotRate: stats.headAccuracy,
+      maxCombo: stats.maxCombo,
+      duration: stats.gamesHistory.length > 0 ? stats.gamesHistory[stats.gamesHistory.length - 1].duration : 60,
+      bestScore: stats.totalScore,
+      bestAccuracy: stats.accuracy,
+      bestCombo: stats.maxCombo,
+    });
+
+    const success = await copyToClipboard(shareText);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <button
+        onClick={handleShare}
+        style={{
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          color: 'white',
+          border: 'none',
+          padding: '8px 16px',
+          borderRadius: 4,
+          cursor: 'pointer',
+          fontSize: 12,
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        📤 {copied ? '已复制！' : '分享成绩'}
+      </button>
+      <span style={{ color: '#888', fontSize: 10 }}>
+        复制训练报告到剪贴板
+      </span>
+    </div>
+  );
+};
+
+function generateShareText(data: {
+  score: number;
+  accuracy: number;
+  headshotRate: number;
+  maxCombo: number;
+  duration: number;
+  bestScore: number;
+  bestAccuracy: number;
+  bestCombo: number;
+}): string {
+  const evaluation = getEvaluation(data);
+  
+  return `🎯 Excel Aim Trainer 训练报告 🎯
+
+━━━━━━━━━━━━━━━━━━
+📊 本局成绩
+━━━━━━━━━━━━━━━━━━
+🏆 得分：${data.score.toLocaleString()}
+🎯 命中率：${data.accuracy.toFixed(1)}%
+💥 爆头率：${data.headshotRate.toFixed(1)}%
+🔥 最高连击：${data.maxCombo}x
+⏱️ 训练时长：${data.duration}秒
+
+━━━━━━━━━━━━━━━━━━
+📈 个人最佳
+━━━━━━━━━━━━━━━━━━
+🏅 最高分：${data.bestScore.toLocaleString()}
+🎯 最高命中率：${data.bestAccuracy.toFixed(1)}%
+🔥 最长连击：${data.bestCombo}x
+
+━━━━━━━━━━━━━━━━━━
+💬 评价
+━━━━━━━━━━━━━━━━━━
+"${evaluation}"
+
+🎮 来挑战我吧！
+#ExcelAimTrainer #摸鱼练枪`;
+}
+
+function getEvaluation(data: { accuracy: number; maxCombo: number; headshotRate: number }): string {
+  if (data.accuracy >= 95 && data.maxCombo >= 20) {
+    return '神级操作！你是职业选手吗？';
+  }
+  if (data.accuracy >= 90) {
+    return '精准射手！命中率惊人！';
+  }
+  if (data.maxCombo >= 30) {
+    return '连击大师！手速爆表！';
+  }
+  if (data.headshotRate >= 80) {
+    return '爆头专家！头部猎人认证！';
+  }
+  if (data.accuracy >= 80) {
+    return '稳定发挥，继续保持！';
+  }
+  if (data.accuracy >= 70) {
+    return '不错的表现，还有提升空间！';
+  }
+  if (data.maxCombo >= 10) {
+    return '连击起步，潜力无限！';
+  }
+  return '继续练习，你一定可以！';
+}
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return success;
+  }
+}

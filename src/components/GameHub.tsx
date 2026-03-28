@@ -98,6 +98,7 @@ export const GameHub: React.FC<GameHubProps> = ({
               <span className="main-btn-icon">▶️</span>
               <span className="main-btn-text">立即开始训练</span>
             </button>
+            <span className="excel-mock-text">就你那手速，能玩的明白？</span>
           </div>
         </div>
 
@@ -147,6 +148,7 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <span className="mode-icon">⏱️</span>
                 <span className="mode-name">限时</span>
               </button>
+              <span className="excel-mode-desc">「与时间赛跑，分秒必争」</span>
               <button
                 className={`excel-mode-btn ${selectedClassicMode === 'endless' ? 'selected' : ''}`}
                 onClick={() => { setSelectedClassicMode('endless'); setTrainingCategory('classic'); }}
@@ -154,6 +156,7 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <span className="mode-icon">♾️</span>
                 <span className="mode-name">无限</span>
               </button>
+              <span className="excel-mode-desc">「没有尽头，只有突破」</span>
               <button
                 className={`excel-mode-btn ${selectedClassicMode === 'zen' ? 'selected' : ''}`}
                 onClick={() => { setSelectedClassicMode('zen'); setTrainingCategory('classic'); }}
@@ -161,6 +164,7 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <span className="mode-icon">🧘</span>
                 <span className="mode-name">禅</span>
               </button>
+              <span className="excel-mode-desc">「心无旁骛，万物皆空」</span>
               <button
                 className={`excel-mode-btn ${selectedClassicMode === 'headshot' ? 'selected' : ''}`}
                 onClick={() => { setSelectedClassicMode('headshot'); setTrainingCategory('classic'); }}
@@ -168,6 +172,7 @@ export const GameHub: React.FC<GameHubProps> = ({
                 <span className="mode-icon">🎯</span>
                 <span className="mode-name">爆头线</span>
               </button>
+              <span className="excel-mode-desc">「一击必杀，瞄准即正义」</span>
             </div>
           </div>
         </div>
@@ -190,20 +195,22 @@ export const GameHub: React.FC<GameHubProps> = ({
           <div className="excel-cell excel-modes-cell excel-fps-cell">
             <div className="excel-fps-grid">
               {[
-                { id: 'motion_track', icon: '🏃', name: '移动射击' },
-                { id: 'peek_shot', icon: '👀', name: '拐角射击' },
-                { id: 'switch_track', icon: '🔄', name: '目标切换' },
-                { id: 'reaction', icon: '⚡', name: '反应测试' },
-                { id: 'precision', icon: '🎯', name: '精准射击' },
+                { id: 'motion_track', icon: '🏃', name: '移动射击', desc: '「追猎移动目标，预判即命中」' },
+                { id: 'peek_shot', icon: '👀', name: '拐角射击', desc: '「转角遇到爱，探头即暴击」' },
+                { id: 'switch_track', icon: '🔄', name: '目标切换', desc: '「眼观六路，快速切换」' },
+                { id: 'reaction', icon: '⚡', name: '反应测试', desc: '「神经反射，极限挑战」' },
+                { id: 'precision', icon: '🎯', name: '精准射击', desc: '「毫厘之间，胜负已分」' },
               ].map(mode => (
-                <button
-                  key={mode.id}
-                  className={`excel-fps-btn ${selectedFPSModeLocal === mode.id ? 'selected' : ''}`}
-                  onClick={() => handleFPSModeSelect(mode.id as FPSTrainingMode)}
-                >
-                  <span className="fps-icon">{mode.icon}</span>
-                  <span className="fps-name">{mode.name}</span>
-                </button>
+                <div key={mode.id} className="excel-fps-item">
+                  <button
+                    className={`excel-fps-btn ${selectedFPSModeLocal === mode.id ? 'selected' : ''}`}
+                    onClick={() => handleFPSModeSelect(mode.id as FPSTrainingMode)}
+                  >
+                    <span className="fps-icon">{mode.icon}</span>
+                    <span className="fps-name">{mode.name}</span>
+                  </button>
+                  <span className="excel-mode-desc fps-desc">{mode.desc}</span>
+                </div>
               ))}
             </div>
           </div>

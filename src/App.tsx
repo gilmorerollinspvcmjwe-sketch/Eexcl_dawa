@@ -7,7 +7,9 @@ import { StatsPanel } from './components/StatsPanel';
 import { StatusBar } from './components/StatusBar';
 import { Crosshair } from './components/Crosshair';
 import { GameHub } from './components/GameHub';
+import { FancyFeedback } from './components/FancyFeedback';
 import { useGameLogic } from './hooks/useGameLogic';
+import { useFeedbackSystem } from './hooks/useFeedbackSystem';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 import type { FPSTrainingMode } from './components/TrainingModeSelector';
@@ -45,6 +47,17 @@ function AppContent() {
     levelConfig,
     levelStatus,
   } = useGameLogic();
+
+  const { currentFeedback } = useFeedbackSystem({
+    combo: gameState.combo,
+    missStreak: gameState.missStreak || 0,
+    headshotStreak: gameState.headshotStreak || 0,
+    headshotRate: gameState.headAppearances > 0 ? (gameState.headHits / gameState.headAppearances) * 100 : 0,
+    score: gameState.score,
+    bestScore: stats.totalScore,
+    isPlaying: gameState.isPlaying,
+    feedbackMode: settings.feedbackMode || 'fancy',
+  });
 
   const handleResetStats = () => {
     if (confirm('确定要重置所有统计数据吗？')) {
@@ -106,6 +119,11 @@ function AppContent() {
         size={settings.crosshairSize || 12}
         visible={isCrosshairVisible}
       />
+
+      {/* 炫酷反馈 - 仅在炫酷模式下显示 */}
+      {settings.feedbackMode !== 'excel' && currentFeedback && (
+        <FancyFeedback feedback={currentFeedback} />
+      )}
 
       {/* 紧急隐藏触发区域 */}
       {!isHidden && (
@@ -238,6 +256,7 @@ function AppContent() {
           onToggleHidden={toggleHidden}
           onExit={currentSheet === 'game' ? exitToHub : undefined}
           selectedCell={selectedCell}
+          feedbackMessage={currentFeedback}
         />
 
         {/* 主内容区 */}

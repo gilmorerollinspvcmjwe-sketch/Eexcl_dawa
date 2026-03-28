@@ -32,6 +32,8 @@ export interface GameState {
   headHits: number;
   headAppearances: number;
   headshotLineRow: number;
+  missStreak?: number;
+  headshotStreak?: number;
 }
 
 export interface CellPosition {

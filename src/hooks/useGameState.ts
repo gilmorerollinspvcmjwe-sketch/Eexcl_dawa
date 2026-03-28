@@ -32,6 +32,8 @@ export function useGameState(initialHeadshotLineRow: number = 10): UseGameStateR
     headHits: 0,
     headAppearances: 0,
     headshotLineRow: initialHeadshotLineRow,
+    missStreak: 0,
+    headshotStreak: 0,
   });
 
   const resetGameState = useCallback((mode: GameMode, duration?: TimedDuration, headshotLineRow?: number) => {
@@ -50,6 +52,8 @@ export function useGameState(initialHeadshotLineRow: number = 10): UseGameStateR
       headHits: 0,
       headAppearances: 0,
       headshotLineRow: headshotLineRow || 10,
+      missStreak: 0,
+      headshotStreak: 0,
     });
   }, []);
 
@@ -79,6 +83,8 @@ export function useGameState(initialHeadshotLineRow: number = 10): UseGameStateR
     setGameState(prev => ({
       ...prev,
       misses: prev.misses + 1,
+      missStreak: prev.missStreak + 1,
+      headshotStreak: 0,
     }));
   }, []);
 
@@ -94,6 +100,8 @@ export function useGameState(initialHeadshotLineRow: number = 10): UseGameStateR
       ...prev,
       hits: prev.hits + 1,
       headHits: isHead ? prev.headHits + 1 : prev.headHits,
+      missStreak: 0,
+      headshotStreak: isHead ? prev.headshotStreak + 1 : 0,
     }));
   }, []);
 

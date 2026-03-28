@@ -212,9 +212,202 @@
 }
 
 .excel-game-hub .excel-main-start-cell {
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 12px 8px;
+}
+
+/* 嘲讽文字样式 */
+.excel-game-hub .excel-mock-text {
+  font-style: italic;
+  color: #9ca3af;
+  font-size: 11px;
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
+/* 模式描述文字 */
+.excel-game-hub .excel-mode-desc {
+  font-style: italic;
+  color: #9ca3af;
+  font-size: 10px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* 反馈动画 */
+@keyframes feedbackPulse {
+  0% { opacity: 0; transform: translateY(-2px); }
+  50% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes comboGlow {
+  0% { box-shadow: 0 0 5px #22c55e; }
+  50% { box-shadow: 0 0 20px #22c55e, 0 0 40px #22c55e; }
+  100% { box-shadow: 0 0 5px #22c55e; }
+}
+
+@keyframes missShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes headshotGold {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.5) sepia(0.3) saturate(1.5); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes achievementPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ==================== 炫酷反馈组件样式 ==================== */
+.fancy-feedback-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 40px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  animation: feedbackFadeIn 0.3s ease-out;
+}
+
+@keyframes feedbackFadeIn {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.fancy-feedback-icon {
+  font-size: 48px;
+  animation: iconBounce 0.5s ease-out;
+}
+
+@keyframes iconBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.fancy-feedback-text {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.fancy-feedback-combo {
+  border: 2px solid #22c55e;
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+}
+
+.fancy-feedback-combo .fancy-feedback-text {
+  color: #22c55e;
+}
+
+.fancy-feedback-headshot {
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+}
+
+.fancy-feedback-headshot .fancy-feedback-text {
+  color: #f59e0b;
+}
+
+.fancy-feedback-miss {
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.fancy-feedback-miss .fancy-feedback-text {
+  color: #ef4444;
+}
+
+.fancy-feedback-achievement {
+  border: 2px solid #8b5cf6;
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.6);
+}
+
+.fancy-feedback-achievement .fancy-feedback-text {
+  color: #8b5cf6;
+}
+
+.fancy-feedback-default {
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+.fancy-feedback-default .fancy-feedback-text {
+  color: #3b82f6;
+}
+
+.fancy-feedback-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fancy-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: particleExplode 0.6s ease-out forwards;
+}
+
+@keyframes particleExplode {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translateY(-60px) scale(0); opacity: 0; }
+}
+
+.fancy-feedback-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 20px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, transparent 70%);
+  animation: glowPulse 0.5s ease-out;
+}
+
+@keyframes glowPulse {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+.fancy-feedback-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.fancy-confetti {
+  position: absolute;
+  top: -10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: confettiFall 1s ease-out forwards;
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
 }
 
 .excel-game-hub .excel-main-start-btn {
@@ -439,6 +632,12 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.excel-game-hub .excel-fps-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .excel-game-hub .excel-fps-btn {

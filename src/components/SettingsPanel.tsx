@@ -357,11 +357,30 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
                 ✓ 启用后敌人显示为纯文字
               </td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>字体风格</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>反馈模式</td>
               <td className="excel-cell" colSpan={2}>
-                <span style={{ fontFamily: 'SimSun, 宋体, serif', fontSize: 14 }}>
-                  宋体 14号
-                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className={`game-preset-btn ${(settings.feedbackMode || 'fancy') === 'fancy' ? 'active' : ''}`}
+                    onClick={() => updateSetting('feedbackMode', 'fancy')}
+                    style={{ 
+                      background: (settings.feedbackMode || 'fancy') === 'fancy' ? '#8b5cf6' : '#e5e7eb', 
+                      color: (settings.feedbackMode || 'fancy') === 'fancy' ? 'white' : '#333'
+                    }}
+                  >
+                    ✨ 炫酷
+                  </button>
+                  <button
+                    className={`game-preset-btn ${settings.feedbackMode === 'excel' ? 'active' : ''}`}
+                    onClick={() => updateSetting('feedbackMode', 'excel')}
+                    style={{ 
+                      background: settings.feedbackMode === 'excel' ? '#107c41' : '#e5e7eb', 
+                      color: settings.feedbackMode === 'excel' ? 'white' : '#333'
+                    }}
+                  >
+                    📝 Excel
+                  </button>
+                </div>
               </td>
             </tr>
 

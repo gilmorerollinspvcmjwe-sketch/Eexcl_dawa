@@ -287,6 +287,8 @@ export function useGameLogic() {
           maxCombo: Math.max(prev.maxCombo, result.combo),
           hits: prev.hits + 1,
           headHits: result.partType === 'head' ? prev.headHits + 1 : prev.headHits,
+          missStreak: 0,
+          headshotStreak: result.partType === 'head' ? (prev.headshotStreak || 0) + 1 : 0,
         }));
 
         if (result.isEnemyDead) {
@@ -306,12 +308,19 @@ export function useGameLogic() {
           ...prev,
           misses: newMisses,
           combo: 0,
+          missStreak: (prev.missStreak || 0) + 1,
+          headshotStreak: 0,
         };
       });
     } else {
-      resetCombo();
+      setGameState(prev => ({
+        ...prev,
+        combo: 0,
+        missStreak: (prev.missStreak || 0) + 1,
+        headshotStreak: 0,
+      }));
     }
-  }, [gameState, multiGridEnemies, incrementClicks, endGame, resetCombo, setGameState, hitPart, removeEnemy]);
+  }, [gameState, multiGridEnemies, incrementClicks, endGame, setGameState, hitPart, removeEnemy]);
 
   const handleCellHover = useCallback((row: number, col: number) => {
     setSelectedCell({ row, col });

@@ -1,10 +1,12 @@
 import React from 'react';
+import type { FeedbackMessage } from '../utils/feedbackMessages';
 
 interface ExcelHeaderProps {
   isHidden: boolean;
   onToggleHidden: () => void;
   onExit?: () => void;
   selectedCell?: { row: number; col: number } | null;
+  feedbackMessage?: FeedbackMessage | null;
 }
 
 export const ExcelHeader: React.FC<ExcelHeaderProps> = ({ 
@@ -12,6 +14,7 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
   onToggleHidden,
   onExit,
   selectedCell,
+  feedbackMessage,
 }) => {
   if (isHidden) return null;
 
@@ -29,6 +32,17 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
   const cellAddress = selectedCell 
     ? `${getColLetter(selectedCell.col)}${selectedCell.row}`
     : '';
+
+  const getFeedbackColor = (type?: string) => {
+    switch (type) {
+      case 'combo': return '#22c55e';
+      case 'headshot': return '#f59e0b';
+      case 'miss': return '#ef4444';
+      case 'achievement': return '#8b5cf6';
+      case 'encouragement': return '#3b82f6';
+      default: return '#107c41';
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -212,7 +226,20 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
         <div className="excel-formula-separator" />
         <div className="excel-function-btn" title="插入函数">fx</div>
         <div className="excel-formula-input">
-          <span style={{ color: '#888' }}>=练习瞄准中...</span>
+          {feedbackMessage ? (
+            <span 
+              className="formula-feedback"
+              style={{ 
+                color: getFeedbackColor(feedbackMessage.type),
+                fontWeight: 500,
+                animation: 'feedbackPulse 0.3s ease-out',
+              }}
+            >
+              {feedbackMessage.text}
+            </span>
+          ) : (
+            <span style={{ color: '#888' }}>=练习瞄准中...</span>
+          )}
         </div>
       </div>
     </div>
