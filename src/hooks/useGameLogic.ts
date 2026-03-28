@@ -1,10 +1,11 @@
 // 主游戏逻辑协调层 - 整合各子系统
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { GameMode, TimedDuration, HitEffect, LevelConfig } from '../types';
+import type { GameMode, TimedDuration, HitEffect, LevelConfig, PartType } from '../types';
 import { TARGET_SCORES, DIFFICULTY_SETTINGS, COMBO_MULTIPLIERS } from '../types';
 import { useGameState } from './useGameState';
 import { useTargetSystem } from './useTargetSystem';
+import { useMultiGridEnemy } from './useMultiGridEnemy';
 import { useStatsSystem } from './useStatsSystem';
 import { useSettings } from '../contexts/SettingsContext';
 import { 
@@ -16,6 +17,7 @@ import {
   CORNER_HIDE_DELAY_MS 
 } from '../constants';
 import { generateLevel, checkLevelCompletion } from '../levelGenerator';
+import type { FPSTrainingMode } from '../components/TrainingModeSelector';
 
 // 连击倍率计算
 function getComboMultiplier(combo: number): number {
@@ -26,8 +28,6 @@ function getComboMultiplier(combo: number): number {
   }
   return 1.0;
 }
-
-import type { FPSTrainingMode } from '../components/TrainingModeSelector';
 
 export function useGameLogic() {
   const { settings } = useSettings();
@@ -82,6 +82,24 @@ export function useGameLogic() {
     onHeadAppear: incrementHeadAppearances,
   });
 
+  // 多格敌人系统
+  const {
+    enemies: multiGridEnemies,
+    spawnEnemy,
+    hitPart,
+    removeEnemy,
+    clearEnemies,
+    updateEnemies,
+    getEnemyAtPosition,
+  } = useMultiGridEnemy({
+    isPlaying: gameState.isPlaying,
+    isPaused: gameState.isPaused,
+    mode: gameState.mode,
+    difficulty: settings.difficulty,
+    moveSpeed: settings.enemyMoveSpeed,
+    movePattern: settings.enemyMovePattern,
+  });
+
   // 统计系统
   const { stats, recordGameEnd } = useStatsSystem();
 
@@ -105,10 +123,13 @@ export function useGameLogic() {
 
       // 清理命中特效
       setHitEffects(prev => prev.filter(e => now - e.createdAt < HIT_EFFECT_DURATION_MS));
+      
+      // 更新多格敌人
+      updateEnemies(0.1);
     }, CLEANUP_INTERVAL_MS);
 
     return () => clearInterval(cleanup);
-  }, [gameState.isPlaying, gameState.mode, setTargets, setGameState]);
+  }, [gameState.isPlaying, gameState.mode, setTargets, setGameState, updateEnemies]);
 
   // 游戏计时器（限时模式）
   useEffect(() => {
@@ -150,6 +171,38 @@ export function useGameLogic() {
       return;
     }
 
+    // FPS 训练模式使用多格敌人系统
+    const useMultiGrid = ['motion_track', 'peek_shot', 'switch_track', 'reaction', 'precision', 'moving_target'].includes(gameState.mode);
+    
+    if (useMultiGrid) {
+      const scheduleNextSpawn = () => {
+        const interval = 2000 + Math.random() * 1000;
+        
+        spawnTimerRef.current = setTimeout(() => {
+          if (gameState.isPlaying && !gameState.isPaused && !isHidden) {
+            spawnEnemy({});
+            scheduleNextSpawn();
+          }
+        }, interval);
+      };
+
+      const initialSpawnTimer = setTimeout(() => {
+        if (!isHidden) {
+          spawnEnemy({});
+          scheduleNextSpawn();
+        }
+      }, INITIAL_SPAWN_DELAY_MS);
+
+      return () => {
+        clearTimeout(initialSpawnTimer);
+        if (spawnTimerRef.current) {
+          clearTimeout(spawnTimerRef.current);
+          spawnTimerRef.current = null;
+        }
+      };
+    }
+
+    // 经典模式使用简单目标系统
     const diffSettings = DIFFICULTY_SETTINGS[settings.difficulty];
     const [minInterval, maxInterval] = diffSettings.spawnInterval;
     
@@ -182,7 +235,7 @@ export function useGameLogic() {
       }
       clearTimeout(initialSpawnTimer);
     };
-  }, [gameState.isPlaying, gameState.isPaused, isHidden, settings.difficulty, settings.spawnRate, spawnTarget]);
+  }, [gameState.isPlaying, gameState.isPaused, isHidden, settings.difficulty, settings.spawnRate, spawnTarget, spawnEnemy, gameState.mode]);
 
   // 开始游戏
   const startGame = useCallback((mode: GameMode, duration?: TimedDuration, level?: number) => {
@@ -281,6 +334,43 @@ export function useGameLogic() {
 
     incrementClicks();
 
+    // 先检查是否击中多格敌人
+    const enemyHit = getEnemyAtPosition(row, col);
+    if (enemyHit) {
+      const { enemy, part } = enemyHit;
+      const result = hitPart(enemy.id, part.type, gameState.combo);
+      
+      if (result) {
+        // 添加命中特效
+        const effect: HitEffect = {
+          id: `${Date.now()}-${Math.random()}`,
+          row,
+          col,
+          score: result.score,
+          isCombo: result.combo >= 5,
+          isHeadshot: result.partType === 'head',
+          createdAt: Date.now(),
+        };
+        setHitEffects(prev => [...prev, effect]);
+
+        setGameState(prev => ({
+          ...prev,
+          score: prev.score + result.score,
+          combo: result.combo,
+          maxCombo: Math.max(prev.maxCombo, result.combo),
+          hits: prev.hits + 1,
+          headHits: result.partType === 'head' ? prev.headHits + 1 : prev.headHits,
+        }));
+
+        // 敌人死亡时移除
+        if (result.isEnemyDead) {
+          removeEnemy(enemy.id);
+        }
+      }
+      return;
+    }
+
+    // 检查简单目标
     const hitTarget = targets.find(t => t.row === row && t.col === col);
 
     if (hitTarget) {
@@ -336,7 +426,7 @@ export function useGameLogic() {
         resetCombo();
       }
     }
-  }, [gameState, targets, incrementClicks, removeTarget, endGame, resetCombo, setGameState]);
+  }, [gameState, targets, incrementClicks, removeTarget, endGame, resetCombo, setGameState, getEnemyAtPosition, hitPart, removeEnemy]);
 
   // 处理单元格悬停
   const handleCellHover = useCallback((row: number, col: number) => {
@@ -432,7 +522,9 @@ export function useGameLogic() {
     setCurrentMode,
     modeConfig,
     setModeConfig,
-    multiGridEnemies: [],
+    // 多格敌人
+    multiGridEnemies,
+    spawnEnemy,
     // 关卡系统
     currentLevel,
     levelConfig,
