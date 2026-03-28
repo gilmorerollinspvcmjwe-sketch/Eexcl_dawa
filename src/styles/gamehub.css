@@ -284,17 +284,18 @@
 }
 
 .excel-game-hub .excel-quick-btn {
-  padding: 6px 12px;
+  padding: 4px 8px;
   border: 1px solid #d4d4d4;
   border-radius: 2px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   font-family: 'Calibri', sans-serif;
+  white-space: nowrap;
 }
 
 .excel-game-hub .excel-quick-btn:hover {
@@ -346,14 +347,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 16px;
+  gap: 2px;
+  padding: 4px 10px;
   background: white;
-  border: 2px solid #d4d4d4;
+  border: 1px solid #d4d4d4;
   border-radius: 2px;
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: 'Calibri', sans-serif;
+  min-width: 50px;
 }
 
 .excel-game-hub .excel-mode-btn:hover {
@@ -368,11 +370,11 @@
 }
 
 .excel-game-hub .excel-mode-btn .mode-icon {
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .excel-game-hub .excel-mode-btn .mode-name {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
 }
 
@@ -391,14 +393,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 12px;
+  gap: 2px;
+  padding: 4px 8px;
   background: white;
-  border: 2px solid #d4d4d4;
+  border: 1px solid #d4d4d4;
   border-radius: 2px;
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: 'Calibri', sans-serif;
+  min-width: 45px;
 }
 
 .excel-game-hub .excel-fps-btn:hover {
@@ -413,11 +416,11 @@
 }
 
 .excel-game-hub .excel-fps-btn .fps-icon {
-  font-size: 16px;
+  font-size: 12px;
 }
 
 .excel-game-hub .excel-fps-btn .fps-name {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
 }
 
@@ -469,15 +472,15 @@
 }
 
 .excel-game-hub .excel-level-btn {
-  width: 28px;
-  height: 24px;
+  width: 22px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: white;
   border: 1px solid #d4d4d4;
   border-radius: 2px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -531,15 +534,16 @@
 }
 
 .excel-game-hub .excel-difficulty-btn {
-  padding: 6px 12px;
+  padding: 4px 8px;
   background: white;
   border: 1px solid #d4d4d4;
   border-radius: 2px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: 'Calibri', sans-serif;
+  white-space: nowrap;
 }
 
 .excel-game-hub .excel-difficulty-btn:hover {
