@@ -8,14 +8,15 @@ interface MultiGridEnemyRendererProps {
   enemy: MultiGridEnemy;
   cellWidth: number;
   cellHeight: number;
+  rowHeaderWidth: number;
+  colHeaderHeight: number;
   renderMode?: 'text' | 'icon';
   showPriority?: boolean;
   showHp?: boolean;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
 }
 
-// 单个部位渲染
-const PartCell: React.FC<{
+interface PartCellProps {
   part: EnemyPart;
   style: React.CSSProperties;
   renderMode: 'text' | 'icon';
@@ -24,8 +25,18 @@ const PartCell: React.FC<{
   absoluteRow: number;
   absoluteCol: number;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
-}> = ({ part, style, renderMode, showHp, enemyId, absoluteRow, absoluteCol, onPartClick }) => {
-  // 已销毁的部位不渲染
+}
+
+const PartCell: React.FC<PartCellProps> = ({
+  part,
+  style,
+  renderMode,
+  showHp,
+  enemyId,
+  absoluteRow,
+  absoluteCol,
+  onPartClick,
+}) => {
   if (part.state === 'destroyed') {
     return null;
   }
@@ -54,9 +65,10 @@ const PartCell: React.FC<{
       ? `0 0 8px ${stateColor}, inset 0 0 4px rgba(255,255,255,0.3)`
       : 'none',
     animation: part.state === 'critical' ? 'pulse 0.5s ease-in-out infinite' : 'none',
+    cursor: 'crosshair',
+    pointerEvents: 'auto',
   };
 
-  // HP 显示
   const hpDisplay = showHp && part.maxHp > 1 ? (
     <span style={{ 
       position: 'absolute', 
@@ -92,7 +104,6 @@ const PartCell: React.FC<{
   );
 };
 
-// 获取部位图标
 function getPartIcon(partType: PartType): string {
   switch (partType) {
     case 'head': return '●';
@@ -104,7 +115,6 @@ function getPartIcon(partType: PartType): string {
   }
 }
 
-// 优先级标签
 const PriorityLabel: React.FC<{ priority: Priority }> = ({ priority }) => {
   const config = PRIORITY_CONFIG[priority];
   return (
@@ -129,7 +139,6 @@ const PriorityLabel: React.FC<{ priority: Priority }> = ({ priority }) => {
   );
 };
 
-// 生命值条
 const HealthBar: React.FC<{ enemy: MultiGridEnemy }> = ({ enemy }) => {
   const totalHp = enemy.parts.reduce((sum, p) => sum + p.maxHp, 0);
   const currentHp = enemy.parts.reduce((sum, p) => sum + p.currentHp, 0);
@@ -157,20 +166,19 @@ const HealthBar: React.FC<{ enemy: MultiGridEnemy }> = ({ enemy }) => {
   );
 };
 
-// 主渲染组件
 export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   enemy,
   cellWidth,
   cellHeight,
+  rowHeaderWidth,
+  colHeaderHeight,
   renderMode = 'text',
   showPriority = true,
   showHp = true,
   onPartClick,
 }) => {
-  // 探头状态时隐藏
   if (enemy.peekState === 'hidden') return null;
 
-  // 计算偏移（用于移动和探头动画）
   let offsetX = 0;
   let offsetY = 0;
 
@@ -179,11 +187,12 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
     offsetX = (enemy.peekDirection === 'left' ? -1 : 1) * (1 - progress) * cellWidth * 3;
   }
 
-  // 小数位置（用于平滑移动）
-  const baseLeft = (enemy.anchorCol - 2) * cellWidth + offsetX;
-  const baseTop = (enemy.anchorRow - 1) * cellHeight + offsetY;
+  // 正确计算位置：考虑行头和列头的偏移
+  // anchorRow/Col 是 1-based 的格子坐标
+  // 渲染位置 = 行头/列头宽度 + (格子坐标 - 1) * 格子尺寸
+  const baseLeft = rowHeaderWidth + (enemy.anchorCol - 1) * cellWidth + offsetX;
+  const baseTop = colHeaderHeight + (enemy.anchorRow - 1) * cellHeight + offsetY;
 
-  // 死亡状态动画
   const isDying = enemy.state === 'dying' || !enemy.isAlive;
 
   return (
@@ -201,18 +210,16 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
         transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
       }}
     >
-      {/* 优先级标签 */}
       {showPriority && enemy.priority && !isDying && (
         <PriorityLabel priority={enemy.priority} />
       )}
 
-      {/* 生命值条 */}
       {!isDying && <HealthBar enemy={enemy} />}
 
-      {/* 部位渲染 */}
       {enemy.parts.map((part, index) => {
         if (part.state === 'destroyed') return null;
 
+        // 部位相对于锚点的偏移（使用 part 的 relativeRow/relativeCol）
         const left = part.relativeCol * cellWidth;
         const top = part.relativeRow * cellHeight;
         
@@ -243,11 +250,12 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   );
 };
 
-// 批量渲染组件
 interface MultiGridEnemiesProps {
   enemies: MultiGridEnemy[];
   cellWidth: number;
   cellHeight: number;
+  rowHeaderWidth: number;
+  colHeaderHeight: number;
   renderMode?: 'text' | 'icon';
   showPriority?: boolean;
   showHp?: boolean;
@@ -258,6 +266,8 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
   enemies,
   cellWidth,
   cellHeight,
+  rowHeaderWidth,
+  colHeaderHeight,
   renderMode = 'text',
   showPriority = true,
   showHp = true,
@@ -271,6 +281,8 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
           enemy={enemy}
           cellWidth={cellWidth}
           cellHeight={cellHeight}
+          rowHeaderWidth={rowHeaderWidth}
+          colHeaderHeight={colHeaderHeight}
           renderMode={renderMode}
           showPriority={showPriority}
           showHp={showHp}
@@ -278,7 +290,6 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
         />
       ))}
 
-      {/* CSS 动画样式 */}
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
