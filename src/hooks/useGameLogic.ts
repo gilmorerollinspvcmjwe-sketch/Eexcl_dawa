@@ -72,6 +72,7 @@ export function useGameLogic() {
     difficulty: settings.difficulty,
     moveSpeed: settings.enemyMoveSpeed,
     movePattern: settings.enemyMovePattern,
+    fpsMode: currentMode,
   });
 
   const { stats, recordGameEnd } = useStatsSystem();
@@ -330,6 +331,17 @@ export function useGameLogic() {
     }
   }, [gameState.isPlaying, setGameState]);
 
+  const exitToHub = useCallback(() => {
+    setGameState(prev => ({ ...prev, isPlaying: false }));
+    clearEnemies();
+    setHitEffects([]);
+    setCurrentSheet('hub');
+    setCurrentLevel(null);
+    setLevelConfig(null);
+    setLevelStatus(null);
+    setCurrentMode(null);
+  }, [setGameState, clearEnemies, setCurrentSheet]);
+
   const handleCornerEnter = useCallback(() => {
     setHoverCorner(true);
     cornerTimerRef.current = setTimeout(() => {
@@ -390,6 +402,7 @@ export function useGameLogic() {
     switchSheet,
     toggleHidden,
     togglePause,
+    exitToHub,
     handleCornerEnter,
     handleCornerLeave,
     COLS,

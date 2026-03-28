@@ -5,10 +5,8 @@ import React, { useState } from 'react';
 import type { FPSTrainingMode } from './TrainingModeSelector';
 import '../styles/gamehub.css';
 
-// 游戏模式类型
 export type GameModeType = 'timed' | 'endless' | 'zen' | 'headshot';
 
-// 难度类型
 export type DifficultyLevel = 'very_easy' | 'easy' | 'normal' | 'medium' | 'hard' | 'expert';
 
 interface GameHubProps {
@@ -20,24 +18,21 @@ interface GameHubProps {
   ) => void;
   onStartFPSTraining: (mode: FPSTrainingMode, config?: any) => void;
   onSwitchSheet: (sheet: 'game' | 'stats' | 'settings') => void;
-  selectedFPSMode?: FPSTrainingMode | null; // kept for compatibility
+  selectedFPSMode?: FPSTrainingMode | null;
+  trainingDuration?: 30 | 60 | 120;
+  difficulty?: DifficultyLevel;
 }
 
 export const GameHub: React.FC<GameHubProps> = ({
   onStartGame,
   onStartFPSTraining,
   onSwitchSheet,
-  // selectedFPSMode is kept for API compatibility but not used internally
 }) => {
-  // 状态管理
   const [trainingCategory, setTrainingCategory] = useState<'classic' | 'fps'>('classic');
   const [selectedClassicMode, setSelectedClassicMode] = useState<GameModeType>('timed');
   const [selectedFPSModeLocal, setSelectedFPSModeLocal] = useState<FPSTrainingMode | null>(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('normal');
-  const [selectedDuration, setSelectedDuration] = useState<30 | 60 | 120>(60);
   const [fpsConfig, setFpsConfig] = useState<any>({});
 
-  // FPS 训练模式配置
   const fpsModeConfigs: Record<FPSTrainingMode, any> = {
     motion_track: { speed: 'normal', pattern: 'linear', duration: 60 },
     peek_shot: { duration: 'normal', interval: 1500 },
@@ -46,10 +41,9 @@ export const GameHub: React.FC<GameHubProps> = ({
     precision: { targetScale: 0.5, targetCount: 3 },
   };
 
-  // 处理开始游戏
   const handleStartGame = () => {
     if (trainingCategory === 'classic') {
-      onStartGame(selectedClassicMode, selectedDuration, undefined, selectedDifficulty);
+      onStartGame(selectedClassicMode, 60, undefined, 'normal');
       onSwitchSheet('game');
     } else if (selectedFPSModeLocal) {
       const config = { ...fpsModeConfigs[selectedFPSModeLocal], ...fpsConfig };
@@ -58,19 +52,11 @@ export const GameHub: React.FC<GameHubProps> = ({
     }
   };
 
-  // 处理快捷模式启动
-  const handleQuickStart = (mode: GameModeType, duration?: 30 | 60 | 120) => {
-    onStartGame(mode, duration, undefined, selectedDifficulty);
-    onSwitchSheet('game');
-  };
-
-  // 处理关卡启动
   const handleLevelStart = (level: number) => {
-    onStartGame('part_training', undefined, level, selectedDifficulty);
+    onStartGame('part_training', undefined, level, 'normal');
     onSwitchSheet('game');
   };
 
-  // 处理 FPS 模式选择
   const handleFPSModeSelect = (mode: FPSTrainingMode) => {
     setSelectedFPSModeLocal(mode);
     setTrainingCategory('fps');
@@ -79,9 +65,7 @@ export const GameHub: React.FC<GameHubProps> = ({
 
   return (
     <div className="excel-game-hub">
-      {/* Excel 表格结构 */}
       <div className="excel-sheet-wrapper">
-        {/* 列标识行 */}
         <div className="excel-col-headers-row">
           <div className="excel-corner-cell"></div>
           <div className="excel-col-header">A</div>
@@ -90,7 +74,6 @@ export const GameHub: React.FC<GameHubProps> = ({
           <div className="excel-col-header">D</div>
         </div>
 
-        {/* 行 1: 标题 */}
         <div className="excel-row">
           <div className="excel-row-header">1</div>
           <div className="excel-cell excel-title-cell">
@@ -99,24 +82,32 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         </div>
 
-        {/* 行 2: 空行 */}
         <div className="excel-row">
           <div className="excel-row-header">2</div>
           <div className="excel-cell excel-empty-cell"></div>
         </div>
 
-        {/* 行 3: 快速开始标题 */}
-        <div className="excel-row">
+        <div className="excel-row excel-start-row">
           <div className="excel-row-header">3</div>
-          <div className="excel-cell excel-section-header">
-            <span className="section-icon">🚀</span>
-            <span>快速开始</span>
+          <div className="excel-cell excel-main-start-cell">
+            <button
+              className="excel-main-start-btn"
+              onClick={handleStartGame}
+              disabled={trainingCategory === 'fps' && !selectedFPSModeLocal}
+            >
+              <span className="main-btn-icon">▶️</span>
+              <span className="main-btn-text">立即开始训练</span>
+            </button>
           </div>
         </div>
 
-        {/* 行 4: 训练模式选择 */}
         <div className="excel-row">
           <div className="excel-row-header">4</div>
+          <div className="excel-cell excel-empty-cell"></div>
+        </div>
+
+        <div className="excel-row">
+          <div className="excel-row-header">5</div>
           <div className="excel-cell">
             <div className="excel-inline-control">
               <span className="excel-label">训练模式：</span>
@@ -130,106 +121,49 @@ export const GameHub: React.FC<GameHubProps> = ({
               </select>
             </div>
           </div>
-          <div className="excel-cell excel-start-cell">
-            <button
-              className="excel-button excel-start-btn"
-              onClick={handleStartGame}
-              disabled={trainingCategory === 'fps' && !selectedFPSModeLocal}
-            >
-              <span className="btn-icon">▶️</span>
-              <span className="btn-text">立即开始</span>
-            </button>
-          </div>
         </div>
 
-        {/* 行 5: 时长选择（经典模式时显示） */}
-        {trainingCategory === 'classic' && selectedClassicMode === 'timed' && (
-          <div className="excel-row">
-            <div className="excel-row-header">5</div>
-            <div className="excel-cell">
-              <div className="excel-inline-control">
-                <span className="excel-label">训练时长：</span>
-                <div className="excel-button-group">
-                  {[30, 60, 120].map(d => (
-                    <button
-                      key={d}
-                      className={`excel-mini-btn ${selectedDuration === d ? 'selected' : ''}`}
-                      onClick={() => setSelectedDuration(d as 30 | 60 | 120)}
-                    >
-                      {d}秒
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 行 6: 快捷入口 */}
         <div className="excel-row">
           <div className="excel-row-header">6</div>
-          <div className="excel-cell excel-quick-access-cell">
-            <div className="excel-quick-buttons">
-              <button className="excel-quick-btn timed" onClick={() => handleQuickStart('timed', 30)}>
-                ⏱️ 30秒
-              </button>
-              <button className="excel-quick-btn endless" onClick={() => handleQuickStart('endless')}>
-                ♾️ 无限
-              </button>
-              <button className="excel-quick-btn zen" onClick={() => handleQuickStart('zen')}>
-                🧘 禅模式
-              </button>
-              <button className="excel-quick-btn headshot" onClick={() => handleQuickStart('headshot')}>
-                🎯 爆头线
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 行 7: 空行 */}
-        <div className="excel-row">
-          <div className="excel-row-header">7</div>
           <div className="excel-cell excel-empty-cell"></div>
         </div>
 
-        {/* 行 8: 经典模式标题 */}
         <div className="excel-row">
-          <div className="excel-row-header">8</div>
+          <div className="excel-row-header">7</div>
           <div className="excel-cell excel-section-header">
             <span className="section-icon">🎯</span>
             <span>经典模式</span>
           </div>
         </div>
 
-        {/* 行 9: 经典模式选择 */}
         <div className="excel-row excel-modes-row">
-          <div className="excel-row-header">9</div>
+          <div className="excel-row-header">8</div>
           <div className="excel-cell excel-modes-cell">
             <div className="excel-mode-grid">
               <button
                 className={`excel-mode-btn ${selectedClassicMode === 'timed' ? 'selected' : ''}`}
-                onClick={() => setSelectedClassicMode('timed')}
+                onClick={() => { setSelectedClassicMode('timed'); setTrainingCategory('classic'); }}
               >
                 <span className="mode-icon">⏱️</span>
                 <span className="mode-name">限时</span>
               </button>
               <button
                 className={`excel-mode-btn ${selectedClassicMode === 'endless' ? 'selected' : ''}`}
-                onClick={() => setSelectedClassicMode('endless')}
+                onClick={() => { setSelectedClassicMode('endless'); setTrainingCategory('classic'); }}
               >
                 <span className="mode-icon">♾️</span>
                 <span className="mode-name">无限</span>
               </button>
               <button
                 className={`excel-mode-btn ${selectedClassicMode === 'zen' ? 'selected' : ''}`}
-                onClick={() => setSelectedClassicMode('zen')}
+                onClick={() => { setSelectedClassicMode('zen'); setTrainingCategory('classic'); }}
               >
                 <span className="mode-icon">🧘</span>
                 <span className="mode-name">禅</span>
               </button>
               <button
                 className={`excel-mode-btn ${selectedClassicMode === 'headshot' ? 'selected' : ''}`}
-                onClick={() => setSelectedClassicMode('headshot')}
+                onClick={() => { setSelectedClassicMode('headshot'); setTrainingCategory('classic'); }}
               >
                 <span className="mode-icon">🎯</span>
                 <span className="mode-name">爆头线</span>
@@ -238,24 +172,21 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         </div>
 
-        {/* 行 10: 空行 */}
         <div className="excel-row">
-          <div className="excel-row-header">10</div>
+          <div className="excel-row-header">9</div>
           <div className="excel-cell excel-empty-cell"></div>
         </div>
 
-        {/* 行 11: FPS 专项训练标题 */}
         <div className="excel-row">
-          <div className="excel-row-header">11</div>
+          <div className="excel-row-header">10</div>
           <div className="excel-cell excel-section-header">
             <span className="section-icon">🔫</span>
             <span>FPS 专项训练</span>
           </div>
         </div>
 
-        {/* 行 12: FPS 模式选择 */}
         <div className="excel-row excel-modes-row">
-          <div className="excel-row-header">12</div>
+          <div className="excel-row-header">11</div>
           <div className="excel-cell excel-modes-cell excel-fps-cell">
             <div className="excel-fps-grid">
               {[
@@ -278,10 +209,9 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         </div>
 
-        {/* 行 13: FPS 配置（选中时显示） */}
         {selectedFPSModeLocal && trainingCategory === 'fps' && (
           <div className="excel-row">
-            <div className="excel-row-header">13</div>
+            <div className="excel-row-header">12</div>
             <div className="excel-cell excel-config-cell">
               <FPSConfigInline
                 mode={selectedFPSModeLocal}
@@ -292,24 +222,21 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         )}
 
-        {/* 行 14: 空行 */}
         <div className="excel-row">
-          <div className="excel-row-header">14</div>
+          <div className="excel-row-header">13</div>
           <div className="excel-cell excel-empty-cell"></div>
         </div>
 
-        {/* 行 15: 挑战关卡标题 */}
         <div className="excel-row">
-          <div className="excel-row-header">15</div>
+          <div className="excel-row-header">14</div>
           <div className="excel-cell excel-section-header">
             <span className="section-icon">🏆</span>
             <span>挑战关卡</span>
           </div>
         </div>
 
-        {/* 行 16: 新手组 */}
         <div className="excel-row">
-          <div className="excel-row-header">16</div>
+          <div className="excel-row-header">15</div>
           <div className="excel-cell excel-challenge-group">
             <span className="group-icon">🌱</span>
             <span className="group-title">新手组</span>
@@ -327,9 +254,8 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         </div>
 
-        {/* 行 17: 进阶组 */}
         <div className="excel-row">
-          <div className="excel-row-header">17</div>
+          <div className="excel-row-header">16</div>
           <div className="excel-cell excel-challenge-group">
             <span className="group-icon">📈</span>
             <span className="group-title">进阶组</span>
@@ -347,9 +273,8 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         </div>
 
-        {/* 行 18: 专家组 */}
         <div className="excel-row">
-          <div className="excel-row-header">18</div>
+          <div className="excel-row-header">17</div>
           <div className="excel-cell excel-challenge-group">
             <span className="group-icon">🏅</span>
             <span className="group-title">专家组</span>
@@ -367,56 +292,13 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         </div>
 
-        {/* 行 19: 空行 */}
+        <div className="excel-row">
+          <div className="excel-row-header">18</div>
+          <div className="excel-cell excel-empty-cell"></div>
+        </div>
+
         <div className="excel-row">
           <div className="excel-row-header">19</div>
-          <div className="excel-cell excel-empty-cell"></div>
-        </div>
-
-        {/* 行 20: 难度选择标题 */}
-        <div className="excel-row">
-          <div className="excel-row-header">20</div>
-          <div className="excel-cell excel-section-header">
-            <span className="section-icon">⚡</span>
-            <span>难度选择</span>
-          </div>
-        </div>
-
-        {/* 行 21: 难度按钮 */}
-        <div className="excel-row">
-          <div className="excel-row-header">21</div>
-          <div className="excel-cell excel-difficulty-cell">
-            <div className="excel-difficulty-grid">
-              {[
-                { id: 'very_easy', name: '非常简单', color: '#22c55e' },
-                { id: 'easy', name: '简单', color: '#84cc16' },
-                { id: 'normal', name: '中等', color: '#eab308' },
-                { id: 'medium', name: '普通', color: '#f97316' },
-                { id: 'hard', name: '困难', color: '#ef4444' },
-                { id: 'expert', name: '专家', color: '#dc2626' },
-              ].map(diff => (
-                <button
-                  key={diff.id}
-                  className={`excel-difficulty-btn ${selectedDifficulty === diff.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedDifficulty(diff.id as DifficultyLevel)}
-                  style={{ '--diff-color': diff.color } as React.CSSProperties}
-                >
-                  {diff.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 行 22: 空行 */}
-        <div className="excel-row">
-          <div className="excel-row-header">22</div>
-          <div className="excel-cell excel-empty-cell"></div>
-        </div>
-
-        {/* 行 23: 快捷导航 */}
-        <div className="excel-row">
-          <div className="excel-row-header">23</div>
           <div className="excel-cell excel-nav-cell">
             <span className="nav-hint">更多设置和统计 →</span>
             <div className="excel-nav-buttons">
@@ -434,7 +316,6 @@ export const GameHub: React.FC<GameHubProps> = ({
   );
 };
 
-// FPS 配置内联组件
 const FPSConfigInline: React.FC<{
   mode: FPSTrainingMode;
   config: any;

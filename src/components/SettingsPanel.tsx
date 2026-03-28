@@ -20,6 +20,15 @@ const CROSSHAIR_STYLES: { id: CrosshairStyle; name: string; preview: string }[] 
   { id: 'cf', name: 'CF', preview: '╋' },
 ];
 
+const DIFFICULTY_LEVELS = [
+  { id: 'very_easy', name: '非常简单', color: '#22c55e', desc: '适合新手入门' },
+  { id: 'easy', name: '简单', color: '#84cc16', desc: '目标较大较慢' },
+  { id: 'normal', name: '普通', color: '#eab308', desc: '标准难度' },
+  { id: 'medium', name: '中等', color: '#f97316', desc: '有一定挑战' },
+  { id: 'hard', name: '困难', color: '#ef4444', desc: '目标小速度快' },
+  { id: 'expert', name: '专家', color: '#dc2626', desc: '极限挑战' },
+];
+
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   settings,
   onUpdateSettings,
@@ -154,29 +163,61 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             <tr>
               <td className="excel-row-header">4</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>难度等级</td>
-              <td className="excel-cell" colSpan={2}>
-                <select
-                  className="settings-cell-select"
-                  value={settings.difficulty}
-                  onChange={(e) => updateSetting('difficulty', e.target.value as GameSettings['difficulty'])}
-                >
-                  <option value="easy">简单</option>
-                  <option value="normal">普通</option>
-                  <option value="hard">困难</option>
-                  <option value="expert">专家</option>
-                </select>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>训练时长</td>
+              <td className="excel-cell" colSpan={3}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[30, 60, 120].map(d => (
+                    <button
+                      key={d}
+                      className={`game-preset-btn ${(settings.trainingDuration || 60) === d ? 'active' : ''}`}
+                      onClick={() => updateSetting('trainingDuration', d as 30 | 60 | 120)}
+                      style={{ 
+                        background: (settings.trainingDuration || 60) === d ? '#107c41' : '#e5e7eb', 
+                        color: (settings.trainingDuration || 60) === d ? 'white' : '#333',
+                        minWidth: 60
+                      }}
+                    >
+                      {d}秒
+                    </button>
+                  ))}
+                </div>
               </td>
               <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                影响：目标生成速度
+                限时模式的训练时间
               </td>
-              <td className="excel-cell" />
               <td className="excel-cell" />
               <td className="excel-cell" />
             </tr>
 
             <tr>
               <td className="excel-row-header">5</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>难度等级</td>
+              <td className="excel-cell" colSpan={5}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {DIFFICULTY_LEVELS.map(diff => (
+                    <button
+                      key={diff.id}
+                      className={`game-preset-btn ${settings.difficulty === diff.id ? 'active' : ''}`}
+                      onClick={() => updateSetting('difficulty', diff.id as GameSettings['difficulty'])}
+                      title={diff.desc}
+                      style={{ 
+                        background: settings.difficulty === diff.id ? diff.color : '#e5e7eb', 
+                        color: settings.difficulty === diff.id ? 'white' : '#333',
+                        minWidth: 65
+                      }}
+                    >
+                      {diff.name}
+                    </button>
+                  ))}
+                </div>
+              </td>
+              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
+                影响：目标生成速度和持续时间
+              </td>
+            </tr>
+
+            <tr>
+              <td className="excel-row-header">6</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>目标生成频率</td>
               <td className="excel-cell">
                 <input
@@ -200,7 +241,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">6</td>
+              <td className="excel-row-header">7</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>目标持续时间</td>
               <td className="excel-cell">
                 <input
@@ -224,7 +265,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">7</td>
+              <td className="excel-row-header">8</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>目标大小 (px)</td>
               <td className="excel-cell">
                 <input
@@ -246,7 +287,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">8</td>
+              <td className="excel-row-header">9</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>移动速度</td>
               <td className="excel-cell">
                 <input
@@ -277,7 +318,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">9</td>
+              <td className="excel-row-header">10</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>敌人显示</td>
               <td className="excel-cell" colSpan={3}>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -303,14 +344,36 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">10</td>
+              <td className="excel-row-header">11</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>无色模式</td>
+              <td className="excel-cell">
+                <input
+                  type="checkbox"
+                  checked={settings.colorlessMode || false}
+                  onChange={(e) => updateSetting('colorlessMode', e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: 'pointer' }}
+                />
+              </td>
+              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
+                ✓ 启用后敌人显示为纯文字
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>字体风格</td>
+              <td className="excel-cell" colSpan={2}>
+                <span style={{ fontFamily: 'SimSun, 宋体, serif', fontSize: 14 }}>
+                  宋体 14号
+                </span>
+              </td>
+            </tr>
+
+            <tr>
+              <td className="excel-row-header">12</td>
               {Array.from({ length: 7 }).map((_, i) => (
                 <td key={i} className="excel-cell" />
               ))}
             </tr>
 
             <tr>
-              <td className="excel-row-header">11</td>
+              <td className="excel-row-header">13</td>
               <td 
                 className="excel-cell" 
                 colSpan={7} 
@@ -326,7 +389,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">12</td>
+              <td className="excel-row-header">14</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>游戏预设</td>
               <td className="excel-cell" colSpan={5}>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -345,7 +408,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">13</td>
+              <td className="excel-row-header">15</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>X 轴灵敏度</td>
               <td className="excel-cell">
                 <input
@@ -379,21 +442,21 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">14</td>
+              <td className="excel-row-header">16</td>
               <td className="excel-cell" colSpan={7} style={{ color: '#888', fontSize: 10, fontStyle: 'italic' }}>
                 💡 注：本游戏为点击式瞄准训练，灵敏度设置用于模拟不同游戏的鼠标移动手感。预设已配置常用游戏的灵敏度倍率。
               </td>
             </tr>
 
             <tr>
-              <td className="excel-row-header">15</td>
+              <td className="excel-row-header">17</td>
               {Array.from({ length: 7 }).map((_, i) => (
                 <td key={i} className="excel-cell" />
               ))}
             </tr>
 
             <tr>
-              <td className="excel-row-header">16</td>
+              <td className="excel-row-header">18</td>
               <td 
                 className="excel-cell" 
                 colSpan={7} 
@@ -409,7 +472,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">17</td>
+              <td className="excel-row-header">19</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>准星样式</td>
               <td className="excel-cell" colSpan={5}>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -430,7 +493,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">18</td>
+              <td className="excel-row-header">20</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>准星大小</td>
               <td className="excel-cell">
                 <input
@@ -459,7 +522,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">19</td>
+              <td className="excel-row-header">21</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>使用准星光标</td>
               <td className="excel-cell">
                 <input
@@ -500,7 +563,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             <tr>
-              <td className="excel-row-header">20</td>
+              <td className="excel-row-header">22</td>
               {Array.from({ length: 7 }).map((_, i) => (
                 <td key={i} className="excel-cell" />
               ))}

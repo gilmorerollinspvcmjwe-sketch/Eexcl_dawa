@@ -26,6 +26,7 @@ interface GridTableProps {
   showEnemyPriority?: boolean;
   showEnemyHp?: boolean;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
+  colorlessMode?: boolean;
 }
 
 export const GridTable: React.FC<GridTableProps> = ({
@@ -46,6 +47,7 @@ export const GridTable: React.FC<GridTableProps> = ({
   showEnemyPriority = true,
   showEnemyHp = true,
   onPartClick,
+  colorlessMode = false,
 }) => {
   const [missEffects, setMissEffects] = useState<Set<string>>(new Set());
 
@@ -201,6 +203,7 @@ export const GridTable: React.FC<GridTableProps> = ({
           showPriority={showEnemyPriority}
           showHp={showEnemyHp}
           onPartClick={onPartClick}
+          colorlessMode={colorlessMode}
         />
       )}
     </div>

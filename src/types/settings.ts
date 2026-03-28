@@ -22,10 +22,13 @@ export interface GameSettings {
   headshotLineEnabled: boolean;
   headshotLineRow: number; // 默认第 10 行
   gamePreset: GamePreset;
+  trainingDuration?: 30 | 60 | 120; // 训练时长（秒）
   // 移动目标配置
   enemyMoveSpeed?: number; // 格/秒
   enemyMovePattern?: 'linear' | 'sine' | 'bounce';
   enemyRenderMode?: 'text' | 'icon';
+  // 无色模式 - Excel风格
+  colorlessMode?: boolean; // 无色模式，敌人显示为纯文字
   // 关卡进度
   unlockedLevels?: number[];
   credits?: number;

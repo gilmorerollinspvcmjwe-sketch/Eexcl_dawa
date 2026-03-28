@@ -35,6 +35,7 @@ function AppContent() {
     switchSheet,
     toggleHidden,
     togglePause,
+    exitToHub,
     handleCornerEnter,
     handleCornerLeave,
     COLS,
@@ -59,16 +60,16 @@ function AppContent() {
     level?: number,
     difficulty?: any
   ) => {
-    startGame(mode, duration, level, difficulty);
+    const finalDuration = duration || settings.trainingDuration || 60;
+    startGame(mode, finalDuration as 30 | 60 | 120, level, difficulty || settings.difficulty);
   };
 
   // 从 GameHub 启动 FPS 训练
   const handleStartFPSTrainingFromHub = (mode: FPSTrainingMode, config?: any) => {
     setCurrentMode(mode);
-    if (config) {
-      setModeConfig(config);
-    }
-    startGameWithMode(mode, config || modeConfig);
+    const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
+    setModeConfig(finalConfig);
+    startGameWithMode(mode, finalConfig);
   };
 
   // Control cursor visibility based on current sheet
@@ -222,6 +223,8 @@ function AppContent() {
               onStartFPSTraining={handleStartFPSTrainingFromHub}
               onSwitchSheet={(sheet) => switchSheet(sheet)}
               selectedFPSMode={currentMode}
+              trainingDuration={settings.trainingDuration}
+              difficulty={settings.difficulty as any}
             />
           ) : currentSheet === 'game' ? (
             // Sheet2: 训练场
@@ -241,10 +244,12 @@ function AppContent() {
               hitEffects={hitEffects}
               togglePause={togglePause}
               soundEnabled={settings.soundEnabled}
+              onExit={exitToHub}
               multiGridEnemies={multiGridEnemies}
               currentLevel={currentLevel}
               levelConfig={levelConfig}
               levelStatus={levelStatus}
+              colorlessMode={settings.colorlessMode}
             />
           ) : currentSheet === 'stats' ? (
             // Sheet3: 统计

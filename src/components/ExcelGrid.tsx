@@ -33,6 +33,7 @@ interface ExcelGridProps {
   hitEffects?: HitEffect[];
   togglePause?: () => void;
   soundEnabled?: boolean;
+  onExit?: () => void;
   // 多格敌人支持
   multiGridEnemies?: MultiGridEnemy[];
   enemyRenderMode?: 'text' | 'icon';
@@ -42,6 +43,8 @@ interface ExcelGridProps {
   currentLevel?: number | null;
   levelConfig?: LevelConfig | null;
   levelStatus?: 'playing' | 'completed' | 'failed' | null;
+  // 无色模式
+  colorlessMode?: boolean;
 }
 
 export const ExcelGrid: React.FC<ExcelGridProps> = ({
@@ -59,6 +62,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   hitEffects = [],
   togglePause,
   soundEnabled = true,
+  onExit,
   // 多格敌人支持
   multiGridEnemies = [],
   enemyRenderMode = 'text',
@@ -68,6 +72,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   currentLevel,
   levelConfig,
   levelStatus,
+  // 无色模式
+  colorlessMode = false,
 }) => {
   // 处理 miss 音效
   const handleMiss = () => {
@@ -107,6 +113,17 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
 
   return (
     <div className="excel-grid-container">
+      {/* 退出按钮 */}
+      {onExit && (
+        <button
+          className="exit-game-btn"
+          onClick={onExit}
+          title="返回游戏中心"
+        >
+          ✕ 退出
+        </button>
+      )}
+
       {/* 游戏 HUD */}
       {gameState.isPlaying && !gameState.isPaused && (
         <GameHUD
@@ -203,6 +220,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         showEnemyPriority={showEnemyPriority}
         showEnemyHp={showEnemyHp}
         onPartClick={handlePartClick}
+        colorlessMode={colorlessMode}
       />
     </div>
   );

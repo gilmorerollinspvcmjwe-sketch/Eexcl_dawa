@@ -14,6 +14,7 @@ interface MultiGridEnemyRendererProps {
   showPriority?: boolean;
   showHp?: boolean;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
+  colorlessMode?: boolean;
 }
 
 interface PartCellProps {
@@ -25,6 +26,7 @@ interface PartCellProps {
   absoluteRow: number;
   absoluteCol: number;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
+  colorlessMode?: boolean;
 }
 
 const PartCell: React.FC<PartCellProps> = ({
@@ -36,6 +38,7 @@ const PartCell: React.FC<PartCellProps> = ({
   absoluteRow,
   absoluteCol,
   onPartClick,
+  colorlessMode = false,
 }) => {
   if (part.state === 'destroyed') {
     return null;
@@ -44,6 +47,44 @@ const PartCell: React.FC<PartCellProps> = ({
   const baseColor = PART_COLORS[part.type];
   const stateColor = PART_STATE_COLORS[part.state];
   const isDamaged = part.state === 'damaged' || part.state === 'critical';
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onPartClick) {
+      onPartClick(enemyId, part.type, absoluteRow, absoluteCol);
+    }
+  };
+
+  if (colorlessMode) {
+    const colorlessStyle: React.CSSProperties = {
+      ...style,
+      position: 'absolute',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'transparent',
+      border: 'none',
+      color: '#000000',
+      fontFamily: 'SimSun, 宋体, serif',
+      fontSize: 14,
+      fontWeight: 'normal',
+      cursor: 'crosshair',
+      pointerEvents: 'auto',
+    };
+
+    return (
+      <div 
+        style={{
+          ...colorlessStyle,
+          cursor: 'crosshair',
+          pointerEvents: 'auto',
+        }}
+        onClick={handleClick}
+      >
+        {PART_TEXTS[part.type]}
+      </div>
+    );
+  }
 
   const cellStyle: React.CSSProperties = {
     ...style,
@@ -82,13 +123,6 @@ const PartCell: React.FC<PartCellProps> = ({
     </span>
   ) : null;
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onPartClick) {
-      onPartClick(enemyId, part.type, absoluteRow, absoluteCol);
-    }
-  };
-
   return (
     <div 
       style={{
@@ -115,7 +149,8 @@ function getPartIcon(partType: PartType): string {
   }
 }
 
-const PriorityLabel: React.FC<{ priority: Priority }> = ({ priority }) => {
+const PriorityLabel: React.FC<{ priority: Priority; colorlessMode?: boolean }> = ({ priority, colorlessMode = false }) => {
+  if (colorlessMode) return null;
   const config = PRIORITY_CONFIG[priority];
   return (
     <div style={{
@@ -139,7 +174,8 @@ const PriorityLabel: React.FC<{ priority: Priority }> = ({ priority }) => {
   );
 };
 
-const HealthBar: React.FC<{ enemy: MultiGridEnemy }> = ({ enemy }) => {
+const HealthBar: React.FC<{ enemy: MultiGridEnemy; colorlessMode?: boolean }> = ({ enemy, colorlessMode = false }) => {
+  if (colorlessMode) return null;
   const totalHp = enemy.parts.reduce((sum, p) => sum + p.maxHp, 0);
   const currentHp = enemy.parts.reduce((sum, p) => sum + p.currentHp, 0);
   const percent = (currentHp / totalHp) * 100;
@@ -176,6 +212,7 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   showPriority = true,
   showHp = true,
   onPartClick,
+  colorlessMode = false,
 }) => {
   if (enemy.peekState === 'hidden') return null;
 
@@ -187,9 +224,6 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
     offsetX = (enemy.peekDirection === 'left' ? -1 : 1) * (1 - progress) * cellWidth * 3;
   }
 
-  // 正确计算位置：考虑行头和列头的偏移
-  // anchorRow/Col 是 1-based 的格子坐标
-  // 渲染位置 = 行头/列头宽度 + (格子坐标 - 1) * 格子尺寸
   const baseLeft = rowHeaderWidth + (enemy.anchorCol - 1) * cellWidth + offsetX;
   const baseTop = colHeaderHeight + (enemy.anchorRow - 1) * cellHeight + offsetY;
 
@@ -210,20 +244,18 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
         transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
       }}
     >
-      {showPriority && enemy.priority && !isDying && (
-        <PriorityLabel priority={enemy.priority} />
+      {showPriority && enemy.priority && !isDying && !colorlessMode && (
+        <PriorityLabel priority={enemy.priority} colorlessMode={colorlessMode} />
       )}
 
-      {!isDying && <HealthBar enemy={enemy} />}
+      {!isDying && !colorlessMode && <HealthBar enemy={enemy} colorlessMode={colorlessMode} />}
 
       {enemy.parts.map((part, index) => {
         if (part.state === 'destroyed') return null;
 
-        // 部位相对于锚点的偏移（使用 part 的 relativeRow/relativeCol）
         const left = part.relativeCol * cellWidth;
         const top = part.relativeRow * cellHeight;
         
-        // 计算绝对位置（用于点击检测）
         const absoluteRow = Math.round(enemy.anchorRow + part.relativeRow);
         const absoluteCol = Math.round(enemy.anchorCol + part.relativeCol);
 
@@ -238,11 +270,12 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
               height: cellHeight - 2,
             }}
             renderMode={renderMode}
-            showHp={showHp}
+            showHp={showHp && !colorlessMode}
             enemyId={enemy.id}
             absoluteRow={absoluteRow}
             absoluteCol={absoluteCol}
             onPartClick={onPartClick}
+            colorlessMode={colorlessMode}
           />
         );
       })}
@@ -260,6 +293,7 @@ interface MultiGridEnemiesProps {
   showPriority?: boolean;
   showHp?: boolean;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
+  colorlessMode?: boolean;
 }
 
 export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
@@ -272,6 +306,7 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
   showPriority = true,
   showHp = true,
   onPartClick,
+  colorlessMode = false,
 }) => {
   return (
     <div className="multi-grid-enemies-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -287,6 +322,7 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
           showPriority={showPriority}
           showHp={showHp}
           onPartClick={onPartClick}
+          colorlessMode={colorlessMode}
         />
       ))}
 

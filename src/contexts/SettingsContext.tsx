@@ -19,11 +19,14 @@ const DEFAULT_SETTINGS: GameSettings = {
   headshotLineEnabled: false,
   headshotLineRow: 10,
   gamePreset: 'custom',
+  trainingDuration: 60,
   // P2: 移动速度配置
   enemyMoveSpeed: 1.0,
   enemyMovePattern: 'linear',
   // P2: 敌人渲染模式
   enemyRenderMode: 'text',
+  // 无色模式
+  colorlessMode: false,
   // P1: 关卡进度
   unlockedLevels: [1], // 初始解锁第1关
   credits: 0,

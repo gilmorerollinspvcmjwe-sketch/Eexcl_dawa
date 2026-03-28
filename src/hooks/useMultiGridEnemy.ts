@@ -25,6 +25,7 @@ interface UseMultiGridEnemyProps {
   difficulty: string;
   moveSpeed?: number;
   movePattern?: MovePattern;
+  fpsMode?: string | null;
 }
 
 interface UseMultiGridEnemyReturn {
@@ -107,7 +108,7 @@ const SPEED_MAP = {
 };
 
 export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEnemyReturn {
-  const { isPlaying, isPaused, mode, moveSpeed = 1.0, movePattern = 'linear' } = props;
+  const { isPlaying, isPaused, mode, moveSpeed = 1.0, movePattern = 'linear', fpsMode } = props;
   
   const [enemies, setEnemies] = useState<MultiGridEnemy[]>([]);
   const fpsConfigRef = useRef<FPSModeConfig>({});
@@ -138,14 +139,16 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
       anchorCol: finalOptions.anchorCol ?? (8 + Math.floor(Math.random() * (COLS - 16))),
     });
 
-    if (mode === 'moving_target' || mode === 'motion_track') {
+    const effectiveMode = fpsMode || mode;
+    
+    if (effectiveMode === 'moving_target' || effectiveMode === 'motion_track') {
       enemy.movePattern = finalOptions.movePattern ?? movePattern;
       enemy.moveSpeed = finalOptions.moveSpeed ?? moveSpeed;
       enemy.moveProgress = 0;
       enemy.moveDirection = Math.random() > 0.5 ? 'left' : 'right';
     }
 
-    if (mode === 'peek_shot') {
+    if (effectiveMode === 'peek_shot') {
       enemy.peekState = 'hidden';
       enemy.peekProgress = 0;
       enemy.peekTimer = 0;
@@ -154,7 +157,7 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     }
 
     setEnemies(prev => [...prev, enemy]);
-  }, [isPlaying, isPaused, mode, movePattern, moveSpeed]);
+  }, [isPlaying, isPaused, mode, movePattern, moveSpeed, fpsMode]);
 
   const hitPart = useCallback((enemyId: string, partType: PartType, combo: number): PartHitResult | null => {
     let result: PartHitResult | null = null;
