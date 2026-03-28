@@ -1,7 +1,7 @@
 // 基础表格渲染组件
 
 import React, { useCallback, useState, useEffect } from 'react';
-import type { Target, MultiGridEnemy } from '../../types';
+import type { Target, MultiGridEnemy, PartType } from '../../types';
 import { generateColLetters } from '../../utils/gridUtils';
 import { TargetRenderer } from './TargetRenderer';
 import { MultiGridEnemies } from './MultiGridEnemyRenderer';
@@ -25,6 +25,7 @@ interface GridTableProps {
   enemyRenderMode?: 'text' | 'icon';
   showEnemyPriority?: boolean;
   showEnemyHp?: boolean;
+  onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
 }
 
 export const GridTable: React.FC<GridTableProps> = ({
@@ -44,6 +45,7 @@ export const GridTable: React.FC<GridTableProps> = ({
   enemyRenderMode = 'text',
   showEnemyPriority = true,
   showEnemyHp = true,
+  onPartClick,
 }) => {
   const [missEffects, setMissEffects] = useState<Set<string>>(new Set());
 
@@ -196,6 +198,7 @@ export const GridTable: React.FC<GridTableProps> = ({
           renderMode={enemyRenderMode}
           showPriority={showEnemyPriority}
           showHp={showEnemyHp}
+          onPartClick={onPartClick}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
 // Excel 表格网格组件 - 整合各子组件
 
 import React from 'react';
-import type { Target, HitEffect, MultiGridEnemy, LevelConfig } from '../types';
+import type { Target, HitEffect, MultiGridEnemy, LevelConfig, PartType } from '../types';
 import { playHitSound, playMissSound } from '../utils/soundUtils';
 import { GridTable, HitEffectRenderer, GameHUD, PauseOverlay } from './grid';
 
@@ -82,6 +82,12 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     if (target) {
       playHitSound(target.type === 'head', gameState.combo, soundEnabled);
     }
+    onCellClick(row, col);
+  };
+
+  // 处理多格敌人部位点击
+  const handlePartClick = (enemyId: string, partType: PartType, row: number, col: number) => {
+    playHitSound(partType === 'head', gameState.combo, soundEnabled);
     onCellClick(row, col);
   };
 
@@ -196,6 +202,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         enemyRenderMode={enemyRenderMode}
         showEnemyPriority={showEnemyPriority}
         showEnemyHp={showEnemyHp}
+        onPartClick={handlePartClick}
       />
     </div>
   );
