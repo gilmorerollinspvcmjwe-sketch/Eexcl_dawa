@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ExcelHeader } from './components/ExcelHeader';
 import { SheetTabs } from './components/SheetTabs';
 import { ExcelGrid } from './components/ExcelGrid';
@@ -6,13 +6,18 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { StatsPanel } from './components/StatsPanel';
 import { StatusBar } from './components/StatusBar';
 import { Crosshair } from './components/Crosshair';
+import { GameHub } from './components/GameHub';
 import { useGameLogic } from './hooks/useGameLogic';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
+import type { FPSTrainingMode } from './components/TrainingModeSelector';
 
 function AppContent() {
   const { settings, updateSetting, applyPreset } = useSettings();
   const { mousePosition, isCrosshairVisible, setCrosshairVisible } = useCrosshair();
+
+  const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
+  const [modeConfig, setModeConfig] = useState<any>({});
 
   const {
     gameState,
@@ -24,6 +29,7 @@ function AppContent() {
     stats,
     hitEffects,
     startGame,
+    startGameWithMode,
     handleCellClick,
     handleCellHover,
     switchSheet,
@@ -33,6 +39,7 @@ function AppContent() {
     handleCornerLeave,
     COLS,
     ROWS,
+    multiGridEnemies,
   } = useGameLogic();
 
   const handleResetStats = () => {
@@ -40,6 +47,29 @@ function AppContent() {
       localStorage.removeItem('excel-aim-stats-v2');
       window.location.reload();
     }
+  };
+
+  // 从 GameHub 启动游戏
+  const handleStartGameFromHub = (
+    mode: any,
+    duration?: 30 | 60 | 120,
+    level?: number,
+    difficulty?: any
+  ) => {
+    if (mode === 'part_training' && level) {
+      startGame(mode, duration, level);
+    } else {
+      startGame(mode, duration);
+    }
+  };
+
+  // 从 GameHub 启动 FPS 训练
+  const handleStartFPSTrainingFromHub = (mode: FPSTrainingMode, config?: any) => {
+    setCurrentMode(mode);
+    if (config) {
+      setModeConfig(config);
+    }
+    startGameWithMode(mode, config || modeConfig);
   };
 
   // Control cursor visibility based on current sheet
@@ -186,7 +216,16 @@ function AppContent() {
 
         {/* 主内容区 */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {currentSheet === 'game' ? (
+          {currentSheet === 'hub' ? (
+            // Sheet1: 游戏中心
+            <GameHub
+              onStartGame={handleStartGameFromHub}
+              onStartFPSTraining={handleStartFPSTrainingFromHub}
+              onSwitchSheet={(sheet) => switchSheet(sheet)}
+              selectedFPSMode={currentMode}
+            />
+          ) : currentSheet === 'game' ? (
+            // Sheet2: 训练场
             <ExcelGrid
               key="game-sheet"
               targets={targets}
@@ -203,8 +242,13 @@ function AppContent() {
               hitEffects={hitEffects}
               togglePause={togglePause}
               soundEnabled={settings.soundEnabled}
+              multiGridEnemies={multiGridEnemies}
             />
-          ) : currentSheet === 'settings' ? (
+          ) : currentSheet === 'stats' ? (
+            // Sheet3: 统计
+            <StatsPanel stats={stats} onReset={handleResetStats} />
+          ) : (
+            // Sheet4: 设置
             <SettingsPanel
               key="settings-sheet"
               settings={settings}
@@ -212,8 +256,6 @@ function AppContent() {
               onApplyPreset={applyPreset}
               onStartGame={startGame}
             />
-          ) : (
-            <StatsPanel key="stats-sheet" stats={stats} onReset={handleResetStats} />
           )}
         </div>
 

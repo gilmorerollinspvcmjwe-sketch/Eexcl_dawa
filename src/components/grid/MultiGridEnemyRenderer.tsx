@@ -11,6 +11,7 @@ interface MultiGridEnemyRendererProps {
   renderMode?: 'text' | 'icon';
   showPriority?: boolean;
   showHp?: boolean;
+  onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
 }
 
 // 单个部位渲染
@@ -19,7 +20,11 @@ const PartCell: React.FC<{
   style: React.CSSProperties;
   renderMode: 'text' | 'icon';
   showHp: boolean;
-}> = ({ part, style, renderMode, showHp }) => {
+  enemyId: string;
+  absoluteRow: number;
+  absoluteCol: number;
+  onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
+}> = ({ part, style, renderMode, showHp, enemyId, absoluteRow, absoluteCol, onPartClick }) => {
   // 已销毁的部位不渲染
   if (part.state === 'destroyed') {
     return null;
@@ -65,8 +70,22 @@ const PartCell: React.FC<{
     </span>
   ) : null;
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onPartClick) {
+      onPartClick(enemyId, part.type, absoluteRow, absoluteCol);
+    }
+  };
+
   return (
-    <div style={cellStyle}>
+    <div 
+      style={{
+        ...cellStyle,
+        cursor: 'crosshair',
+        pointerEvents: 'auto',
+      }}
+      onClick={handleClick}
+    >
       {renderMode === 'text' ? PART_TEXTS[part.type] : getPartIcon(part.type)}
       {hpDisplay}
     </div>
@@ -146,6 +165,7 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   renderMode = 'text',
   showPriority = true,
   showHp = true,
+  onPartClick,
 }) => {
   if (!enemy.isAlive) return null;
 
@@ -191,6 +211,10 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
 
         const left = part.relativeCol * cellWidth;
         const top = part.relativeRow * cellHeight;
+        
+        // 计算绝对位置（用于点击检测）
+        const absoluteRow = Math.round(enemy.anchorRow + part.relativeRow);
+        const absoluteCol = Math.round(enemy.anchorCol + part.relativeCol);
 
         return (
           <PartCell
@@ -204,6 +228,10 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
             }}
             renderMode={renderMode}
             showHp={showHp}
+            enemyId={enemy.id}
+            absoluteRow={absoluteRow}
+            absoluteCol={absoluteCol}
+            onPartClick={onPartClick}
           />
         );
       })}
@@ -219,6 +247,7 @@ interface MultiGridEnemiesProps {
   renderMode?: 'text' | 'icon';
   showPriority?: boolean;
   showHp?: boolean;
+  onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
 }
 
 export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
@@ -228,6 +257,7 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
   renderMode = 'text',
   showPriority = true,
   showHp = true,
+  onPartClick,
 }) => {
   return (
     <div className="multi-grid-enemies-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -240,6 +270,7 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
           renderMode={renderMode}
           showPriority={showPriority}
           showHp={showHp}
+          onPartClick={onPartClick}
         />
       ))}
 

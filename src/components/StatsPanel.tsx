@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import type { GameStats } from '../types';
-import { generateSimpleColLetters } from '../utils/gridUtils';
 
 interface StatsPanelProps {
   stats: GameStats;
@@ -32,7 +31,7 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({ stats, onReset }) => {
   const maxModeScore = Math.max(...modeData.map(m => m.stat.bestScore || 1), 1);
 
   // 列字母
-  const colLetters = useMemo(() => generateSimpleColLetters(12), []);
+  const colLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
   return (
     <div className="excel-grid-container stats-panel-container">

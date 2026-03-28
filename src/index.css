@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-/* ==================== Excel 变量定义 ==================== */
+/* ==================== Excel 主题变量 ==================== */
 :root {
-  /* Excel 绿色主题 */
+  /* Excel 配色方案 */
   --excel-green: #107c41;
   --excel-green-hover: #0e6b38;
   --excel-green-light: #e6f4ea;
@@ -49,7 +49,7 @@ body {
   height: 100vh;
 }
 
-/* ==================== Excel 标题栏 ==================== */
+/* ==================== Excel 标题�?==================== */
 .excel-titlebar {
   background: linear-gradient(180deg, #107c41 0%, #0d6a38 100%);
   height: 30px;
@@ -114,7 +114,7 @@ body {
   background: #e81123;
 }
 
-/* ==================== Excel 菜单栏 ==================== */
+/* ==================== Excel Ribbon 菜单�?==================== */
 .excel-menubar {
   background: var(--excel-header-bg);
   height: 27px;
@@ -143,7 +143,7 @@ body {
   color: var(--excel-green);
 }
 
-/* ==================== Excel 功能区 ==================== */
+/* ==================== Excel Ribbon 工具�?==================== */
 .excel-ribbon {
   background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
   border-bottom: 1px solid var(--excel-border);
@@ -246,7 +246,7 @@ body {
   font-size: var(--excel-font-size-sm);
 }
 
-/* ==================== Excel 公式栏 ==================== */
+/* ==================== Excel 公式�?==================== */
 .excel-formula-bar {
   display: flex;
   align-items: center;
@@ -312,7 +312,7 @@ body {
   border-color: var(--excel-selected-green);
 }
 
-/* ==================== Excel 网格容器 ==================== */
+/* ==================== Excel 网格区域 ==================== */
 .excel-grid-container {
   flex: 1;
   display: flex;
@@ -416,7 +416,7 @@ body {
   color: var(--excel-green);
 }
 
-/* 单元格 */
+/* 单元�?*/
 .excel-cell {
   min-width: var(--excel-cell-width);
   width: var(--excel-cell-width);
@@ -429,6 +429,27 @@ body {
   vertical-align: middle;
   position: relative;
   cursor: crosshair;
+}
+
+/* GridTable 作用域限定 - 防止被 gamehub.css 覆盖 */
+.excel-grid-wrapper .excel-cell {
+  min-width: var(--excel-cell-width) !important;
+  width: var(--excel-cell-width) !important;
+}
+
+.excel-grid-wrapper .excel-row-header {
+  min-width: var(--excel-row-header-width) !important;
+  width: var(--excel-row-header-width) !important;
+}
+
+.excel-grid-wrapper .excel-col-header {
+  min-width: var(--excel-cell-width) !important;
+  width: var(--excel-cell-width) !important;
+}
+
+.excel-grid-wrapper .excel-corner-cell {
+  min-width: var(--excel-row-header-width) !important;
+  width: var(--excel-row-header-width) !important;
 }
 
 .excel-cell.selected {
@@ -548,13 +569,13 @@ body {
   text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 
-/* 爆头线目标 */
+/* 爆头线目�?*/
 .target-headshot-line {
   border: 2px solid #ff0000;
   box-shadow: 0 0 8px rgba(255,0,0,0.5), inset 0 0 4px rgba(255,0,0,0.3);
 }
 
-/* ==================== 命中特效 ==================== */
+/* ==================== 命中效果 ==================== */
 @keyframes hitExplosion {
   0% {
     transform: translate(-50%, -50%) scale(1);
@@ -639,7 +660,7 @@ body {
   animation: missFlash 0.2s ease-in-out;
 }
 
-/* ==================== Excel 工作表标签 ==================== */
+/* ==================== Excel 工作表标�?==================== */
 .excel-sheet-bar {
   display: flex;
   background: #f3f3f3;
@@ -786,18 +807,9 @@ body {
   align-items: center;
   padding: 6px 12px;
   background: transparent;
-  color: #333;
+  color: white;
   font-size: var(--excel-font-size);
-  pointer-events: none;
-}
-
-.game-hud > * {
-  pointer-events: auto;
-}
-
-.game-crosshair {
-  pointer-events: none !important;
-  user-select: none;
+  box-shadow: none;
 }
 
 .game-hud-left {
@@ -842,15 +854,15 @@ body {
 
 .game-stat-value.time.warning {
   color: #fca5a5;
-  animation: pulseAnim 1s infinite;
+  animation: pulse 1s infinite;
 }
 
-@keyframes pulseAnim {
+@keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
 }
 
-/* ==================== 设置页 ==================== */
+/* ==================== 设置面板（Excel Sheet 风格�?==================== */
 .settings-sheet {
   flex: 1;
   overflow: auto;
@@ -939,7 +951,7 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-/* ==================== 统计页 ==================== */
+/* ==================== 统计面板（Excel Sheet 风格�?==================== */
 .stats-sheet {
   flex: 1;
   overflow: auto;
@@ -947,6 +959,7 @@ body {
   padding: 20px;
 }
 
+/* 修复 StatsPanel �?SettingsPanel 显示问题 */
 .excel-grid-container .excel-grid-wrapper {
   min-height: 100%;
   overflow-y: auto;
@@ -958,12 +971,21 @@ body {
   min-width: 100%;
 }
 
+/* GridTable 训练场表格 - 确保完整显示所有列 */
+.excel-grid-wrapper .excel-table {
+  /* 计算宽度: 行头(24px) + 30列 × 64px = 1944px */
+  width: calc(var(--excel-row-header-width) + var(--excel-cell-width) * 30);
+  min-width: calc(var(--excel-row-header-width) + var(--excel-cell-width) * 30);
+}
+
+/* 确保面板组件正确显示 */
 .excel-grid-container > div {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
+/* StatsPanel 特定样式 */
 .stats-panel-container {
   background: white;
 }
@@ -976,6 +998,7 @@ body {
   table-layout: auto !important;
 }
 
+/* SettingsPanel 特定样式 */
 .settings-panel-container {
   background: white;
 }
@@ -1040,7 +1063,7 @@ body {
   color: #333;
 }
 
-/* ==================== 隐藏状态 ==================== */
+/* ==================== 隐藏状�?==================== */
 .hidden-overlay {
   position: fixed;
   inset: 0;
@@ -1097,7 +1120,7 @@ body {
   animation: comboPop 0.3s ease-out;
 }
 
-/* ==================== 游戏模式预设 ==================== */
+/* ==================== 游戏模板预设 ==================== */
 .game-presets {
   display: flex;
   gap: 8px;
@@ -1158,7 +1181,7 @@ body {
   border-left-color: rgba(255, 0, 0, 0.7);
 }
 
-/* ==================== Crosshair 准星组件 ==================== */
+/* ==================== Crosshair 准星光标 ==================== */
 .crosshair-cursor {
   cursor: crosshair;
 }
@@ -1210,136 +1233,4 @@ body {
 
 .custom-crosshair-line.bottom {
   top: 6px;
-}
-
-/* ==================== P0: 部位敌人样式 ==================== */
-.part-enemy {
-  position: relative;
-  transition: all 0.15s ease;
-}
-
-.part-enemy:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
-}
-
-/* ==================== P2: 文字敌人样式 ==================== */
-.text-enemy-container {
-  position: absolute;
-  pointer-events: none;
-}
-
-.text-enemy-part {
-  transition: all 0.15s ease;
-  pointer-events: auto;
-}
-
-.text-enemy-part:hover {
-  transform: scale(1.1);
-  filter: brightness(1.1);
-}
-
-.text-enemy-part.moving {
-  animation: enemyMove 0.5s ease-in-out infinite;
-}
-
-.text-enemy-part.hit {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.text-part-cell {
-  cursor: crosshair;
-}
-
-.text-part-cell:hover {
-  transform: scale(1.1);
-}
-
-.text-part-cell.moving {
-  animation: pulse 0.8s ease-in-out infinite;
-}
-
-.text-part-cell.hit {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* 敌人移动动画 */
-@keyframes enemyMove {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(3px);
-  }
-}
-
-/* 拐角射击 - 探头动画 */
-@keyframes peekIn {
-  0% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes peekOut {
-  0% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-}
-
-.peek-enemy {
-  animation: peekIn 0.3s ease-out forwards;
-}
-
-.peek-enemy.hiding {
-  animation: peekOut 0.3s ease-in forwards;
-}
-
-/* 关卡完成/失败弹窗 */
-.level-complete-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.level-complete-modal {
-  background: white;
-  padding: 32px 48px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.level-complete-modal.success {
-  border: 3px solid #107c41;
-}
-
-.level-complete-modal.failure {
-  border: 3px solid #dc2626;
 }

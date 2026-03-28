@@ -1,7 +1,7 @@
 // 统计和历史记录管理 Hook
 
 import { useState, useEffect, useCallback } from 'react';
-import type { GameStats, GameHistoryEntry, ModeStat } from '../types';
+import type { GameStats, GameHistoryEntry, ModeStat, ReactionTimeStats } from '../types';
 
 // 默认模式统计
 const DEFAULT_MODE_STAT: ModeStat = {
@@ -11,6 +11,14 @@ const DEFAULT_MODE_STAT: ModeStat = {
   avgAccuracy: 0,
   totalHits: 0,
   totalClicks: 0,
+};
+
+// P1-1: 默认反应时间统计
+const DEFAULT_REACTION_TIME_STATS: ReactionTimeStats = {
+  avg: 0,
+  best: Infinity,
+  worst: 0,
+  history: [],
 };
 
 // 默认游戏统计
@@ -28,6 +36,10 @@ const DEFAULT_STATS: GameStats = {
     zen: { ...DEFAULT_MODE_STAT },
     headshot: { ...DEFAULT_MODE_STAT },
   },
+  // P1-1 & P1-2: 新增字段
+  reactionTime: { ...DEFAULT_REACTION_TIME_STATS },
+  cps: 0,
+  cpsHistory: [],
 };
 
 interface UseStatsSystemReturn {
@@ -41,6 +53,9 @@ interface UseStatsSystemReturn {
     headAppearances: number;
     maxCombo: number;
     duration: number;
+    // P1-1: 反应时间参数
+    avgReactionTime?: number;
+    reactionTimeHistory?: number[];
   }) => void;
   resetStats: () => void;
 }
@@ -66,9 +81,15 @@ export function useStatsSystem(): UseStatsSystemReturn {
     headAppearances: number;
     maxCombo: number;
     duration: number;
+    // P1-1: 反应时间参数
+    avgReactionTime?: number;
+    reactionTimeHistory?: number[];
   }) => {
     const accuracy = entry.totalClicks > 0 ? (entry.hits / entry.totalClicks) * 100 : 0;
     const headAccuracy = entry.headAppearances > 0 ? (entry.headHits / entry.headAppearances) * 100 : 0;
+
+    // P1-2: 计算 CPS (每秒点击数)
+    const cps = entry.duration > 0 ? entry.totalClicks / entry.duration : 0;
 
     const historyEntry: GameHistoryEntry = {
       date: new Date().toLocaleString('zh-CN'),
@@ -104,6 +125,25 @@ export function useStatsSystem(): UseStatsSystemReturn {
       const newModeHits = modeStat.totalHits + entry.hits;
       const newModeClicks = modeStat.totalClicks + entry.totalClicks;
 
+      // P1-1: 更新反应时间统计
+      let newReactionTime = s.reactionTime || DEFAULT_REACTION_TIME_STATS;
+      if (entry.avgReactionTime && entry.reactionTimeHistory) {
+        const allHistory = [...(s.reactionTime?.history || []), ...entry.reactionTimeHistory].slice(-10);
+        const avg = allHistory.length > 0 ? allHistory.reduce((a, b) => a + b, 0) / allHistory.length : 0;
+        const best = allHistory.length > 0 ? Math.min(...allHistory) : Infinity;
+        const worst = allHistory.length > 0 ? Math.max(...allHistory) : 0;
+        newReactionTime = {
+          avg,
+          best: Math.min(s.reactionTime?.best || Infinity, best),
+          worst: Math.max(s.reactionTime?.worst || 0, worst),
+          history: allHistory,
+        };
+      }
+
+      // P1-2: 更新 CPS 统计
+      const newCpsHistory = [...(s.cpsHistory || []), cps].slice(-10);
+      const avgCps = newCpsHistory.length > 0 ? newCpsHistory.reduce((a, b) => a + b, 0) / newCpsHistory.length : 0;
+
       return {
         totalGames: newTotalGames,
         totalScore: newTotalScore,
@@ -123,6 +163,10 @@ export function useStatsSystem(): UseStatsSystemReturn {
             totalClicks: newModeClicks,
           },
         },
+        // P1-1 & P1-2: 新增统计
+        reactionTime: newReactionTime,
+        cps: avgCps,
+        cpsHistory: newCpsHistory,
       };
     });
   }, []);

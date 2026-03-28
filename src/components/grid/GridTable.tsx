@@ -121,7 +121,7 @@ export const GridTable: React.FC<GridTableProps> = ({
               <th 
                 key={letter} 
                 className={`excel-col-header ${
-                  selectedCell && colIndex + 2 === selectedCell.col ? 'highlighted' : ''
+                  selectedCell && colIndex + 1 === selectedCell.col ? 'highlighted' : ''
                 }`}
               >
                 {letter}
@@ -142,7 +142,7 @@ export const GridTable: React.FC<GridTableProps> = ({
                   {rowNum}
                 </td>
                 {colLetters.map((letter, colIndex) => {
-                  const colNum = colIndex + 2;
+                  const colNum = colIndex + 1;
                   const target = getTargetAt(rowNum, colNum);
                   const selected = isSelected(rowNum, colNum);
                   const isMissEffect = missEffects.has(`${rowNum}-${colNum}`);

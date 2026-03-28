@@ -26,15 +26,21 @@ function getComboMultiplier(combo: number): number {
   return 1.0;
 }
 
+import type { FPSTrainingMode } from '../components/TrainingModeSelector';
+
 export function useGameLogic() {
   const { settings } = useSettings();
   
   // UI 状态 - 必须在 useTargetSystem 之前声明
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
-  const [currentSheet, setCurrentSheet] = useState<'game' | 'stats' | 'settings'>('game');
+  const [currentSheet, setCurrentSheet] = useState<'hub' | 'game' | 'stats' | 'settings'>('hub');
   const [isHidden, setIsHidden] = useState(false);
   const [hoverCorner, setHoverCorner] = useState(false);
   const [hitEffects, setHitEffects] = useState<HitEffect[]>([]);
+  
+  // FPS 训练模式状态
+  const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
+  const [modeConfig, setModeConfig] = useState<any>({});
 
   // 计时器引用
   const spawnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -176,6 +182,20 @@ export function useGameLogic() {
   const startGame = useCallback((mode: GameMode, duration?: TimedDuration) => {
     gameStartTimeRef.current = Date.now();
     resetGameState(mode, duration, settings.headshotLineRow);
+    clearTargets();
+    setHitEffects([]);
+    setCurrentSheet('game');
+  }, [resetGameState, clearTargets, settings.headshotLineRow]);
+  
+  // 开始 FPS 训练模式
+  const startGameWithMode = useCallback((mode: FPSTrainingMode, config?: any) => {
+    gameStartTimeRef.current = Date.now();
+    setCurrentMode(mode);
+    if (config) {
+      setModeConfig(config);
+    }
+    // 根据 FPS 模式设置游戏参数
+    resetGameState('timed', config?.duration || 60, settings.headshotLineRow);
     clearTargets();
     setHitEffects([]);
     setCurrentSheet('game');
@@ -345,6 +365,7 @@ export function useGameLogic() {
     stats,
     hitEffects,
     startGame,
+    startGameWithMode,
     endGame,
     handleCellClick,
     handleCellHover,
@@ -355,5 +376,11 @@ export function useGameLogic() {
     handleCornerLeave,
     COLS,
     ROWS,
+    // FPS 训练模式
+    currentMode,
+    setCurrentMode,
+    modeConfig,
+    setModeConfig,
+    multiGridEnemies: [],
   };
 }

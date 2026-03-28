@@ -259,15 +259,17 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
   };
 }
 
-// 连击倍率计算
+// P1-3: 连击倍率计算 - 使用平滑曲线版本
 function getComboMultiplier(combo: number): number {
   const COMBO_MULTIPLIERS = [
     { threshold: 0, multiplier: 1.0 },
-    { threshold: 5, multiplier: 1.2 },
-    { threshold: 10, multiplier: 1.5 },
-    { threshold: 20, multiplier: 2.0 },
-    { threshold: 30, multiplier: 2.5 },
-    { threshold: 50, multiplier: 3.0 },
+    { threshold: 3, multiplier: 1.1 },   // 降低入门门槛
+    { threshold: 8, multiplier: 1.25 },  // 更平滑过渡
+    { threshold: 15, multiplier: 1.5 },
+    { threshold: 25, multiplier: 2.0 },
+    { threshold: 40, multiplier: 2.5 },
+    { threshold: 60, multiplier: 3.0 },
+    { threshold: 100, multiplier: 4.0 }, // 新增高阶奖励
   ];
   
   for (let i = COMBO_MULTIPLIERS.length - 1; i >= 0; i--) {

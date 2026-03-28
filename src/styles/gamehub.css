@@ -1,0 +1,687 @@
+/* 游戏中心 Excel 表格风格样式 */
+
+/* ==================== Excel 表格容器 ==================== */
+.excel-game-hub {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f3f3f3;
+  overflow: auto;
+  font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.excel-sheet-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  min-height: 100%;
+}
+
+/* ==================== 列标识行 ==================== */
+.excel-col-headers-row {
+  display: flex;
+  background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+  border-bottom: 1px solid #c4c4c4;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.excel-corner-cell {
+  width: 40px;
+  min-width: 40px;
+  height: 24px;
+  background: linear-gradient(135deg, #f8f8f8 0%, #e0e0e0 100%);
+  border: 1px solid #c4c4c4;
+  border-top: none;
+}
+
+.excel-col-header {
+  flex: 1;
+  min-width: 120px;
+  height: 24px;
+  background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+  border: 1px solid #c4c4c4;
+  border-top: none;
+  border-left: none;
+  font-size: 11px;
+  font-weight: 400;
+  color: #333;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* ==================== Excel 行 ==================== */
+.excel-row {
+  display: flex;
+  min-height: 28px;
+  border-bottom: 1px dotted #d4d4d4;
+}
+
+.excel-row:hover {
+  background: rgba(16, 124, 65, 0.02);
+}
+
+/* 行号 */
+.excel-row-header {
+  width: 40px;
+  min-width: 40px;
+  height: 28px;
+  background: linear-gradient(90deg, #f8f8f8 0%, #e8e8e8 100%);
+  border: 1px solid #c4c4c4;
+  border-left: none;
+  border-bottom: none;
+  font-size: 10px;
+  font-weight: 400;
+  color: #333;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  position: sticky;
+  left: 0;
+  z-index: 20;
+}
+
+/* ==================== Excel 单元格 ==================== */
+.excel-cell {
+  flex: 1;
+  min-width: 120px;
+  height: 28px;
+  background: white;
+  border-right: 1px dotted #d4d4d4;
+  padding: 4px 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: default;
+}
+
+.excel-cell:hover {
+  background: rgba(33, 115, 70, 0.03);
+}
+
+/* 空单元格 */
+.excel-empty-cell {
+  background: #f9fafb;
+}
+
+/* ==================== 标题单元格 ==================== */
+.excel-title-cell {
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-bottom: 2px solid #0b4a1f;
+  min-height: 32px;
+  cursor: default;
+}
+
+.excel-title-cell:hover {
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+}
+
+.excel-title-icon {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.excel-title-text {
+  font-weight: 600;
+}
+
+/* ==================== 区域标题单元格 ==================== */
+.excel-section-header {
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-bottom: 2px solid #0b4a1f;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+
+.excel-section-header:hover {
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+}
+
+.excel-section-header .section-icon {
+  font-size: 14px;
+}
+
+/* ==================== 开始按钮单元格 ==================== */
+.excel-start-cell {
+  justify-content: center;
+}
+
+.excel-button {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border: 1px solid #15803d;
+  border-radius: 2px;
+  padding: 6px 16px;
+  font-family: 'Calibri', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.excel-button:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.excel-button:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.excel-start-btn {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 24px;
+}
+
+.excel-start-btn .btn-icon {
+  font-size: 14px;
+}
+
+.excel-start-btn .btn-text {
+  font-weight: 600;
+}
+
+/* ==================== Excel 下拉框 ==================== */
+.excel-select {
+  font-family: 'Calibri', sans-serif;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  background: white;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.excel-select:hover {
+  border-color: #107c41;
+}
+
+.excel-select:focus {
+  outline: none;
+  border-color: #107c41;
+  box-shadow: 0 0 0 1px rgba(16, 124, 65, 0.2);
+}
+
+/* ==================== Excel 内联控制 ==================== */
+.excel-inline-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.excel-label {
+  font-size: 12px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.excel-button-group {
+  display: flex;
+  gap: 4px;
+}
+
+/* Excel 小按钮 */
+.excel-mini-btn {
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Calibri', sans-serif;
+}
+
+.excel-mini-btn:hover {
+  border-color: #107c41;
+  background: #f0fdf4;
+}
+
+.excel-mini-btn.selected {
+  background: #107c41;
+  color: white;
+  border-color: #107c41;
+}
+
+/* ==================== 快捷入口按钮 ==================== */
+.excel-quick-access-cell {
+  justify-content: center;
+  padding: 6px 8px;
+}
+
+.excel-quick-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.excel-quick-btn {
+  padding: 6px 12px;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Calibri', sans-serif;
+}
+
+.excel-quick-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.excel-quick-btn.timed {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.excel-quick-btn.endless {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.excel-quick-btn.zen {
+  background: #f3e8ff;
+  border-color: #a855f7;
+  color: #6b21a8;
+}
+
+.excel-quick-btn.headshot {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+/* ==================== 模式选择网格 ==================== */
+.excel-modes-row {
+  min-height: auto;
+}
+
+.excel-modes-cell {
+  padding: 8px;
+  min-height: auto;
+}
+
+.excel-mode-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.excel-mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: white;
+  border: 2px solid #d4d4d4;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Calibri', sans-serif;
+}
+
+.excel-mode-btn:hover {
+  border-color: #107c41;
+  background: #f0fdf4;
+}
+
+.excel-mode-btn.selected {
+  border-color: #107c41;
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: white;
+}
+
+.excel-mode-btn .mode-icon {
+  font-size: 18px;
+}
+
+.excel-mode-btn .mode-name {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ==================== FPS 模式网格 ==================== */
+.excel-fps-cell {
+  padding: 8px;
+}
+
+.excel-fps-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.excel-fps-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 12px;
+  background: white;
+  border: 2px solid #d4d4d4;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Calibri', sans-serif;
+}
+
+.excel-fps-btn:hover {
+  border-color: #107c41;
+  background: #f0fdf4;
+}
+
+.excel-fps-btn.selected {
+  border-color: #107c41;
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: white;
+}
+
+.excel-fps-btn .fps-icon {
+  font-size: 16px;
+}
+
+.excel-fps-btn .fps-name {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* ==================== FPS 配置内联 ==================== */
+.excel-config-cell {
+  padding: 6px 8px;
+  background: #f9fafb;
+}
+
+.excel-inline-config {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.config-label {
+  font-size: 11px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.config-label-right {
+  margin-left: 16px;
+}
+
+/* ==================== 挑战关卡分组 ==================== */
+.excel-challenge-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+}
+
+.group-icon {
+  font-size: 14px;
+}
+
+.group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.excel-level-buttons {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.excel-level-btn {
+  width: 28px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Calibri', sans-serif;
+}
+
+.excel-level-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.excel-level-btn.beginner {
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.excel-level-btn.beginner:hover {
+  background: #22c55e;
+  color: white;
+}
+
+.excel-level-btn.intermediate {
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+.excel-level-btn.intermediate:hover {
+  background: #2563eb;
+  color: white;
+}
+
+.excel-level-btn.expert {
+  border-color: #dc2626;
+  color: #b91c1c;
+}
+
+.excel-level-btn.expert:hover {
+  background: #dc2626;
+  color: white;
+}
+
+/* ==================== 难度选择 ==================== */
+.excel-difficulty-cell {
+  padding: 6px 8px;
+}
+
+.excel-difficulty-grid {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.excel-difficulty-btn {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Calibri', sans-serif;
+}
+
+.excel-difficulty-btn:hover {
+  border-color: var(--diff-color);
+  background: color-mix(in srgb, var(--diff-color) 10%, white);
+}
+
+.excel-difficulty-btn.selected {
+  background: var(--diff-color);
+  color: white;
+  border-color: var(--diff-color);
+}
+
+/* ==================== 快捷导航 ==================== */
+.excel-nav-cell {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 8px;
+  background: #f9fafb;
+}
+
+.nav-hint {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.excel-nav-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.excel-nav-btn {
+  padding: 6px 14px;
+  background: white;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Calibri', sans-serif;
+}
+
+.excel-nav-btn:hover {
+  border-color: #107c41;
+  background: #f0fdf4;
+}
+
+/* ==================== 响应式布局 ==================== */
+@media (max-width: 768px) {
+  .excel-col-header {
+    min-width: 80px;
+  }
+
+  .excel-cell {
+    min-width: 80px;
+    padding: 4px 6px;
+  }
+
+  .excel-row-header {
+    width: 32px;
+    min-width: 32px;
+  }
+
+  .excel-corner-cell {
+    width: 32px;
+    min-width: 32px;
+  }
+
+  .excel-mode-grid {
+    gap: 4px;
+  }
+
+  .excel-mode-btn {
+    padding: 6px 10px;
+  }
+
+  .excel-fps-grid {
+    gap: 4px;
+  }
+
+  .excel-fps-btn {
+    padding: 4px 8px;
+  }
+
+  .excel-quick-buttons {
+    gap: 4px;
+  }
+
+  .excel-quick-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .excel-title-text {
+    font-size: 13px;
+  }
+
+  .excel-section-header {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .excel-difficulty-grid {
+    gap: 2px;
+  }
+
+  .excel-difficulty-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .excel-level-btn {
+    width: 24px;
+    height: 20px;
+    font-size: 10px;
+  }
+}
+
+/* ==================== 滚动条样式 ==================== */
+.excel-game-hub::-webkit-scrollbar {
+  width: 17px;
+  height: 17px;
+}
+
+.excel-game-hub::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-left: 1px solid #d4d4d4;
+  border-top: 1px solid #d4d4d4;
+}
+
+.excel-game-hub::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border: 1px solid #f0f0f0;
+}
+
+.excel-game-hub::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.excel-game-hub::-webkit-scrollbar-corner {
+  background: #f0f0f0;
+}

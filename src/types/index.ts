@@ -49,4 +49,4 @@ export type { CrosshairStyle, GamePreset, GameSettings } from './settings';
 export { GAME_PRESETS } from './settings';
 
 // 统计类型
-export type { ModeStat, GameStats, GameHistoryEntry, LevelDifficulty, LevelObjectiveType, LevelConfig } from './stats';
+export type { ModeStat, GameStats, GameHistoryEntry, LevelDifficulty, LevelObjectiveType, LevelConfig, ReactionTimeStats } from './stats';

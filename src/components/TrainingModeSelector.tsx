@@ -45,36 +45,37 @@ interface TrainingModeSelectorProps {
 }
 
 // 训练模式配置
+// 训练模式配置 - P0-2 已修复图标重复问题
 const TRAINING_MODES: { id: FPSTrainingMode; name: string; description: string; icon: string }[] = [
   {
     id: 'motion_track',
     name: '移动射击',
     description: '追踪移动目标，训练跟枪能力',
-    icon: '🎯',
+    icon: '🎯', // 目标追踪
   },
   {
     id: 'peek_shot',
     name: '拐角射击',
     description: '目标从掩体探头，训练预瞄反应',
-    icon: '👀',
+    icon: '👀', // 观察预瞄
   },
   {
     id: 'switch_track',
     name: '目标切换',
     description: '按优先级射击多个目标',
-    icon: '🔄',
+    icon: '🔄', // 切换顺序
   },
   {
     id: 'reaction',
     name: '反应测试',
     description: '测量纯反应时间',
-    icon: '⚡',
+    icon: '⚡', // 快速反应
   },
   {
     id: 'precision',
     name: '精准射击',
     description: '训练对微小目标的精准度',
-    icon: '🎯',
+    icon: '🔫', // 精准射击 (P0-2: 从🎯改为🔫避免与移动射击重复)
   },
 ];
 
