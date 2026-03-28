@@ -113,17 +113,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
 
   return (
     <div className="excel-grid-container">
-      {/* 退出按钮 */}
-      {onExit && (
-        <button
-          className="exit-game-btn"
-          onClick={onExit}
-          title="返回游戏中心"
-        >
-          ✕ 退出
-        </button>
-      )}
-
       {/* 游戏 HUD */}
       {gameState.isPlaying && !gameState.isPaused && (
         <GameHUD

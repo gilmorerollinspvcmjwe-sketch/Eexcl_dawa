@@ -29,6 +29,8 @@ export interface GameSettings {
   enemyRenderMode?: 'text' | 'icon';
   // 无色模式 - Excel风格
   colorlessMode?: boolean; // 无色模式，敌人显示为纯文字
+  // 伪装图片
+  coverImage?: string; // base64图片，用于隐藏时显示
   // 关卡进度
   unlockedLevels?: number[];
   credits?: number;

@@ -360,11 +360,8 @@ export function useGameLogic() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        toggleHidden();
-      }
-      if (e.key === 'F5' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        setIsHidden(false);
+        toggleHidden();
       }
       if (e.key === 'p' || e.key === 'P') {
         if (!isHidden && gameState.isPlaying) {

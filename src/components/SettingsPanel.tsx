@@ -628,13 +628,117 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 className="excel-cell" 
                 colSpan={7} 
                 style={{ 
+                  background: '#3b82f6', 
+                  color: 'white', 
+                  fontWeight: 'bold',
+                  paddingLeft: 8,
+                }}
+              >
+                🖼️ 老板键伪装图片
+              </td>
+            </tr>
+
+            <tr>
+              <td className="excel-row-header">25</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>上传伪装图片</td>
+              <td className="excel-cell" colSpan={4}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <label 
+                    style={{ 
+                      padding: '6px 12px',
+                      background: '#3b82f6',
+                      color: 'white',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      fontSize: 12,
+                    }}
+                  >
+                    📁 选择图片
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            updateSetting('coverImage', ev.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  {settings.coverImage && (
+                    <button
+                      onClick={() => updateSetting('coverImage', '')}
+                      style={{ 
+                        padding: '4px 8px',
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        fontSize: 11,
+                      }}
+                    >
+                      删除图片
+                    </button>
+                  )}
+                </div>
+              </td>
+              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
+                按 Esc 隐藏时显示此图片
+              </td>
+              <td className="excel-cell" />
+            </tr>
+
+            {settings.coverImage && (
+              <tr>
+                <td className="excel-row-header">26</td>
+                <td className="excel-cell" style={{ fontWeight: 500 }}>图片预览</td>
+                <td className="excel-cell" colSpan={5}>
+                  <div style={{ 
+                    maxWidth: 300, 
+                    maxHeight: 150, 
+                    border: '1px solid #d4d4d4',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    padding: 4,
+                    background: '#f9fafb',
+                  }}>
+                    <img 
+                      src={settings.coverImage} 
+                      alt="伪装图片预览" 
+                      style={{ maxWidth: '100%', maxHeight: 140, display: 'block' }}
+                    />
+                  </div>
+                </td>
+                <td className="excel-cell" />
+              </tr>
+            )}
+
+            <tr>
+              <td className="excel-row-header">27</td>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <td key={i} className="excel-cell" />
+              ))}
+            </tr>
+
+            <tr>
+              <td className="excel-row-header">28</td>
+              <td 
+                className="excel-cell" 
+                colSpan={7} 
+                style={{ 
                   background: '#f3f4f6', 
                   color: '#6b7280',
                   fontSize: 10,
                   paddingLeft: 8,
                 }}
               >
-                📝 操作说明：Esc = 紧急隐藏 | F5 = 恢复游戏 | P = 暂停 | 点击目标进行射击 | 左上角悬停 3 秒 = 快速隐藏
+                📝 操作说明：Esc = 隐藏/恢复游戏 | P = 暂停 | 点击目标进行射击 | 左上角悬停 3 秒 = 快速隐藏
               </td>
             </tr>
           </tbody>

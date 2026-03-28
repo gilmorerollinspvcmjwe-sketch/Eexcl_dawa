@@ -149,57 +149,82 @@ function AppContent() {
             flexDirection: 'column',
           }}
         >
-          <div 
-            style={{
-              display: 'flex',
-              background: '#f3f3f3',
-              borderBottom: '1px solid #d4d4d4',
-              padding: '4px 8px',
-              gap: 4,
-            }}
-          >
+          {settings.coverImage ? (
             <div 
               style={{
-                padding: '4px 12px',
-                fontSize: 11,
-                cursor: 'pointer',
-                borderRadius: 2,
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#f5f5f5',
+                overflow: 'auto',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f4ea'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              onClick={toggleHidden}
             >
-              文件
+              <img 
+                src={settings.coverImage} 
+                alt="Excel工作表" 
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                }}
+              />
             </div>
-            <div 
-              style={{
-                padding: '4px 12px',
-                fontSize: 11,
-                cursor: 'pointer',
-                borderRadius: 2,
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f4ea'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              onClick={toggleHidden}
-            >
-              打开
-            </div>
-          </div>
-          <div 
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#9ca3af',
-              fontSize: 14,
-            }}
-          >
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ marginBottom: 8 }}>📄 空白工作簿</p>
-              <p style={{ fontSize: 11, color: '#d1d5db' }}>按 F5 恢复游戏</p>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div 
+                style={{
+                  display: 'flex',
+                  background: '#f3f3f3',
+                  borderBottom: '1px solid #d4d4d4',
+                  padding: '4px 8px',
+                  gap: 4,
+                }}
+              >
+                <div 
+                  style={{
+                    padding: '4px 12px',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    borderRadius: 2,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#e6f4ea'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  onClick={toggleHidden}
+                >
+                  文件
+                </div>
+                <div 
+                  style={{
+                    padding: '4px 12px',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    borderRadius: 2,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#e6f4ea'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  onClick={toggleHidden}
+                >
+                  打开
+                </div>
+              </div>
+              <div 
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#9ca3af',
+                  fontSize: 14,
+                }}
+              >
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ marginBottom: 8 }}>📄 空白工作簿</p>
+                  <p style={{ fontSize: 11, color: '#d1d5db' }}>按 Esc 恢复游戏</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -211,6 +236,7 @@ function AppContent() {
         <ExcelHeader 
           isHidden={isHidden} 
           onToggleHidden={toggleHidden}
+          onExit={currentSheet === 'game' ? exitToHub : undefined}
           selectedCell={selectedCell}
         />
 

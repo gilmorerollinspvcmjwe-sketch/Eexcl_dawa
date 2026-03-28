@@ -3,17 +3,18 @@ import React from 'react';
 interface ExcelHeaderProps {
   isHidden: boolean;
   onToggleHidden: () => void;
+  onExit?: () => void;
   selectedCell?: { row: number; col: number } | null;
 }
 
 export const ExcelHeader: React.FC<ExcelHeaderProps> = ({ 
   isHidden, 
   onToggleHidden,
+  onExit,
   selectedCell,
 }) => {
   if (isHidden) return null;
 
-  // 生成列字母
   const getColLetter = (col: number): string => {
     let result = '';
     let n = col;
@@ -31,19 +32,24 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
 
   return (
     <div className="flex flex-col">
-      {/* 标题栏 */}
       <div className="excel-titlebar">
         <div className="excel-titlebar-left">
           <div className="excel-titlebar-logo">X</div>
           <span className="excel-titlebar-title">Microsoft Excel - 练枪数据.xlsx</span>
         </div>
         <div className="excel-titlebar-controls">
-          <button className="excel-titlebar-btn">─</button>
+          <button 
+            className="excel-titlebar-btn" 
+            onClick={onToggleHidden}
+            title="隐藏 (Esc)"
+          >
+            ─
+          </button>
           <button className="excel-titlebar-btn">□</button>
           <button 
             className="excel-titlebar-btn close"
-            onClick={onToggleHidden}
-            title="紧急隐藏 (Esc)"
+            onClick={onExit}
+            title="退出训练"
           >
             ✕
           </button>
