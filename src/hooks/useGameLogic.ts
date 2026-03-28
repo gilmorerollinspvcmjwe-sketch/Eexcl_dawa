@@ -1,10 +1,9 @@
 // 主游戏逻辑协调层 - 整合各子系统
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { GameMode, TimedDuration, HitEffect, LevelConfig, PartType } from '../types';
-import { TARGET_SCORES, DIFFICULTY_SETTINGS, COMBO_MULTIPLIERS } from '../types';
+import type { GameMode, TimedDuration, HitEffect, LevelConfig } from '../types';
+import { DIFFICULTY_SETTINGS, COMBO_MULTIPLIERS } from '../types';
 import { useGameState } from './useGameState';
-import { useTargetSystem } from './useTargetSystem';
 import { useMultiGridEnemy } from './useMultiGridEnemy';
 import { useStatsSystem } from './useStatsSystem';
 import { useSettings } from '../contexts/SettingsContext';
@@ -32,7 +31,7 @@ function getComboMultiplier(combo: number): number {
 export function useGameLogic() {
   const { settings } = useSettings();
   
-  // UI 状态 - 必须在 useTargetSystem 之前声明
+  // UI 状态
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [currentSheet, setCurrentSheet] = useState<'hub' | 'game' | 'stats' | 'settings'>('hub');
   const [isHidden, setIsHidden] = useState(false);
@@ -61,26 +60,7 @@ export function useGameLogic() {
     resetGameState,
     resetCombo,
     incrementClicks,
-    incrementHeadAppearances,
   } = useGameState(settings.headshotLineRow);
-
-  // 目标系统
-  const {
-    targets,
-    setTargets,
-    spawnTarget,
-    removeTarget,
-    clearTargets,
-  } = useTargetSystem({
-    isPlaying: gameState.isPlaying,
-    isPaused: gameState.isPaused,
-    isHidden: isHidden,
-    mode: gameState.mode,
-    difficulty: settings.difficulty,
-    targetDuration: settings.targetDuration,
-    headshotLineRow: gameState.headshotLineRow,
-    onHeadAppear: incrementHeadAppearances,
-  });
 
   // 多格敌人系统
   const {
@@ -103,24 +83,11 @@ export function useGameLogic() {
   // 统计系统
   const { stats, recordGameEnd } = useStatsSystem();
 
-  // 清理过期目标和特效
+  // 清理过期敌人和特效
   useEffect(() => {
     const cleanup = setInterval(() => {
       const now = Date.now();
       
-      // 清理过期目标
-      setTargets(prev => {
-        const expired = prev.filter(t => t.expiresAt && t.expiresAt < now);
-        if (expired.length > 0 && gameState.isPlaying && gameState.mode !== 'zen') {
-          setGameState(gs => ({
-            ...gs,
-            combo: 0,
-            misses: gs.misses + expired.length,
-          }));
-        }
-        return prev.filter(t => !t.expiresAt || t.expiresAt >= now);
-      });
-
       // 清理命中特效
       setHitEffects(prev => prev.filter(e => now - e.createdAt < HIT_EFFECT_DURATION_MS));
       
@@ -131,7 +98,7 @@ export function useGameLogic() {
     }, CLEANUP_INTERVAL_MS);
 
     return () => clearInterval(cleanup);
-  }, [gameState.isPlaying, gameState.mode, gameState.isPaused, setTargets, setGameState]);
+  }, [gameState.isPlaying, gameState.isPaused, updateEnemies]);
 
   // 游戏计时器（限时模式）
   useEffect(() => {
@@ -163,7 +130,7 @@ export function useGameLogic() {
     };
   }, [gameState.isPlaying, gameState.isPaused, gameState.mode]);
 
-  // 生成计时器
+  // 敌人生成计时器
   useEffect(() => {
     if (!gameState.isPlaying || gameState.isPaused || isHidden) {
       if (spawnTimerRef.current) {
@@ -173,38 +140,6 @@ export function useGameLogic() {
       return;
     }
 
-    // FPS 训练模式使用多格敌人系统
-    const useMultiGrid = ['motion_track', 'peek_shot', 'switch_track', 'reaction', 'precision', 'moving_target'].includes(gameState.mode);
-    
-    if (useMultiGrid) {
-      const scheduleNextSpawn = () => {
-        const interval = 2000 + Math.random() * 1000;
-        
-        spawnTimerRef.current = setTimeout(() => {
-          if (gameState.isPlaying && !gameState.isPaused && !isHidden) {
-            spawnEnemy({});
-            scheduleNextSpawn();
-          }
-        }, interval);
-      };
-
-      const initialSpawnTimer = setTimeout(() => {
-        if (!isHidden) {
-          spawnEnemy({});
-          scheduleNextSpawn();
-        }
-      }, INITIAL_SPAWN_DELAY_MS);
-
-      return () => {
-        clearTimeout(initialSpawnTimer);
-        if (spawnTimerRef.current) {
-          clearTimeout(spawnTimerRef.current);
-          spawnTimerRef.current = null;
-        }
-      };
-    }
-
-    // 经典模式使用简单目标系统
     const diffSettings = DIFFICULTY_SETTINGS[settings.difficulty];
     const [minInterval, maxInterval] = diffSettings.spawnInterval;
     
@@ -217,7 +152,7 @@ export function useGameLogic() {
       
       spawnTimerRef.current = setTimeout(() => {
         if (gameState.isPlaying && !gameState.isPaused && !isHidden) {
-          spawnTarget();
+          spawnEnemy({});
           scheduleNextSpawn();
         }
       }, interval);
@@ -225,7 +160,7 @@ export function useGameLogic() {
 
     const initialSpawnTimer = setTimeout(() => {
       if (!isHidden) {
-        spawnTarget();
+        spawnEnemy({});
         scheduleNextSpawn();
       }
     }, INITIAL_SPAWN_DELAY_MS);
@@ -237,13 +172,13 @@ export function useGameLogic() {
       }
       clearTimeout(initialSpawnTimer);
     };
-  }, [gameState.isPlaying, gameState.isPaused, isHidden, settings.difficulty, settings.spawnRate, spawnTarget, spawnEnemy, gameState.mode]);
+  }, [gameState.isPlaying, gameState.isPaused, isHidden, settings.difficulty, settings.spawnRate, spawnEnemy]);
 
   // 开始游戏
   const startGame = useCallback((mode: GameMode, duration?: TimedDuration, level?: number) => {
     gameStartTimeRef.current = Date.now();
     resetGameState(mode, duration, settings.headshotLineRow);
-    clearTargets();
+    clearEnemies();
     setHitEffects([]);
     setCurrentSheet('game');
     
@@ -259,7 +194,7 @@ export function useGameLogic() {
       setLevelConfig(null);
       setLevelStatus(null);
     }
-  }, [resetGameState, clearTargets, settings.headshotLineRow]);
+  }, [resetGameState, clearEnemies, settings.headshotLineRow]);
   
   // 开始 FPS 训练模式
   const startGameWithMode = useCallback((mode: FPSTrainingMode, config?: any) => {
@@ -269,10 +204,9 @@ export function useGameLogic() {
       setModeConfig(config);
     }
     
-    // 根据 FPS 模式和配置设置游戏参数
     const duration = config?.duration || 60;
     resetGameState('timed', duration as TimedDuration, settings.headshotLineRow);
-    clearTargets();
+    clearEnemies();
     setHitEffects([]);
     setCurrentSheet('game');
     
@@ -291,7 +225,7 @@ export function useGameLogic() {
     } else if (mode === 'precision' && config) {
       console.log(`Precision: targetScale=${config.targetScale}, targetCount=${config.targetCount}`);
     }
-  }, [resetGameState, clearTargets, settings.headshotLineRow]);
+  }, [resetGameState, clearEnemies, settings.headshotLineRow]);
 
   // 结束游戏
   const endGame = useCallback(() => {
@@ -325,8 +259,8 @@ export function useGameLogic() {
 
       return { ...prev, isPlaying: false };
     });
-    clearTargets();
-  }, [recordGameEnd, clearTargets, setGameState, levelConfig, currentLevel, gameState]);
+    clearEnemies();
+  }, [recordGameEnd, clearEnemies, setGameState, levelConfig, currentLevel, gameState]);
 
   // 处理点击
   const handleCellClick = useCallback((row: number, col: number) => {
@@ -336,7 +270,7 @@ export function useGameLogic() {
 
     incrementClicks();
 
-    // 先检查是否击中多格敌人
+    // 检查是否击中多格敌人
     const enemyHit = getEnemyAtPosition(row, col);
     if (enemyHit) {
       const { enemy, part } = enemyHit;
@@ -372,63 +306,23 @@ export function useGameLogic() {
       return;
     }
 
-    // 检查简单目标
-    const hitTarget = targets.find(t => t.row === row && t.col === col);
-
-    if (hitTarget) {
-      // 爆头线模式：只有头部命中计分
-      if (gameState.mode === 'headshot' && hitTarget.type !== 'head') {
-        removeTarget(hitTarget.id);
-        return;
-      }
-
-      // 命中
-      const baseScore = TARGET_SCORES[hitTarget.type];
-      const newCombo = gameState.combo + 1;
-      const multiplier = getComboMultiplier(newCombo);
-      const earnedScore = Math.floor(baseScore * multiplier);
-
-      // 添加命中特效
-      const effect: HitEffect = {
-        id: `${Date.now()}-${Math.random()}`,
-        row,
-        col,
-        score: earnedScore,
-        isCombo: newCombo >= 5,
-        isHeadshot: hitTarget.type === 'head',
-        createdAt: Date.now(),
-      };
-      setHitEffects(prev => [...prev, effect]);
-
-      setGameState(prev => ({
-        ...prev,
-        score: prev.score + earnedScore,
-        combo: newCombo,
-        maxCombo: Math.max(prev.maxCombo, newCombo),
-        hits: prev.hits + 1,
-        headHits: hitTarget.type === 'head' ? prev.headHits + 1 : prev.headHits,
-      }));
-
-      removeTarget(hitTarget.id);
+    // Miss
+    if (gameState.mode === 'endless') {
+      setGameState(prev => {
+        const newMisses = prev.misses + 1;
+        if (newMisses >= 3) {
+          endGame();
+        }
+        return {
+          ...prev,
+          misses: newMisses,
+          combo: 0,
+        };
+      });
     } else {
-      // Miss
-      if (gameState.mode === 'endless') {
-        setGameState(prev => {
-          const newMisses = prev.misses + 1;
-          if (newMisses >= 3) {
-            endGame();
-          }
-          return {
-            ...prev,
-            misses: newMisses,
-            combo: 0,
-          };
-        });
-      } else {
-        resetCombo();
-      }
+      resetCombo();
     }
-  }, [gameState, targets, incrementClicks, removeTarget, endGame, resetCombo, setGameState, getEnemyAtPosition, hitPart, removeEnemy]);
+  }, [gameState, incrementClicks, endGame, resetCombo, setGameState, getEnemyAtPosition, hitPart, removeEnemy]);
 
   // 处理单元格悬停
   const handleCellHover = useCallback((row: number, col: number) => {
@@ -500,7 +394,7 @@ export function useGameLogic() {
 
   return {
     gameState,
-    targets,
+    targets: [], // 保留接口兼容，但返回空数组
     selectedCell,
     currentSheet,
     isHidden,
