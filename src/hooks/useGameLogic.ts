@@ -1,7 +1,7 @@
 // 主游戏逻辑协调层 - 整合各子系统
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { GameMode, TimedDuration, HitEffect, LevelConfig } from '../types';
+import type { GameMode, TimedDuration, HitEffect, LevelConfig, MultiGridEnemy, EnemyPart } from '../types';
 import { DIFFICULTY_SETTINGS, COMBO_MULTIPLIERS } from '../types';
 import { useGameState } from './useGameState';
 import { useMultiGridEnemy } from './useMultiGridEnemy';
@@ -270,8 +270,26 @@ export function useGameLogic() {
 
     incrementClicks();
 
-    // 检查是否击中多格敌人
-    const enemyHit = getEnemyAtPosition(row, col);
+    // 直接在 multiGridEnemies 中查找
+    let enemyHit: { enemy: MultiGridEnemy; part: EnemyPart } | null = null;
+    
+    for (const enemy of multiGridEnemies) {
+      if (!enemy.isAlive) continue;
+      
+      for (const part of enemy.parts) {
+        if (part.state === 'destroyed') continue;
+        
+        const partRow = Math.round(enemy.anchorRow + part.relativeRow);
+        const partCol = Math.round(enemy.anchorCol + part.relativeCol);
+        
+        if (partRow === row && partCol === col) {
+          enemyHit = { enemy, part };
+          break;
+        }
+      }
+      if (enemyHit) break;
+    }
+    
     if (enemyHit) {
       const { enemy, part } = enemyHit;
       const result = hitPart(enemy.id, part.type, gameState.combo);
@@ -322,7 +340,7 @@ export function useGameLogic() {
     } else {
       resetCombo();
     }
-  }, [gameState, incrementClicks, endGame, resetCombo, setGameState, getEnemyAtPosition, hitPart, removeEnemy]);
+  }, [gameState, multiGridEnemies, incrementClicks, endGame, resetCombo, setGameState, hitPart, removeEnemy]);
 
   // 处理单元格悬停
   const handleCellHover = useCallback((row: number, col: number) => {
