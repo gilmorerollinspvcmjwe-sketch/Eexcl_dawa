@@ -1,7 +1,7 @@
 // 主游戏逻辑协调层 - 整合各子系统
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { GameMode, TimedDuration, HitEffect } from '../types';
+import type { GameMode, TimedDuration, HitEffect, LevelConfig } from '../types';
 import { TARGET_SCORES, DIFFICULTY_SETTINGS, COMBO_MULTIPLIERS } from '../types';
 import { useGameState } from './useGameState';
 import { useTargetSystem } from './useTargetSystem';
@@ -15,6 +15,7 @@ import {
   HIT_EFFECT_DURATION_MS, 
   CORNER_HIDE_DELAY_MS 
 } from '../constants';
+import { generateLevel, checkLevelCompletion } from '../levelGenerator';
 
 // 连击倍率计算
 function getComboMultiplier(combo: number): number {
@@ -41,6 +42,11 @@ export function useGameLogic() {
   // FPS 训练模式状态
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
   const [modeConfig, setModeConfig] = useState<any>({});
+  
+  // 关卡系统状态
+  const [currentLevel, setCurrentLevel] = useState<number | null>(null);
+  const [levelConfig, setLevelConfig] = useState<LevelConfig | null>(null);
+  const [levelStatus, setLevelStatus] = useState<'playing' | 'completed' | 'failed' | null>(null);
 
   // 计时器引用
   const spawnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -186,8 +192,17 @@ export function useGameLogic() {
     setHitEffects([]);
     setCurrentSheet('game');
     
+    // 关卡模式
     if (level) {
-      console.log(`Starting level ${level} in ${mode} mode`);
+      const config = generateLevel(level as any);
+      setCurrentLevel(level);
+      setLevelConfig(config);
+      setLevelStatus('playing');
+      console.log(`Starting level ${level}:`, config.objectives);
+    } else {
+      setCurrentLevel(null);
+      setLevelConfig(null);
+      setLevelStatus(null);
     }
   }, [resetGameState, clearTargets, settings.headshotLineRow]);
   
@@ -198,16 +213,48 @@ export function useGameLogic() {
     if (config) {
       setModeConfig(config);
     }
-    // 根据 FPS 模式设置游戏参数
-    resetGameState('timed', config?.duration || 60, settings.headshotLineRow);
+    
+    // 根据 FPS 模式和配置设置游戏参数
+    const duration = config?.duration || 60;
+    resetGameState('timed', duration as TimedDuration, settings.headshotLineRow);
     clearTargets();
     setHitEffects([]);
     setCurrentSheet('game');
+    
+    // 清除关卡状态
+    setCurrentLevel(null);
+    setLevelConfig(null);
+    setLevelStatus(null);
+    
+    // 应用 FPS 模式特定配置
+    if (mode === 'motion_track' && config) {
+      console.log(`Motion Track: speed=${config.speed}, pattern=${config.pattern}`);
+    } else if (mode === 'peek_shot' && config) {
+      console.log(`Peek Shot: duration=${config.duration}, interval=${config.interval}`);
+    } else if (mode === 'switch_track' && config) {
+      console.log(`Switch Track: targetCount=${config.targetCount}, showPriority=${config.showPriority}`);
+    } else if (mode === 'precision' && config) {
+      console.log(`Precision: targetScale=${config.targetScale}, targetCount=${config.targetCount}`);
+    }
   }, [resetGameState, clearTargets, settings.headshotLineRow]);
 
   // 结束游戏
   const endGame = useCallback(() => {
     const gameDuration = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
+    
+    // 检查关卡完成状态
+    if (levelConfig && currentLevel) {
+      const result = checkLevelCompletion(levelConfig, {
+        score: gameState.score,
+        hits: gameState.hits,
+        totalClicks: gameState.totalClicks,
+        maxCombo: gameState.maxCombo,
+        headHits: gameState.headHits,
+        timeRemaining: gameState.timeRemaining,
+      });
+      setLevelStatus(result.completed ? 'completed' : (result.failed ? 'failed' : 'failed'));
+      console.log(`Level ${currentLevel} ${result.completed ? 'completed!' : 'failed'}`, result.message);
+    }
     
     setGameState(prev => {
       recordGameEnd({
@@ -224,7 +271,7 @@ export function useGameLogic() {
       return { ...prev, isPlaying: false };
     });
     clearTargets();
-  }, [recordGameEnd, clearTargets, setGameState]);
+  }, [recordGameEnd, clearTargets, setGameState, levelConfig, currentLevel, gameState]);
 
   // 处理点击
   const handleCellClick = useCallback((row: number, col: number) => {
@@ -386,5 +433,9 @@ export function useGameLogic() {
     modeConfig,
     setModeConfig,
     multiGridEnemies: [],
+    // 关卡系统
+    currentLevel,
+    levelConfig,
+    levelStatus,
   };
 }

@@ -40,6 +40,9 @@ function AppContent() {
     COLS,
     ROWS,
     multiGridEnemies,
+    currentLevel,
+    levelConfig,
+    levelStatus,
   } = useGameLogic();
 
   const handleResetStats = () => {
@@ -246,6 +249,9 @@ function AppContent() {
               togglePause={togglePause}
               soundEnabled={settings.soundEnabled}
               multiGridEnemies={multiGridEnemies}
+              currentLevel={currentLevel}
+              levelConfig={levelConfig}
+              levelStatus={levelStatus}
             />
           ) : currentSheet === 'stats' ? (
             // Sheet3: 统计

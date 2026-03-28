@@ -1,7 +1,7 @@
 // Excel 表格网格组件 - 整合各子组件
 
 import React from 'react';
-import type { Target, HitEffect, MultiGridEnemy } from '../types';
+import type { Target, HitEffect, MultiGridEnemy, LevelConfig } from '../types';
 import { playHitSound, playMissSound } from '../utils/soundUtils';
 import { GridTable, HitEffectRenderer, GameHUD, PauseOverlay } from './grid';
 
@@ -22,6 +22,10 @@ interface ExcelGridProps {
     mode: string;
     misses: number;
     headshotLineRow?: number;
+    hits?: number;
+    totalClicks?: number;
+    maxCombo?: number;
+    headHits?: number;
   };
   headshotLineEnabled?: boolean;
   headshotLineRow?: number;
@@ -34,6 +38,10 @@ interface ExcelGridProps {
   enemyRenderMode?: 'text' | 'icon';
   showEnemyPriority?: boolean;
   showEnemyHp?: boolean;
+  // 关卡系统
+  currentLevel?: number | null;
+  levelConfig?: LevelConfig | null;
+  levelStatus?: 'playing' | 'completed' | 'failed' | null;
 }
 
 export const ExcelGrid: React.FC<ExcelGridProps> = ({
@@ -56,6 +64,10 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   enemyRenderMode = 'text',
   showEnemyPriority = true,
   showEnemyHp = true,
+  // 关卡系统
+  currentLevel,
+  levelConfig,
+  levelStatus,
 }) => {
   // 处理 miss 音效
   const handleMiss = () => {
@@ -99,6 +111,64 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
           misses={gameState.misses}
           headshotLineRow={headshotLineRow}
         />
+      )}
+
+      {/* 关卡进度显示 */}
+      {currentLevel && levelConfig && gameState.isPlaying && !gameState.isPaused && (
+        <div className="level-progress-hud">
+          <div className="level-header">
+            <span className="level-badge">关卡 {currentLevel}</span>
+            <span className="level-difficulty">{levelConfig.difficulty <= 3 ? '新手' : levelConfig.difficulty <= 6 ? '进阶' : levelConfig.difficulty <= 9 ? '熟练' : '专家'}</span>
+          </div>
+          <div className="level-objectives">
+            {levelConfig.objectives.map((obj, idx) => {
+              let current = 0;
+              let isComplete = false;
+              
+              switch (obj.type) {
+                case 'minScore':
+                  current = gameState.score;
+                  isComplete = current >= obj.target;
+                  break;
+                case 'accuracy':
+                  current = gameState.totalClicks && gameState.hits ? Math.round((gameState.hits / gameState.totalClicks) * 100) : 0;
+                  isComplete = current >= obj.target;
+                  break;
+                case 'combo':
+                  current = gameState.maxCombo || 0;
+                  isComplete = current >= obj.target;
+                  break;
+                case 'headshotCount':
+                  current = gameState.headHits || 0;
+                  isComplete = current >= obj.target;
+                  break;
+                case 'timeLimit':
+                  current = gameState.timeRemaining;
+                  isComplete = current > 0;
+                  break;
+              }
+              
+              return (
+                <div key={idx} className={`objective ${isComplete ? 'complete' : ''}`}>
+                  <span className="obj-icon">{isComplete ? '✓' : '○'}</span>
+                  <span className="obj-text">{obj.description}</span>
+                  <span className="obj-progress">{current.toLocaleString()}/{obj.target.toLocaleString()}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 关卡完成/失败覆盖层 */}
+      {levelStatus && levelStatus !== 'playing' && (
+        <div className={`level-result-overlay ${levelStatus}`}>
+          <div className="level-result-content">
+            <h2>{levelStatus === 'completed' ? '🎉 关卡完成!' : '💔 关卡失败'}</h2>
+            <p>关卡 {currentLevel}</p>
+            <div className="final-score">得分: {gameState.score.toLocaleString()}</div>
+          </div>
+        </div>
       )}
 
       {/* 暂停覆盖层 */}
