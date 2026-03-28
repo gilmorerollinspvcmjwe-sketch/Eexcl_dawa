@@ -158,48 +158,64 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
 
   const hitPart = useCallback((enemyId: string, partType: PartType, combo: number): PartHitResult | null => {
     let result: PartHitResult | null = null;
+    let foundEnemy: MultiGridEnemy | null = null;
+    let partIndex = -1;
 
+    // 先同步查找敌人和部位
+    for (const enemy of enemies) {
+      if (enemy.id === enemyId && enemy.isAlive) {
+        const idx = enemy.parts.findIndex(p => p.type === partType && p.state !== 'destroyed');
+        if (idx !== -1) {
+          foundEnemy = enemy;
+          partIndex = idx;
+          break;
+        }
+      }
+    }
+
+    if (!foundEnemy || partIndex === -1) return null;
+
+    const part = foundEnemy.parts[partIndex];
+    const newHp = part.currentHp - 1;
+    
+    let newState: PartState = 'normal';
+    if (newHp <= 0) {
+      newState = 'destroyed';
+    } else if (newHp === 1) {
+      newState = 'critical';
+    } else {
+      newState = 'damaged';
+    }
+
+    const baseScore = PART_SCORES[partType];
+    const comboMultiplier = getComboMultiplier(combo + 1);
+    const score = Math.floor(baseScore * comboMultiplier);
+
+    const isDestroyed = newState === 'destroyed';
+    const headDestroyed = partType === 'head' && isDestroyed;
+    const allDestroyed = foundEnemy.parts.every((p, i) => 
+      i === partIndex ? newState === 'destroyed' : p.state === 'destroyed'
+    );
+    const isEnemyDead = headDestroyed || allDestroyed;
+
+    result = {
+      partType,
+      damage: 1,
+      isDestroyed,
+      isEnemyDead,
+      score,
+      combo: combo + 1,
+    };
+
+    // 更新状态
     setEnemies(prev => prev.map(enemy => {
       if (enemy.id !== enemyId || !enemy.isAlive) return enemy;
-
-      const partIndex = enemy.parts.findIndex(p => p.type === partType && p.state !== 'destroyed');
-      if (partIndex === -1) return enemy;
-
-      const part = enemy.parts[partIndex];
-      const newHp = part.currentHp - 1;
-      
-      let newState: PartState = 'normal';
-      if (newHp <= 0) {
-        newState = 'destroyed';
-      } else if (newHp === 1) {
-        newState = 'critical';
-      } else {
-        newState = 'damaged';
-      }
 
       const updatedParts = [...enemy.parts];
       updatedParts[partIndex] = {
         ...part,
         currentHp: Math.max(0, newHp),
         state: newState,
-      };
-
-      const baseScore = PART_SCORES[partType];
-      const comboMultiplier = getComboMultiplier(combo + 1);
-      const score = Math.floor(baseScore * comboMultiplier);
-
-      const isDestroyed = newState === 'destroyed';
-      const headDestroyed = partType === 'head' && isDestroyed;
-      const allDestroyed = updatedParts.every(p => p.state === 'destroyed');
-      const isEnemyDead = headDestroyed || allDestroyed;
-
-      result = {
-        partType,
-        damage: 1,
-        isDestroyed,
-        isEnemyDead,
-        score,
-        combo: combo + 1,
       };
 
       return {
@@ -214,7 +230,7 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     }));
 
     return result;
-  }, []);
+  }, [enemies]);
 
   const removeEnemy = useCallback((id: string) => {
     setEnemies(prev => prev.filter(e => e.id !== id));
