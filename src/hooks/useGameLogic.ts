@@ -125,11 +125,13 @@ export function useGameLogic() {
       setHitEffects(prev => prev.filter(e => now - e.createdAt < HIT_EFFECT_DURATION_MS));
       
       // 更新多格敌人
-      updateEnemies(0.1);
+      if (gameState.isPlaying && !gameState.isPaused) {
+        updateEnemies(0.1);
+      }
     }, CLEANUP_INTERVAL_MS);
 
     return () => clearInterval(cleanup);
-  }, [gameState.isPlaying, gameState.mode, setTargets, setGameState, updateEnemies]);
+  }, [gameState.isPlaying, gameState.mode, gameState.isPaused, setTargets, setGameState]);
 
   // 游戏计时器（限时模式）
   useEffect(() => {
