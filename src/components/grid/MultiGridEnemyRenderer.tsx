@@ -167,8 +167,6 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   showHp = true,
   onPartClick,
 }) => {
-  if (!enemy.isAlive) return null;
-
   // 探头状态时隐藏
   if (enemy.peekState === 'hidden') return null;
 
@@ -185,9 +183,12 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   const baseLeft = (enemy.anchorCol - 2) * cellWidth + offsetX;
   const baseTop = (enemy.anchorRow - 1) * cellHeight + offsetY;
 
+  // 死亡状态动画
+  const isDying = enemy.state === 'dying' || !enemy.isAlive;
+
   return (
     <div
-      className="multi-grid-enemy"
+      className={`multi-grid-enemy ${isDying ? 'enemy-dying' : ''}`}
       data-enemy-id={enemy.id}
       style={{
         position: 'absolute',
@@ -195,15 +196,18 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
         top: baseTop,
         pointerEvents: 'none',
         zIndex: 10,
+        opacity: isDying ? 0 : 1,
+        transform: isDying ? 'scale(1.2)' : 'scale(1)',
+        transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
       }}
     >
       {/* 优先级标签 */}
-      {showPriority && enemy.priority && (
+      {showPriority && enemy.priority && !isDying && (
         <PriorityLabel priority={enemy.priority} />
       )}
 
       {/* 生命值条 */}
-      <HealthBar enemy={enemy} />
+      {!isDying && <HealthBar enemy={enemy} />}
 
       {/* 部位渲染 */}
       {enemy.parts.map((part, index) => {

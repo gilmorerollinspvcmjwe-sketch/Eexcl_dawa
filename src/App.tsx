@@ -59,14 +59,7 @@ function AppContent() {
     level?: number,
     difficulty?: any
   ) => {
-    if (difficulty && difficulty !== settings.difficulty) {
-      updateSetting('difficulty', difficulty);
-    }
-    if (mode === 'part_training' && level) {
-      startGame(mode, duration, level);
-    } else {
-      startGame(mode, duration);
-    }
+    startGame(mode, duration, level, difficulty);
   };
 
   // 从 GameHub 启动 FPS 训练

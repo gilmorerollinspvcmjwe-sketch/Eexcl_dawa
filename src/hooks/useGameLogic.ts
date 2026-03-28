@@ -18,7 +18,6 @@ import {
 import { generateLevel, checkLevelCompletion } from '../levelGenerator';
 import type { FPSTrainingMode } from '../components/TrainingModeSelector';
 
-// 连击倍率计算
 function getComboMultiplier(combo: number): number {
   for (let i = COMBO_MULTIPLIERS.length - 1; i >= 0; i--) {
     if (combo >= COMBO_MULTIPLIERS[i].threshold) {
@@ -29,31 +28,27 @@ function getComboMultiplier(combo: number): number {
 }
 
 export function useGameLogic() {
-  const { settings } = useSettings();
+  const { settings, updateSetting } = useSettings();
   
-  // UI 状态
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [currentSheet, setCurrentSheet] = useState<'hub' | 'game' | 'stats' | 'settings'>('hub');
   const [isHidden, setIsHidden] = useState(false);
   const [hoverCorner, setHoverCorner] = useState(false);
   const [hitEffects, setHitEffects] = useState<HitEffect[]>([]);
   
-  // FPS 训练模式状态
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
   const [modeConfig, setModeConfig] = useState<any>({});
   
-  // 关卡系统状态
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [levelConfig, setLevelConfig] = useState<LevelConfig | null>(null);
   const [levelStatus, setLevelStatus] = useState<'playing' | 'completed' | 'failed' | null>(null);
 
-  // 计时器引用
   const spawnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cornerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameStartTimeRef = useRef<number>(0);
   const gameTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingDifficultyRef = useRef<string | null>(null);
 
-  // 游戏状态管理
   const {
     gameState,
     setGameState,
@@ -62,7 +57,6 @@ export function useGameLogic() {
     incrementClicks,
   } = useGameState(settings.headshotLineRow);
 
-  // 多格敌人系统
   const {
     enemies: multiGridEnemies,
     spawnEnemy,
@@ -70,7 +64,7 @@ export function useGameLogic() {
     removeEnemy,
     clearEnemies,
     updateEnemies,
-    getEnemyAtPosition,
+    setFPSConfig,
   } = useMultiGridEnemy({
     isPlaying: gameState.isPlaying,
     isPaused: gameState.isPaused,
@@ -80,18 +74,14 @@ export function useGameLogic() {
     movePattern: settings.enemyMovePattern,
   });
 
-  // 统计系统
   const { stats, recordGameEnd } = useStatsSystem();
 
-  // 清理过期敌人和特效
   useEffect(() => {
     const cleanup = setInterval(() => {
       const now = Date.now();
       
-      // 清理命中特效
       setHitEffects(prev => prev.filter(e => now - e.createdAt < HIT_EFFECT_DURATION_MS));
       
-      // 更新多格敌人
       if (gameState.isPlaying && !gameState.isPaused) {
         updateEnemies(0.1);
       }
@@ -100,7 +90,6 @@ export function useGameLogic() {
     return () => clearInterval(cleanup);
   }, [gameState.isPlaying, gameState.isPaused, updateEnemies]);
 
-  // 游戏计时器（限时模式）
   useEffect(() => {
     if (!gameState.isPlaying || gameState.isPaused) {
       if (gameTimerRef.current) {
@@ -130,7 +119,6 @@ export function useGameLogic() {
     };
   }, [gameState.isPlaying, gameState.isPaused, gameState.mode]);
 
-  // 敌人生成计时器
   useEffect(() => {
     if (!gameState.isPlaying || gameState.isPaused || isHidden) {
       if (spawnTimerRef.current) {
@@ -174,34 +162,36 @@ export function useGameLogic() {
     };
   }, [gameState.isPlaying, gameState.isPaused, isHidden, settings.difficulty, settings.spawnRate, spawnEnemy]);
 
-  // 开始游戏
-  const startGame = useCallback((mode: GameMode, duration?: TimedDuration, level?: number) => {
+  const startGame = useCallback((mode: GameMode, duration?: TimedDuration, level?: number, difficulty?: string) => {
     gameStartTimeRef.current = Date.now();
+    
+    if (difficulty && difficulty !== settings.difficulty) {
+      updateSetting('difficulty', difficulty as any);
+    }
+    
     resetGameState(mode, duration, settings.headshotLineRow);
     clearEnemies();
     setHitEffects([]);
     setCurrentSheet('game');
     
-    // 关卡模式
     if (level) {
       const config = generateLevel(level as any);
       setCurrentLevel(level);
       setLevelConfig(config);
       setLevelStatus('playing');
-      console.log(`Starting level ${level}:`, config.objectives);
     } else {
       setCurrentLevel(null);
       setLevelConfig(null);
       setLevelStatus(null);
     }
-  }, [resetGameState, clearEnemies, settings.headshotLineRow]);
+  }, [resetGameState, clearEnemies, settings.headshotLineRow, settings.difficulty, updateSetting]);
   
-  // 开始 FPS 训练模式
   const startGameWithMode = useCallback((mode: FPSTrainingMode, config?: any) => {
     gameStartTimeRef.current = Date.now();
     setCurrentMode(mode);
     if (config) {
       setModeConfig(config);
+      setFPSConfig(config);
     }
     
     const duration = config?.duration || 60;
@@ -210,28 +200,14 @@ export function useGameLogic() {
     setHitEffects([]);
     setCurrentSheet('game');
     
-    // 清除关卡状态
     setCurrentLevel(null);
     setLevelConfig(null);
     setLevelStatus(null);
-    
-    // 应用 FPS 模式特定配置
-    if (mode === 'motion_track' && config) {
-      console.log(`Motion Track: speed=${config.speed}, pattern=${config.pattern}`);
-    } else if (mode === 'peek_shot' && config) {
-      console.log(`Peek Shot: duration=${config.duration}, interval=${config.interval}`);
-    } else if (mode === 'switch_track' && config) {
-      console.log(`Switch Track: targetCount=${config.targetCount}, showPriority=${config.showPriority}`);
-    } else if (mode === 'precision' && config) {
-      console.log(`Precision: targetScale=${config.targetScale}, targetCount=${config.targetCount}`);
-    }
-  }, [resetGameState, clearEnemies, settings.headshotLineRow]);
+  }, [resetGameState, clearEnemies, settings.headshotLineRow, setFPSConfig]);
 
-  // 结束游戏
   const endGame = useCallback(() => {
     const gameDuration = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
     
-    // 检查关卡完成状态
     if (levelConfig && currentLevel) {
       const result = checkLevelCompletion(levelConfig, {
         score: gameState.score,
@@ -242,7 +218,6 @@ export function useGameLogic() {
         timeRemaining: gameState.timeRemaining,
       });
       setLevelStatus(result.completed ? 'completed' : (result.failed ? 'failed' : 'failed'));
-      console.log(`Level ${currentLevel} ${result.completed ? 'completed!' : 'failed'}`, result.message);
     }
     
     setGameState(prev => {
@@ -262,7 +237,6 @@ export function useGameLogic() {
     clearEnemies();
   }, [recordGameEnd, clearEnemies, setGameState, levelConfig, currentLevel, gameState]);
 
-  // 处理点击
   const handleCellClick = useCallback((row: number, col: number) => {
     setSelectedCell({ row, col });
     
@@ -270,7 +244,6 @@ export function useGameLogic() {
 
     incrementClicks();
 
-    // 直接在 multiGridEnemies 中查找
     let enemyHit: { enemy: MultiGridEnemy; part: EnemyPart } | null = null;
     
     for (const enemy of multiGridEnemies) {
@@ -295,7 +268,6 @@ export function useGameLogic() {
       const result = hitPart(enemy.id, part.type, gameState.combo);
       
       if (result) {
-        // 添加命中特效
         const effect: HitEffect = {
           id: `${Date.now()}-${Math.random()}`,
           row,
@@ -316,15 +288,13 @@ export function useGameLogic() {
           headHits: result.partType === 'head' ? prev.headHits + 1 : prev.headHits,
         }));
 
-        // 敌人死亡时移除
         if (result.isEnemyDead) {
-          removeEnemy(enemy.id);
+          setTimeout(() => removeEnemy(enemy.id), 500);
         }
       }
       return;
     }
 
-    // Miss
     if (gameState.mode === 'endless') {
       setGameState(prev => {
         const newMisses = prev.misses + 1;
@@ -342,29 +312,24 @@ export function useGameLogic() {
     }
   }, [gameState, multiGridEnemies, incrementClicks, endGame, resetCombo, setGameState, hitPart, removeEnemy]);
 
-  // 处理单元格悬停
   const handleCellHover = useCallback((row: number, col: number) => {
     setSelectedCell({ row, col });
   }, []);
 
-  // 切换工作表
   const switchSheet = useCallback((sheet: 'game' | 'stats' | 'settings') => {
     setCurrentSheet(sheet);
   }, []);
 
-  // 紧急隐藏
   const toggleHidden = useCallback(() => {
     setIsHidden(prev => !prev);
   }, []);
 
-  // 暂停/继续游戏
   const togglePause = useCallback(() => {
     if (gameState.isPlaying) {
       setGameState(prev => ({ ...prev, isPaused: !prev.isPaused }));
     }
   }, [gameState.isPlaying, setGameState]);
 
-  // 检测左上角悬停
   const handleCornerEnter = useCallback(() => {
     setHoverCorner(true);
     cornerTimerRef.current = setTimeout(() => {
@@ -380,7 +345,6 @@ export function useGameLogic() {
     }
   }, []);
 
-  // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -401,7 +365,6 @@ export function useGameLogic() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toggleHidden, togglePause, isHidden, gameState.isPlaying]);
 
-  // 清理
   useEffect(() => {
     return () => {
       if (spawnTimerRef.current) clearTimeout(spawnTimerRef.current);
@@ -412,7 +375,7 @@ export function useGameLogic() {
 
   return {
     gameState,
-    targets: [], // 保留接口兼容，但返回空数组
+    targets: [],
     selectedCell,
     currentSheet,
     isHidden,
@@ -431,15 +394,12 @@ export function useGameLogic() {
     handleCornerLeave,
     COLS,
     ROWS,
-    // FPS 训练模式
     currentMode,
     setCurrentMode,
     modeConfig,
     setModeConfig,
-    // 多格敌人
     multiGridEnemies,
     spawnEnemy,
-    // 关卡系统
     currentLevel,
     levelConfig,
     levelStatus,

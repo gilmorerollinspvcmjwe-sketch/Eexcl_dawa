@@ -1,6 +1,6 @@
 // 多格敌人管理 Hook
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { 
   MultiGridEnemy, 
   EnemyPart, 
@@ -43,14 +43,26 @@ interface SpawnOptions {
   priority?: Priority;
   movePattern?: MovePattern;
   peekDirection?: 'left' | 'right';
+  moveSpeed?: number;
+  peekDuration?: number;
+  targetScale?: number;
 }
 
-// 生成唯一 ID
+interface FPSModeConfig {
+  speed?: 'slow' | 'normal' | 'fast' | 'extreme';
+  pattern?: MovePattern;
+  duration?: number;
+  interval?: number;
+  targetCount?: number;
+  showPriority?: boolean;
+  targetScale?: number;
+}
+
+let enemyIdCounter = 0;
 function generateId(): string {
-  return `enemy-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `enemy-${Date.now()}-${++enemyIdCounter}`;
 }
 
-// 创建敌人部位
 function createPart(partType: PartType, relativeRow: number, relativeCol: number): EnemyPart {
   return {
     type: partType,
@@ -62,7 +74,6 @@ function createPart(partType: PartType, relativeRow: number, relativeCol: number
   };
 }
 
-// 创建完整人形敌人
 function createHumanoidEnemy(options: SpawnOptions): MultiGridEnemy {
   const parts: EnemyPart[] = HUMANOID_PART_POSITIONS.map(({ part, relativeRow, relativeCol }) => 
     createPart(part, relativeRow, relativeCol)
@@ -82,29 +93,54 @@ function createHumanoidEnemy(options: SpawnOptions): MultiGridEnemy {
     spawnTime: Date.now(),
     timeLimit: options.priority ? PRIORITY_CONFIG[options.priority].timeLimit : undefined,
     movePattern: options.movePattern ?? 'static',
+    moveSpeed: options.moveSpeed ?? 1.0,
     peekDirection: options.peekDirection,
+    peekDuration: options.peekDuration,
   };
 }
+
+const SPEED_MAP = {
+  slow: 0.5,
+  normal: 1.0,
+  fast: 1.5,
+  extreme: 2.5,
+};
 
 export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEnemyReturn {
   const { isPlaying, isPaused, mode, moveSpeed = 1.0, movePattern = 'linear' } = props;
   
   const [enemies, setEnemies] = useState<MultiGridEnemy[]>([]);
+  const fpsConfigRef = useRef<FPSModeConfig>({});
 
-  // 生成敌人
+  const setFPSConfig = useCallback((config: FPSModeConfig) => {
+    fpsConfigRef.current = config;
+  }, []);
+
   const spawnEnemy = useCallback((options?: SpawnOptions) => {
     if (!isPlaying || isPaused) return;
 
+    const config = fpsConfigRef.current;
+    const finalOptions: SpawnOptions = { ...options };
+
+    if (config.speed) {
+      finalOptions.moveSpeed = SPEED_MAP[config.speed] ?? 1.0;
+    }
+    if (config.pattern) {
+      finalOptions.movePattern = config.pattern;
+    }
+    if (config.targetScale) {
+      finalOptions.targetScale = config.targetScale;
+    }
+
     const enemy = createHumanoidEnemy({
-      ...options,
-      anchorRow: options?.anchorRow ?? (5 + Math.floor(Math.random() * (ROWS - 10))),
-      anchorCol: options?.anchorCol ?? (5 + Math.floor(Math.random() * (COLS - 10))),
+      ...finalOptions,
+      anchorRow: finalOptions.anchorRow ?? (8 + Math.floor(Math.random() * (ROWS - 16))),
+      anchorCol: finalOptions.anchorCol ?? (8 + Math.floor(Math.random() * (COLS - 16))),
     });
 
-    // 根据模式设置
-    if (mode === 'moving_target') {
-      enemy.movePattern = movePattern;
-      enemy.moveSpeed = moveSpeed;
+    if (mode === 'moving_target' || mode === 'motion_track') {
+      enemy.movePattern = finalOptions.movePattern ?? movePattern;
+      enemy.moveSpeed = finalOptions.moveSpeed ?? moveSpeed;
       enemy.moveProgress = 0;
       enemy.moveDirection = Math.random() > 0.5 ? 'left' : 'right';
     }
@@ -113,14 +149,13 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
       enemy.peekState = 'hidden';
       enemy.peekProgress = 0;
       enemy.peekTimer = 0;
-      enemy.peekDuration = 1200;
+      enemy.peekDuration = config.duration ?? 1200;
       enemy.peekDirection = options?.peekDirection ?? (Math.random() > 0.5 ? 'left' : 'right');
     }
 
     setEnemies(prev => [...prev, enemy]);
   }, [isPlaying, isPaused, mode, movePattern, moveSpeed]);
 
-  // 击中部位
   const hitPart = useCallback((enemyId: string, partType: PartType, combo: number): PartHitResult | null => {
     let result: PartHitResult | null = null;
 
@@ -149,12 +184,10 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
         state: newState,
       };
 
-      // 计算得分
       const baseScore = PART_SCORES[partType];
       const comboMultiplier = getComboMultiplier(combo + 1);
       const score = Math.floor(baseScore * comboMultiplier);
 
-      // 检查敌人是否死亡
       const isDestroyed = newState === 'destroyed';
       const headDestroyed = partType === 'head' && isDestroyed;
       const allDestroyed = updatedParts.every(p => p.state === 'destroyed');
@@ -173,7 +206,8 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
         ...enemy,
         parts: updatedParts,
         isAlive: !isEnemyDead,
-        state: isEnemyDead ? 'dead' : enemy.state,
+        state: isEnemyDead ? 'dying' : enemy.state,
+        diedAt: isEnemyDead ? Date.now() : undefined,
         totalDamageDealt: enemy.totalDamageDealt + 1,
         partsDestroyed: enemy.partsDestroyed + (isDestroyed ? 1 : 0),
       };
@@ -182,17 +216,14 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     return result;
   }, []);
 
-  // 移除敌人
   const removeEnemy = useCallback((id: string) => {
     setEnemies(prev => prev.filter(e => e.id !== id));
   }, []);
 
-  // 清空所有敌人
   const clearEnemies = useCallback(() => {
     setEnemies([]);
   }, []);
 
-  // 更新敌人状态（移动、探头等）
   const updateEnemies = useCallback((deltaTime: number) => {
     if (!isPlaying || isPaused) return;
 
@@ -201,12 +232,10 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
 
       let updated = { ...enemy };
 
-      // 移动目标更新
       if (enemy.movePattern && enemy.movePattern !== 'static' && enemy.moveSpeed) {
         updated = updateMovingEnemy(updated, deltaTime);
       }
 
-      // 探头状态更新
       if (enemy.peekState !== undefined) {
         updated = updatePeekingEnemy(updated, deltaTime);
       }
@@ -215,7 +244,6 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     }));
   }, [isPlaying, isPaused]);
 
-  // 获取指定位置的敌人和部位
   const getEnemyAtPosition = useCallback((row: number, col: number) => {
     for (const enemy of enemies) {
       if (!enemy.isAlive) continue;
@@ -234,16 +262,19 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     return null;
   }, [enemies]);
 
-  // 自动清理死亡敌人和过期敌人
   useEffect(() => {
     const cleanup = setInterval(() => {
+      const now = Date.now();
       setEnemies(prev => prev.filter(e => {
+        if (!e.isAlive && e.diedAt) {
+          return now - e.diedAt < 500;
+        }
         if (!e.isAlive) return false;
-        if (e.expiresAt && Date.now() > e.expiresAt) return false;
-        if (e.timeLimit && Date.now() - (e.spawnTime ?? 0) > e.timeLimit) return false;
+        if (e.expiresAt && now > e.expiresAt) return false;
+        if (e.timeLimit && now - (e.spawnTime ?? 0) > e.timeLimit) return false;
         return true;
       }));
-    }, 200);
+    }, 100);
 
     return () => clearInterval(cleanup);
   }, []);
@@ -256,20 +287,20 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     clearEnemies,
     updateEnemies,
     getEnemyAtPosition,
-  };
+    setFPSConfig,
+  } as UseMultiGridEnemyReturn & { setFPSConfig: (config: FPSModeConfig) => void };
 }
 
-// P1-3: 连击倍率计算 - 使用平滑曲线版本
 function getComboMultiplier(combo: number): number {
   const COMBO_MULTIPLIERS = [
     { threshold: 0, multiplier: 1.0 },
-    { threshold: 3, multiplier: 1.1 },   // 降低入门门槛
-    { threshold: 8, multiplier: 1.25 },  // 更平滑过渡
+    { threshold: 3, multiplier: 1.1 },
+    { threshold: 8, multiplier: 1.25 },
     { threshold: 15, multiplier: 1.5 },
     { threshold: 25, multiplier: 2.0 },
     { threshold: 40, multiplier: 2.5 },
     { threshold: 60, multiplier: 3.0 },
-    { threshold: 100, multiplier: 4.0 }, // 新增高阶奖励
+    { threshold: 100, multiplier: 4.0 },
   ];
   
   for (let i = COMBO_MULTIPLIERS.length - 1; i >= 0; i--) {
@@ -280,7 +311,6 @@ function getComboMultiplier(combo: number): number {
   return 1.0;
 }
 
-// 更新移动敌人
 function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridEnemy {
   if (!enemy.moveSpeed || !enemy.moveDirection) return enemy;
 
@@ -289,7 +319,6 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
   let newCol = enemy.anchorCol;
   let direction = enemy.moveDirection;
 
-  // 根据移动模式更新位置
   switch (enemy.movePattern) {
     case 'linear':
       if (direction === 'left') {
@@ -308,7 +337,6 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
       break;
 
     case 'sine':
-      // 正弦波移动：水平移动 + 上下波动
       const sineOffset = Math.sin(progress * 2) * 2;
       newCol = enemy.anchorCol + (direction === 'left' ? -deltaTime : deltaTime) * enemy.moveSpeed;
       return {
@@ -320,7 +348,6 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
       };
 
     case 'bounce':
-      // 弹跳移动
       const bounceY = Math.abs(Math.sin(progress * 3)) * 3;
       newCol = enemy.anchorCol + (direction === 'left' ? -deltaTime : deltaTime) * enemy.moveSpeed;
       return {
@@ -343,16 +370,15 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
   };
 }
 
-// 更新探头敌人
 function updatePeekingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridEnemy {
-  const PEEK_ANIM_DURATION = 200; // ms
+  const PEEK_ANIM_DURATION = 200;
 
   let newState = { ...enemy };
   const timer = (enemy.peekTimer ?? 0) + deltaTime * 1000;
 
   switch (enemy.peekState) {
     case 'hidden':
-      if (timer >= 2000) { // 等待 2 秒后探头
+      if (timer >= 2000) {
         return {
           ...newState,
           peekState: 'peeking',
