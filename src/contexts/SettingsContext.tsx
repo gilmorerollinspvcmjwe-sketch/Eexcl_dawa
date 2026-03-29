@@ -35,6 +35,16 @@ const DEFAULT_SETTINGS: GameSettings = {
   spawnAnimation: 'popIn',
   enemyFontSize: 14,
   enemyFontWeight: 'bold',
+  // 单元格设置 (Sheet2 外观)
+  cellSettings: {
+    cellWidth: 64,
+    cellHeight: 20,
+    colorMode: 'default',
+    colorIntensity: 50,
+    enableAnimation: false,
+    animationSpeed: 'normal',
+    colorShift: false,
+  },
 };
 
 interface SettingsContextType {
@@ -47,6 +57,13 @@ interface SettingsContextType {
   unlockLevel: (level: number) => void;
   addCredits: (amount: number) => void;
   isLevelUnlocked: (level: number) => boolean;
+  // 临时设置状态（用于设置面板）
+  tempSettings: GameSettings;
+  updateTempSetting: <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => void;
+  updateTempSettings: (newSettings: Partial<GameSettings>) => void;
+  saveSettings: () => void;
+  cancelSettings: () => void;
+  resetTempSettings: () => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -67,6 +84,14 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     }
     return DEFAULT_SETTINGS;
   });
+
+  // 临时设置状态（用于设置面板编辑）
+  const [tempSettings, setTempSettings] = useState<GameSettings>(settings);
+
+  // 当 settings 变化时，同步更新 tempSettings
+  useEffect(() => {
+    setTempSettings(settings);
+  }, [settings]);
 
   // 持久化设置到 localStorage
   useEffect(() => {
@@ -121,6 +146,27 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     return (settings.unlockedLevels ?? [1]).includes(level);
   }, [settings.unlockedLevels]);
 
+  // 临时设置操作
+  const updateTempSetting = useCallback(<K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
+    setTempSettings(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const updateTempSettings = useCallback((newSettings: Partial<GameSettings>) => {
+    setTempSettings(prev => ({ ...prev, ...newSettings }));
+  }, []);
+
+  const saveSettings = useCallback(() => {
+    setSettings(tempSettings);
+  }, [tempSettings]);
+
+  const cancelSettings = useCallback(() => {
+    setTempSettings(settings);
+  }, [settings]);
+
+  const resetTempSettings = useCallback(() => {
+    setTempSettings(DEFAULT_SETTINGS);
+  }, []);
+
   return (
     <SettingsContext.Provider value={{ 
       settings, 
@@ -131,6 +177,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       unlockLevel,
       addCredits,
       isLevelUnlocked,
+      tempSettings,
+      updateTempSetting,
+      updateTempSettings,
+      saveSettings,
+      cancelSettings,
+      resetTempSettings,
     }}>
       {children}
     </SettingsContext.Provider>

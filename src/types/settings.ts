@@ -6,6 +6,27 @@ export type CrosshairStyle = 'dot' | 'cross' | 'circle' | 't-shape' | 'valorant'
 
 export type GamePreset = 'valorant' | 'cs2' | 'cf' | 'custom';
 
+// 单元格颜色模式
+export type CellColorMode = 'default' | 'random' | 'density' | 'checkerboard' | 'heatmap' | 'rainbow';
+
+// 单元格设置
+export interface CellSettings {
+  // 单元格大小
+  cellWidth: number;      // 40-100, default: 64
+  cellHeight: number;     // 15-40, default: 20
+  
+  // 颜色模式
+  colorMode: CellColorMode;
+  
+  // 颜色强度/密度 (0-100)
+  colorIntensity: number;
+  
+  // 动态效果
+  enableAnimation: boolean;
+  animationSpeed: 'slow' | 'normal' | 'fast';
+  colorShift: boolean;
+}
+
 export interface GameSettings {
   sensitivity: number;
   sensitivityX: number;
@@ -41,6 +62,8 @@ export interface GameSettings {
   spawnAnimation?: 'none' | 'fadeIn' | 'popIn' | 'slideUp' | 'bounceIn' | 'flashIn';
   enemyFontSize?: number; // 10-24
   enemyFontWeight?: 'normal' | 'bold' | '300' | '500';
+  // 单元格设置 (Sheet2 外观)
+  cellSettings?: CellSettings;
 }
 
 // 游戏预设灵敏度配置

@@ -71,7 +71,7 @@ const MODE_TUTORIALS: Record<string, { title: string; description: string; tips:
   },
 };
 
-export const ModeTutorialModal: React.FC<ModeTutorialModalModalProps> = ({
+export const ModeTutorialModal: React.FC<ModeTutorialModalProps> = ({
   mode,
   modeName,
   isOpen,

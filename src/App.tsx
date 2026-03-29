@@ -18,7 +18,16 @@ import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 import type { FPSTrainingMode } from './components/TrainingModeSelector';
 
 function AppContent() {
-  const { settings, updateSetting, applyPreset, resetSettings } = useSettings();
+  const { 
+    settings, 
+    updateSetting, 
+    applyPreset, 
+    resetSettings,
+    tempSettings,
+    updateTempSetting,
+    saveSettings,
+    cancelSettings,
+  } = useSettings();
   const { mousePosition, isCrosshairVisible, setCrosshairVisible } = useCrosshair();
 
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
@@ -342,6 +351,7 @@ function AppContent() {
                 enemyFontSize: settings.enemyFontSize,
                 enemyFontWeight: settings.enemyFontWeight,
               }}
+              cellSettings={settings.cellSettings}
             />
           ) : currentSheet === 'stats' ? (
             // Sheet3: 统计
@@ -355,6 +365,11 @@ function AppContent() {
               onApplyPreset={applyPreset}
               onStartGame={startGame}
               onResetSettings={resetSettings}
+              // 临时设置相关
+              tempSettings={tempSettings}
+              onUpdateTempSetting={updateTempSetting}
+              onSaveSettings={saveSettings}
+              onCancelSettings={cancelSettings}
             />
           )}
         </div>
@@ -386,8 +401,14 @@ function AppContent() {
       {showModeTutorial && (
         <ModeTutorialModal
           mode={showModeTutorial}
+          modeName={showModeTutorial}
           isOpen={true}
           onClose={() => {
+            localStorage.setItem(`tutorial-shown-${showModeTutorial}`, 'true');
+            setShowModeTutorial(null);
+            setPendingGameStart(null);
+          }}
+          onStart={() => {
             localStorage.setItem(`tutorial-shown-${showModeTutorial}`, 'true');
             setShowModeTutorial(null);
             // 使用保存的参数启动游戏

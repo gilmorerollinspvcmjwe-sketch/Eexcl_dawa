@@ -146,13 +146,13 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     let anchorRow: number;
     let anchorCol: number;
     
-    if (effectiveMode === 'headshot' || mode === 'headshot') {
+    if (effectiveMode === 'headshot') {
       // 爆头模式：确保在爆头线附近，但仍在安全列范围内
       anchorRow = Math.max(minRow, Math.min(maxRow, headshotLineRow));
       anchorCol = Math.max(minCol, Math.min(maxCol, 
         finalOptions.anchorCol ?? (minCol + Math.floor(Math.random() * (maxCol - minCol)))
       ));
-      console.log('[DEBUG] Headshot mode detected:', { effectiveMode, mode, headshotLineRow, anchorRow, anchorCol });
+      // 爆头模式：固定在爆头线行
     } else {
       // 普通模式：在安全区域内随机生成
       anchorRow = Math.max(minRow, Math.min(maxRow,

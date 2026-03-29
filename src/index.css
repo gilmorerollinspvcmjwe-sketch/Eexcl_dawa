@@ -1754,3 +1754,46 @@ body {
 .headshot-stat-value.highlight {
   color: #dc2626;
 }
+
+/* ==================== 单元格动态效果 ==================== */
+@keyframes cellPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes cellColorShift {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.cell-animated {
+  animation: cellPulse 1s ease-in-out infinite;
+}
+
+.cell-color-shift {
+  animation: cellColorShift 3s linear infinite;
+}
+
+/* 不同速度的动画 */
+.cell-animate-slow {
+  animation-duration: 2s;
+}
+
+.cell-animate-normal {
+  animation-duration: 1s;
+}
+
+.cell-animate-fast {
+  animation-duration: 0.5s;
+}
+
+/* 单元格颜色过渡 - 优化性能 */
+.excel-cell {
+  transition: background-color 0.15s ease-out;
+  will-change: background-color;
+}
+
+/* 禁用悬停效果时的颜色变化，提高性能 */
+.excel-cell:not(:hover) {
+  transition: none;
+}

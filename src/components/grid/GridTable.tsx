@@ -1,12 +1,15 @@
 // 基础表格渲染组件
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import type { Target, MultiGridEnemy, PartType, HitEffect } from '../../types';
+import type { CellSettings } from '../../types/settings';
 import { generateColLetters } from '../../utils/gridUtils';
+import { generateCellCSSVariables } from '../../utils/cellColorUtils';
+import { useCellEffects } from '../../hooks/useCellEffects';
+import { useCellColors, getDefaultCellColor } from '../../hooks/useCellColors';
 import { TargetRenderer } from './TargetRenderer';
 import { MultiGridEnemies } from './MultiGridEnemyRenderer';
 import { HitEffectRenderer } from './HitEffectRenderer';
-import { CELL_WIDTH, CELL_HEIGHT } from '../../constants';
 
 interface GridTableProps {
   COLS: number;
@@ -37,6 +40,8 @@ interface GridTableProps {
   };
   // 命中特效
   hitEffects?: HitEffect[];
+  // 单元格设置
+  cellSettings?: CellSettings;
 }
 
 export const GridTable: React.FC<GridTableProps> = ({
@@ -62,13 +67,42 @@ export const GridTable: React.FC<GridTableProps> = ({
   visualSettings,
   // 命中特效
   hitEffects = [],
+  // 单元格设置
+  cellSettings,
 }) => {
   const [missEffects, setMissEffects] = useState<Set<string>>(new Set());
+
+  // 动态效果
+  const { timeOffset, animationClass } = useCellEffects(cellSettings);
+
+  // 使用优化的颜色缓存 Hook
+  const colorMap = useCellColors(ROWS, COLS, cellSettings, timeOffset);
 
   // 生成列字母
   const colLetters = React.useMemo(() => {
     return generateColLetters(COLS);
   }, [COLS]);
+
+  // 计算单元格大小
+  const cellWidth = cellSettings?.cellWidth || 64;
+  const cellHeight = cellSettings?.cellHeight || 20;
+
+  // 生成 CSS 变量
+  const cssVariables = useMemo(() => {
+    return generateCellCSSVariables(cellWidth, cellHeight);
+  }, [cellWidth, cellHeight]);
+
+  // 获取单元格颜色的回调函数
+  const getCellBackgroundColor = useCallback((row: number, col: number): string => {
+    const colorMode = cellSettings?.colorMode || 'default';
+    
+    if (colorMode === 'default') {
+      return getDefaultCellColor(row, col);
+    }
+    
+    const key = `${row}-${col}`;
+    return colorMap.get(key) || getDefaultCellColor(row, col);
+  }, [colorMap, cellSettings?.colorMode]);
 
   const getTargetAt = useCallback((row: number, col: number) => {
     return targets.find(t => t.row === row && t.col === col);
@@ -130,7 +164,7 @@ export const GridTable: React.FC<GridTableProps> = ({
   };
 
   return (
-    <div className="excel-grid-wrapper" style={{ position: 'relative' }}>
+    <div className={`excel-grid-wrapper ${animationClass}`} style={{ position: 'relative', ...cssVariables }}>
       <table className="excel-table">
         <thead>
           <tr>
@@ -165,11 +199,17 @@ export const GridTable: React.FC<GridTableProps> = ({
                   const selected = isSelected(rowNum, colNum);
                   const isMissEffect = missEffects.has(`${rowNum}-${colNum}`);
 
+                  // 获取单元格背景色（使用缓存）
+                  const cellBackgroundColor = getCellBackgroundColor(rowNum, colNum);
+
                   return (
                     <td
                       key={`${letter}-${rowNum}`}
                       className={`excel-cell ${selected ? 'selected' : ''} ${isMissEffect ? 'miss-flash' : ''}`}
-                      style={isHeadshotLine ? { background: 'rgba(255, 0, 0, 0.03)' } : undefined}
+                      style={{
+                        backgroundColor: cellBackgroundColor,
+                        ...(isHeadshotLine ? { background: 'rgba(255, 0, 0, 0.03)' } : {}),
+                      }}
                       onClick={() => handleCellClick(rowNum, colNum)}
                       onMouseEnter={() => onCellHover(rowNum, colNum)}
                     >
@@ -209,8 +249,8 @@ export const GridTable: React.FC<GridTableProps> = ({
       {multiGridEnemies.length > 0 && (
         <MultiGridEnemies
           enemies={multiGridEnemies}
-          cellWidth={CELL_WIDTH}
-          cellHeight={CELL_HEIGHT}
+          cellWidth={cellWidth}
+          cellHeight={cellHeight}
           rowHeaderWidth={24}
           colHeaderHeight={20}
           renderMode={enemyRenderMode}

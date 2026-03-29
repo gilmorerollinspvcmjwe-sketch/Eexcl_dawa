@@ -9,6 +9,11 @@ interface SettingsPanelProps {
   onApplyPreset: (preset: GamePreset) => void;
   onStartGame: (mode: 'timed' | 'endless' | 'zen' | 'headshot' | 'part_training' | 'peek_shot' | 'moving_target', duration?: 30 | 60 | 120, level?: number) => void;
   onResetSettings?: () => void;
+  // 临时设置相关
+  tempSettings?: GameSettings;
+  onUpdateTempSetting?: <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => void;
+  onSaveSettings?: () => void;
+  onCancelSettings?: () => void;
 }
 
 const CROSSHAIR_STYLES: { id: CrosshairStyle; name: string; preview: string }[] = [
@@ -40,9 +45,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onApplyPreset,
   onStartGame,
   onResetSettings,
+  // 临时设置相关
+  tempSettings,
+  onUpdateTempSetting,
+  onSaveSettings,
+  onCancelSettings,
 }) => {
+  // 使用临时设置（如果提供），否则使用实际设置
+  const displaySettings = tempSettings || settings;
+  const hasUnsavedChanges = tempSettings !== undefined && JSON.stringify(tempSettings) !== JSON.stringify(settings);
+
   const updateSetting = <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
-    onUpdateSettings(key, value);
+    if (onUpdateTempSetting && tempSettings) {
+      // 使用临时设置模式
+      onUpdateTempSetting(key, value);
+    } else {
+      // 使用实时更新模式
+      onUpdateSettings(key, value);
+    }
   };
 
   const applyPreset = (preset: GamePreset) => {
@@ -52,10 +72,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const colLetters = React.useMemo(() => generateSimpleColLetters(15), []);
 
   const renderCrosshairPreview = () => {
-    const size = settings.crosshairSize || 12;
-    const color = settings.crosshairColor;
+    const size = displaySettings.crosshairSize || 12;
+    const color = displaySettings.crosshairColor;
     
-    switch (settings.crosshairStyle) {
+    switch (displaySettings.crosshairStyle) {
       case 'dot':
         return <circle cx="12" cy="12" r={size / 3} fill={color} />;
       case 'cross':
@@ -820,8 +840,188 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             {renderEmptyRow(36)}
 
+            {/* ========== 📊 单元格设置 (Sheet2 外观) ========== */}
+            {renderSectionHeader(37, '📊', '单元格设置 (Sheet2 外观)', '#8b5cf6')}
+
+            {/* 单元格大小 */}
+            <tr>
+              <td className="excel-row-header">38</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>单元格宽度</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="40"
+                  max="100"
+                  step="4"
+                  value={settings.cellSettings?.cellWidth || 64}
+                  onChange={(e) => {
+                    const newSettings = {
+                      ...settings.cellSettings,
+                      cellWidth: parseInt(e.target.value)
+                    };
+                    updateSetting('cellSettings', newSettings);
+                  }}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#8b5cf6' }}>{settings.cellSettings?.cellWidth || 64}px</strong>
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>单元格高度</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="15"
+                  max="40"
+                  step="1"
+                  value={settings.cellSettings?.cellHeight || 20}
+                  onChange={(e) => {
+                    const newSettings = {
+                      ...settings.cellSettings,
+                      cellHeight: parseInt(e.target.value)
+                    };
+                    updateSetting('cellSettings', newSettings);
+                  }}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#8b5cf6' }}>{settings.cellSettings?.cellHeight || 20}px</strong>
+              </td>
+            </tr>
+            <tr>
+              <td className="excel-row-header">39</td>
+              <td className="excel-cell" colSpan={7} style={{ color: '#666', fontSize: 10, fontStyle: 'italic' }}>
+                💡 更小的单元格 = 更高的游戏难度。建议保持默认 64x20px 以获得最佳体验
+              </td>
+            </tr>
+
+            {/* 颜色模式 */}
+            <tr>
+              <td className="excel-row-header">40</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>颜色模式</td>
+              <td className="excel-cell" colSpan={5}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'default', name: '默认', desc: 'Excel 经典风格', icon: '⬜' },
+                    { id: 'random', name: '随机', desc: '完全随机颜色', icon: '🎲' },
+                    { id: 'density', name: '密度', desc: '区域密度变化', icon: '🌊' },
+                    { id: 'checkerboard', name: '棋盘', desc: '棋盘格模式', icon: '⬛' },
+                    { id: 'heatmap', name: '热图', desc: '中心亮边缘暗', icon: '🔥' },
+                    { id: 'rainbow', name: '彩虹', desc: '彩虹渐变', icon: '🌈' },
+                  ].map(mode => (
+                    <button
+                      key={mode.id}
+                      className={`game-preset-btn ${settings.cellSettings?.colorMode === mode.id ? 'active' : ''}`}
+                      onClick={() => {
+                        const newSettings = {
+                          ...settings.cellSettings,
+                          colorMode: mode.id as any
+                        };
+                        updateSetting('cellSettings', newSettings);
+                      }}
+                      style={{ 
+                        minWidth: 70, 
+                        fontSize: 11, 
+                        padding: '5px 8px', 
+                        background: settings.cellSettings?.colorMode === mode.id ? '#8b5cf6' : '#e5e7eb', 
+                        color: settings.cellSettings?.colorMode === mode.id ? 'white' : '#333' 
+                      }}
+                      title={mode.desc}
+                    >
+                      {mode.icon} {mode.name}
+                    </button>
+                  ))}
+                </div>
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                单元格背景颜色模式
+              </td>
+            </tr>
+
+            {/* 颜色强度 */}
+            <tr>
+              <td className="excel-row-header">41</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>颜色强度</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={settings.cellSettings?.colorIntensity || 50}
+                  onChange={(e) => {
+                    const newSettings = {
+                      ...settings.cellSettings,
+                      colorIntensity: parseInt(e.target.value)
+                    };
+                    updateSetting('cellSettings', newSettings);
+                  }}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#8b5cf6' }}>{settings.cellSettings?.colorIntensity || 50}%</strong>
+              </td>
+              <td className="excel-cell" colSpan={4} style={{ color: '#666', fontSize: 10 }}>
+                控制颜色变化的强度和对比度，0% = 几乎无色，100% = 最鲜艳
+              </td>
+            </tr>
+
+            {/* 动态效果 */}
+            <tr>
+              <td className="excel-row-header">42</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>动态效果</td>
+              <td className="excel-cell" colSpan={2}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={settings.cellSettings?.enableAnimation || false}
+                    onChange={(e) => {
+                      const newSettings = {
+                        ...settings.cellSettings,
+                        enableAnimation: e.target.checked
+                      };
+                      updateSetting('cellSettings', newSettings);
+                    }}
+                  />
+                  <span>启用闪烁</span>
+                </label>
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>闪烁速度</td>
+              <td className="excel-cell">
+                <select
+                  value={settings.cellSettings?.animationSpeed || 'normal'}
+                  onChange={(e) => {
+                    const newSettings = {
+                      ...settings.cellSettings,
+                      animationSpeed: e.target.value as 'slow' | 'normal' | 'fast'
+                    };
+                    updateSetting('cellSettings', newSettings);
+                  }}
+                  disabled={!settings.cellSettings?.enableAnimation}
+                  style={{ 
+                    padding: '4px 8px', 
+                    borderRadius: 4, 
+                    border: '1px solid #d4d4d4',
+                    fontSize: 12,
+                    opacity: settings.cellSettings?.enableAnimation ? 1 : 0.5,
+                  }}
+                >
+                  <option value="slow">慢</option>
+                  <option value="normal">中</option>
+                  <option value="fast">快</option>
+                </select>
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                {settings.cellSettings?.enableAnimation ? '单元格会闪烁变化' : '动态效果已关闭'}
+              </td>
+            </tr>
+
+            {renderEmptyRow(43)}
+
             {/* ========== 🖼️ 伪装设置 ========== */}
-            {renderSectionHeader(37, '🖼️', '伪装设置', '#3b82f6')}
+            {renderSectionHeader(44, '🖼️', '伪装设置', '#3b82f6')}
 
             {/* 上传伪装图片 */}
             <tr>
@@ -906,12 +1106,92 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             {renderEmptyRow(40)}
 
-            {/* 操作说明和恢复默认 */}
+            {/* 保存/取消按钮 - 第41行 */}
+            {onSaveSettings && onCancelSettings && (
+              <tr>
+                <td className="excel-row-header">41</td>
+                <td 
+                  className="excel-cell" 
+                  colSpan={7} 
+                  style={{ 
+                    background: hasUnsavedChanges ? '#fef3c7' : '#f3f4f6',
+                    border: hasUnsavedChanges ? '2px solid #f59e0b' : 'none',
+                    borderRadius: 4,
+                    padding: '12px 16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {hasUnsavedChanges ? (
+                        <>
+                          <span style={{ color: '#92400e', fontWeight: 'bold' }}>⚠️ 有未保存的更改</span>
+                          <span style={{ color: '#92400e', fontSize: 11 }}>点击"保存设置"应用更改</span>
+                        </>
+                      ) : (
+                        <span style={{ color: '#6b7280', fontSize: 11 }}>✅ 所有更改已保存</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {onResetSettings && (
+                        <button
+                          onClick={onResetSettings}
+                          style={{
+                            padding: '8px 16px',
+                            background: '#6b7280',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            fontWeight: 500,
+                          }}
+                        >
+                          🔄 恢复默认
+                        </button>
+                      )}
+                      <button
+                        onClick={onCancelSettings}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#e5e7eb',
+                          color: '#374151',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          fontWeight: 500,
+                        }}
+                      >
+                        ❌ 取消
+                      </button>
+                      <button
+                        onClick={onSaveSettings}
+                        disabled={!hasUnsavedChanges}
+                        style={{
+                          padding: '8px 16px',
+                          background: hasUnsavedChanges ? '#107c41' : '#9ca3af',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
+                          fontSize: 12,
+                          fontWeight: 500,
+                        }}
+                      >
+                        💾 保存设置
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            )}
+
+            {/* 操作说明 */}
             <tr>
-              <td className="excel-row-header">41</td>
+              <td className="excel-row-header">42</td>
               <td 
                 className="excel-cell" 
-                colSpan={5} 
+                colSpan={7} 
                 style={{ 
                   background: '#f3f4f6', 
                   color: '#6b7280',
@@ -920,24 +1200,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 }}
               >
                 📝 操作说明：Esc = 隐藏/恢复游戏 | P = 暂停 | 点击目标进行射击 | 左上角悬停 3 秒 = 快速隐藏
-              </td>
-              <td className="excel-cell" colSpan={2}>
-                {onResetSettings && (
-                  <button
-                    onClick={onResetSettings}
-                    style={{
-                      padding: '6px 12px',
-                      background: '#6b7280',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: 'pointer',
-                      fontSize: 11,
-                    }}
-                  >
-                    🔄 恢复默认设置
-                  </button>
-                )}
               </td>
             </tr>
           </tbody>

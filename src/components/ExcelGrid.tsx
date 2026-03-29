@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { Target, HitEffect, MultiGridEnemy, LevelConfig, PartType } from '../types';
+import type { CellSettings } from '../types/settings';
 import { playHitSound, playMissSound } from '../utils/soundUtils';
 import { GridTable, GameHUD, PauseOverlay } from './grid';
 
@@ -52,6 +53,8 @@ interface ExcelGridProps {
     enemyFontSize?: number;
     enemyFontWeight?: string;
   };
+  // 单元格设置
+  cellSettings?: CellSettings;
 }
 
 export const ExcelGrid: React.FC<ExcelGridProps> = ({
@@ -83,6 +86,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   colorlessMode = false,
   // 视觉设置
   visualSettings,
+  // 单元格设置
+  cellSettings,
 }) => {
   // 处理 miss 音效
   const handleMiss = () => {
@@ -260,6 +265,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         visualSettings={visualSettings}
         // 命中特效
         hitEffects={hitEffects}
+        // 单元格设置
+        cellSettings={cellSettings}
       />
     </div>
   );
