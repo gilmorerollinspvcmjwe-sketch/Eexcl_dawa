@@ -16,7 +16,7 @@ import {
   HUMANOID_PART_POSITIONS,
   PRIORITY_CONFIG
 } from '../types/enemy';
-import { COLS, ROWS } from '../constants';
+import { COLS, ROWS, SAFE_ZONE_ROWS, SAFE_ZONE_COLS, BOTTOM_SAFE_ROWS } from '../constants';
 
 interface UseMultiGridEnemyProps {
   isPlaying: boolean;
@@ -136,16 +136,30 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
 
     const effectiveMode = fpsMode || mode;
     
+    // 计算安全区域边界
+    const minRow = SAFE_ZONE_ROWS;
+    const maxRow = ROWS - BOTTOM_SAFE_ROWS - 3; // 减去底部预留和敌人高度
+    const minCol = SAFE_ZONE_COLS;
+    const maxCol = COLS - SAFE_ZONE_COLS - 3; // 减去左右预留和敌人宽度
+    
     let anchorRow: number;
     let anchorCol: number;
     
     if (effectiveMode === 'headshot' || mode === 'headshot') {
-      anchorRow = headshotLineRow;
-      anchorCol = finalOptions.anchorCol ?? (5 + Math.floor(Math.random() * (COLS - 10)));
+      // 爆头模式：确保在爆头线附近，但仍在安全列范围内
+      anchorRow = Math.max(minRow, Math.min(maxRow, headshotLineRow));
+      anchorCol = Math.max(minCol, Math.min(maxCol, 
+        finalOptions.anchorCol ?? (minCol + Math.floor(Math.random() * (maxCol - minCol)))
+      ));
       console.log('[DEBUG] Headshot mode detected:', { effectiveMode, mode, headshotLineRow, anchorRow, anchorCol });
     } else {
-      anchorRow = finalOptions.anchorRow ?? (5 + Math.floor(Math.random() * (ROWS - 10)));
-      anchorCol = finalOptions.anchorCol ?? (5 + Math.floor(Math.random() * (COLS - 10)));
+      // 普通模式：在安全区域内随机生成
+      anchorRow = Math.max(minRow, Math.min(maxRow,
+        finalOptions.anchorRow ?? (minRow + Math.floor(Math.random() * (maxRow - minRow)))
+      ));
+      anchorCol = Math.max(minCol, Math.min(maxCol,
+        finalOptions.anchorCol ?? (minCol + Math.floor(Math.random() * (maxCol - minCol)))
+      ));
     }
 
     const enemy = createHumanoidEnemy({
@@ -349,21 +363,28 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
   const progress = (enemy.moveProgress ?? 0) + deltaTime * enemy.moveSpeed;
   
   let newCol = enemy.anchorCol;
+  let newRow = enemy.anchorRow;
   let direction = enemy.moveDirection;
+
+  // 使用安全区域边界
+  const minRow = SAFE_ZONE_ROWS;
+  const maxRow = ROWS - BOTTOM_SAFE_ROWS - 3;
+  const minCol = SAFE_ZONE_COLS;
+  const maxCol = COLS - SAFE_ZONE_COLS - 3;
 
   switch (enemy.movePattern) {
     case 'linear':
       if (direction === 'left') {
         newCol = enemy.anchorCol - deltaTime * enemy.moveSpeed;
-        if (newCol <= 4) {
+        if (newCol <= minCol) {
           direction = 'right';
-          newCol = 4;
+          newCol = minCol;
         }
       } else {
         newCol = enemy.anchorCol + deltaTime * enemy.moveSpeed;
-        if (newCol >= COLS - 2) {
+        if (newCol >= maxCol) {
           direction = 'left';
-          newCol = COLS - 2;
+          newCol = maxCol;
         }
       }
       break;
@@ -371,10 +392,11 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
     case 'sine':
       const sineOffset = Math.sin(progress * 2) * 2;
       newCol = enemy.anchorCol + (direction === 'left' ? -deltaTime : deltaTime) * enemy.moveSpeed;
+      newRow = enemy.anchorRow + sineOffset * deltaTime;
       return {
         ...enemy,
-        anchorCol: Math.max(4, Math.min(COLS - 2, newCol)),
-        anchorRow: Math.max(5, Math.min(ROWS - 5, enemy.anchorRow + sineOffset * deltaTime)),
+        anchorCol: Math.max(minCol, Math.min(maxCol, newCol)),
+        anchorRow: Math.max(minRow, Math.min(maxRow, newRow)),
         moveProgress: progress,
         moveDirection: direction,
       };
@@ -382,10 +404,11 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
     case 'bounce':
       const bounceY = Math.abs(Math.sin(progress * 3)) * 3;
       newCol = enemy.anchorCol + (direction === 'left' ? -deltaTime : deltaTime) * enemy.moveSpeed;
+      newRow = enemy.anchorRow + bounceY * deltaTime;
       return {
         ...enemy,
-        anchorCol: Math.max(4, Math.min(COLS - 2, newCol)),
-        anchorRow: enemy.anchorRow + bounceY * deltaTime,
+        anchorCol: Math.max(minCol, Math.min(maxCol, newCol)),
+        anchorRow: Math.max(minRow, Math.min(maxRow, newRow)),
         moveProgress: progress,
         moveDirection: direction,
       };
@@ -396,7 +419,8 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
 
   return {
     ...enemy,
-    anchorCol: Math.max(4, Math.min(COLS - 2, newCol)),
+    anchorCol: Math.max(minCol, Math.min(maxCol, newCol)),
+    anchorRow: Math.max(minRow, Math.min(maxRow, newRow)),
     moveProgress: progress,
     moveDirection: direction,
   };

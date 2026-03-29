@@ -6,6 +6,11 @@ export const ROWS = 50; // 1 to 50
 export const CELL_WIDTH = 64;
 export const CELL_HEIGHT = 20;
 
+// 安全刷新区域（避免被UI遮挡）
+export const SAFE_ZONE_ROWS = 5; // 顶部预留5行给UI（GameHUD + 连击进度条）
+export const SAFE_ZONE_COLS = 2; // 左右各预留2列
+export const BOTTOM_SAFE_ROWS = 3; // 底部预留3行
+
 // 目标持续时间配置
 export const DEFAULT_TARGET_DURATION_MS = 1000; // 基础持续时间
 export const TARGET_DURATION_FACTOR = 300; // 每级增加/减少的毫秒数
