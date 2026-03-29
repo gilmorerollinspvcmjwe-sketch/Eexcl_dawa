@@ -4,9 +4,10 @@ import type { GameStats } from '../types';
 interface StatsPanelProps {
   stats: GameStats;
   onReset: () => void;
+  onExit?: () => void;
 }
 
-export const StatsPanel: React.FC<StatsPanelProps> = ({ stats, onReset }) => {
+export const StatsPanel: React.FC<StatsPanelProps> = ({ stats, onReset, onExit }) => {
   // 生成趋势图数据
   const trendData = useMemo(() => {
     const recent = stats.gamesHistory.slice(-10);
@@ -409,7 +410,29 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({ stats, onReset }) => {
             <tr>
               <td className="excel-row-header">31</td>
               <td className="excel-cell" colSpan={11}>
-                <ShareButton stats={stats} />
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <ShareButton stats={stats} />
+                  {onExit && (
+                    <button
+                      onClick={onExit}
+                      style={{
+                        background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      🏠 返回主页
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           </tbody>

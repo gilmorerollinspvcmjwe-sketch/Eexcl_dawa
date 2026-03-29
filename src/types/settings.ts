@@ -36,6 +36,11 @@ export interface GameSettings {
   // 关卡进度
   unlockedLevels?: number[];
   credits?: number;
+  // 视觉系统设置
+  colorHarmonyMode?: 'none' | 'complementary' | 'analogous' | 'triadic' | 'split-complementary';
+  spawnAnimation?: 'none' | 'fadeIn' | 'popIn' | 'slideUp' | 'bounceIn' | 'flashIn';
+  enemyFontSize?: number; // 10-24
+  enemyFontWeight?: 'normal' | 'bold' | '300' | '500';
 }
 
 // 游戏预设灵敏度配置

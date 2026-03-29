@@ -298,7 +298,7 @@ function AppContent() {
             />
           ) : currentSheet === 'stats' ? (
             // Sheet3: 统计
-            <StatsPanel stats={stats} onReset={handleResetStats} />
+            <StatsPanel stats={stats} onReset={handleResetStats} onExit={() => switchSheet('hub')} />
           ) : (
             // Sheet4: 设置
             <SettingsPanel

@@ -30,6 +30,11 @@ const DEFAULT_SETTINGS: GameSettings = {
   // P1: 关卡进度
   unlockedLevels: [1], // 初始解锁第1关
   credits: 0,
+  // 视觉系统设置
+  colorHarmonyMode: 'none',
+  spawnAnimation: 'popIn',
+  enemyFontSize: 14,
+  enemyFontWeight: 'bold',
 };
 
 interface SettingsContextType {

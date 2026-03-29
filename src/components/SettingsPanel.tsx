@@ -675,12 +675,130 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             {renderEmptyRow(31)}
 
+            {/* ========== 🎨 视觉设置 ========== */}
+            {renderSectionHeader(32, '🎨', '视觉设置', '#ec4899')}
+
+            {/* 敌人颜色和谐模式 */}
+            <tr>
+              <td className="excel-row-header">33</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>颜色和谐模式</td>
+              <td className="excel-cell" colSpan={5}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'none', name: '无', desc: '各部位独立颜色' },
+                    { id: 'complementary', name: '互补色', desc: '对比强烈' },
+                    { id: 'analogous', name: '类似色', desc: '和谐统一' },
+                    { id: 'triadic', name: '三色组', desc: '色彩丰富' },
+                    { id: 'split-complementary', name: '分裂互补', desc: '动态平衡' },
+                  ].map(mode => (
+                    <button
+                      key={mode.id}
+                      className={`game-preset-btn ${(settings as any).colorHarmonyMode === mode.id ? 'active' : ''}`}
+                      onClick={() => onUpdateSettings('colorHarmonyMode' as any, mode.id as any)}
+                      style={{ 
+                        minWidth: 80, 
+                        fontSize: 11, 
+                        padding: '5px 8px', 
+                        background: (settings as any).colorHarmonyMode === mode.id ? '#ec4899' : '#e5e7eb', 
+                        color: (settings as any).colorHarmonyMode === mode.id ? 'white' : '#333' 
+                      }}
+                      title={mode.desc}
+                    >
+                      {mode.name}
+                    </button>
+                  ))}
+                </div>
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                敌人各部位的颜色搭配方式
+              </td>
+            </tr>
+
+            {/* 敌人出现动画 */}
+            <tr>
+              <td className="excel-row-header">34</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>出现动画</td>
+              <td className="excel-cell" colSpan={5}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'none', name: '无', icon: '—' },
+                    { id: 'fadeIn', name: '淡入', icon: '🌅' },
+                    { id: 'popIn', name: '弹出', icon: '💥' },
+                    { id: 'slideUp', name: '滑入', icon: '⬆️' },
+                    { id: 'bounceIn', name: '弹跳', icon: '🎾' },
+                    { id: 'flashIn', name: '闪烁', icon: '⚡' },
+                  ].map(anim => (
+                    <button
+                      key={anim.id}
+                      className={`game-preset-btn ${(settings as any).spawnAnimation === anim.id ? 'active' : ''}`}
+                      onClick={() => onUpdateSettings('spawnAnimation' as any, anim.id as any)}
+                      style={{ 
+                        minWidth: 70, 
+                        fontSize: 11, 
+                        padding: '5px 8px', 
+                        background: (settings as any).spawnAnimation === anim.id ? '#ec4899' : '#e5e7eb', 
+                        color: (settings as any).spawnAnimation === anim.id ? 'white' : '#333' 
+                      }}
+                    >
+                      {anim.icon} {anim.name}
+                    </button>
+                  ))}
+                </div>
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                敌人出现时的动画效果
+              </td>
+            </tr>
+
+            {/* 文本样式 */}
+            <tr>
+              <td className="excel-row-header">35</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>敌人字号</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="10"
+                  max="24"
+                  step="1"
+                  value={(settings as any).enemyFontSize || 14}
+                  onChange={(e) => onUpdateSettings('enemyFontSize' as any, parseInt(e.target.value) as any)}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#ec4899' }}>{(settings as any).enemyFontSize || 14}px</strong>
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>敌人字重</td>
+              <td className="excel-cell">
+                <select
+                  value={(settings as any).enemyFontWeight || 'bold'}
+                  onChange={(e) => onUpdateSettings('enemyFontWeight' as any, e.target.value as any)}
+                  style={{ 
+                    padding: '4px 8px', 
+                    borderRadius: 4, 
+                    border: '1px solid #d4d4d4',
+                    fontSize: 12,
+                  }}
+                >
+                  <option value="normal">常规</option>
+                  <option value="bold">加粗</option>
+                  <option value="300">细体</option>
+                  <option value="500">中等</option>
+                </select>
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                调整敌人文字的显示样式
+              </td>
+            </tr>
+
+            {renderEmptyRow(36)}
+
             {/* ========== 🖼️ 伪装设置 ========== */}
-            {renderSectionHeader(32, '🖼️', '伪装设置', '#3b82f6')}
+            {renderSectionHeader(37, '🖼️', '伪装设置', '#3b82f6')}
 
             {/* 上传伪装图片 */}
             <tr>
-              <td className="excel-row-header">33</td>
+              <td className="excel-row-header">38</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>上传伪装图片</td>
               <td className="excel-cell" colSpan={4}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -737,7 +855,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             {/* 图片预览 */}
             {settings.coverImage && (
               <tr>
-                <td className="excel-row-header">34</td>
+                <td className="excel-row-header">39</td>
                 <td className="excel-cell" style={{ fontWeight: 500 }}>图片预览</td>
                 <td className="excel-cell" colSpan={6}>
                   <div style={{ 
@@ -759,11 +877,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </tr>
             )}
 
-            {renderEmptyRow(35)}
+            {renderEmptyRow(40)}
 
             {/* 操作说明和恢复默认 */}
             <tr>
-              <td className="excel-row-header">36</td>
+              <td className="excel-row-header">41</td>
               <td 
                 className="excel-cell" 
                 colSpan={5} 
