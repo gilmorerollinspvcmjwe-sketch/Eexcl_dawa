@@ -141,38 +141,23 @@ export const GameHub: React.FC<GameHubProps> = ({
           <div className="excel-row-header">8</div>
           <div className="excel-cell excel-modes-cell">
             <div className="excel-mode-grid">
-              <button
-                className={`excel-mode-btn ${selectedClassicMode === 'timed' ? 'selected' : ''}`}
-                onClick={() => { setSelectedClassicMode('timed'); setTrainingCategory('classic'); }}
-              >
-                <span className="mode-icon">⏱️</span>
-                <span className="mode-name">限时</span>
-              </button>
-              <span className="excel-mode-desc">「与时间赛跑，分秒必争」</span>
-              <button
-                className={`excel-mode-btn ${selectedClassicMode === 'endless' ? 'selected' : ''}`}
-                onClick={() => { setSelectedClassicMode('endless'); setTrainingCategory('classic'); }}
-              >
-                <span className="mode-icon">♾️</span>
-                <span className="mode-name">无限</span>
-              </button>
-              <span className="excel-mode-desc">「没有尽头，只有突破」</span>
-              <button
-                className={`excel-mode-btn ${selectedClassicMode === 'zen' ? 'selected' : ''}`}
-                onClick={() => { setSelectedClassicMode('zen'); setTrainingCategory('classic'); }}
-              >
-                <span className="mode-icon">🧘</span>
-                <span className="mode-name">禅</span>
-              </button>
-              <span className="excel-mode-desc">「心无旁骛，万物皆空」</span>
-              <button
-                className={`excel-mode-btn ${selectedClassicMode === 'headshot' ? 'selected' : ''}`}
-                onClick={() => { setSelectedClassicMode('headshot'); setTrainingCategory('classic'); }}
-              >
-                <span className="mode-icon">🎯</span>
-                <span className="mode-name">爆头线</span>
-              </button>
-              <span className="excel-mode-desc">「一击必杀，瞄准即正义」</span>
+              {[
+                { id: 'timed', icon: '⏱️', name: '限时', desc: '「与时间赛跑，分秒必争」' },
+                { id: 'endless', icon: '♾️', name: '无限', desc: '「没有尽头，只有突破」' },
+                { id: 'zen', icon: '🧘', name: '禅', desc: '「心无旁骛，万物皆空」' },
+                { id: 'headshot', icon: '🎯', name: '爆头线', desc: '「一击必杀，瞄准即正义」' },
+              ].map(mode => (
+                <div key={mode.id} className="excel-mode-item">
+                  <button
+                    className={`excel-mode-btn ${selectedClassicMode === mode.id ? 'selected' : ''}`}
+                    onClick={() => { setSelectedClassicMode(mode.id as GameModeType); setTrainingCategory('classic'); }}
+                  >
+                    <span className="mode-icon">{mode.icon}</span>
+                    <span className="mode-name">{mode.name}</span>
+                  </button>
+                  <span className="excel-mode-desc">{mode.desc}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

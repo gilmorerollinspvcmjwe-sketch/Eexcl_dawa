@@ -499,8 +499,15 @@
 
 .excel-game-hub .excel-mode-grid {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
+}
+
+.excel-game-hub .excel-mode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
 .excel-game-hub .excel-mode-btn {
