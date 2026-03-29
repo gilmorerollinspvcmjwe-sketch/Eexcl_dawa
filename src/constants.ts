@@ -7,9 +7,9 @@ export const CELL_WIDTH = 64;
 export const CELL_HEIGHT = 20;
 
 // 安全刷新区域（避免被UI遮挡）
-export const SAFE_ZONE_ROWS = 5; // 顶部预留5行给UI（GameHUD + 连击进度条）
-export const SAFE_ZONE_COLS = 2; // 左右各预留2列
-export const BOTTOM_SAFE_ROWS = 3; // 底部预留3行
+export const SAFE_ZONE_ROWS = 8; // 顶部预留8行给UI（GameHUD + 连击进度条 + 额外缓冲）
+export const SAFE_ZONE_COLS = 4; // 左右各预留4列（连击进度条宽度约160px ≈ 2-3列）
+export const BOTTOM_SAFE_ROWS = 5; // 底部预留5行（状态栏高度）
 
 // 目标持续时间配置
 export const DEFAULT_TARGET_DURATION_MS = 1000; // 基础持续时间
