@@ -74,6 +74,7 @@ export function useGameLogic() {
     movePattern: settings.enemyMovePattern,
     fpsMode: currentMode,
     headshotLineRow: settings.headshotLineRow,
+    targetDuration: settings.targetDuration,
   });
 
   const { stats, recordGameEnd } = useStatsSystem();

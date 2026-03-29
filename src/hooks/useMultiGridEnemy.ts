@@ -27,6 +27,7 @@ interface UseMultiGridEnemyProps {
   movePattern?: MovePattern;
   fpsMode?: string | null;
   headshotLineRow?: number;
+  targetDuration?: number; // 秒
 }
 
 interface UseMultiGridEnemyReturn {
@@ -109,7 +110,7 @@ const SPEED_MAP = {
 };
 
 export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEnemyReturn {
-  const { isPlaying, isPaused, mode, moveSpeed = 1.0, movePattern = 'linear', fpsMode, headshotLineRow = 10 } = props;
+  const { isPlaying, isPaused, mode, moveSpeed = 1.0, movePattern = 'linear', fpsMode, headshotLineRow = 10, targetDuration = 5 } = props;
   
   const [enemies, setEnemies] = useState<MultiGridEnemy[]>([]);
   const fpsConfigRef = useRef<FPSModeConfig>({});
@@ -167,6 +168,10 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
       anchorRow,
       anchorCol,
     });
+    
+    // 设置敌人消失时间（使用设置中的targetDuration，转换为毫秒）
+    const durationMs = (targetDuration || 5) * 1000;
+    enemy.expiresAt = Date.now() + durationMs;
     
     if (effectiveMode === 'moving_target' || effectiveMode === 'motion_track') {
       enemy.movePattern = finalOptions.movePattern ?? movePattern;

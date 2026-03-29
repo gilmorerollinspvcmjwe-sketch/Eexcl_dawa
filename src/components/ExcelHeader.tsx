@@ -7,6 +7,11 @@ interface ExcelHeaderProps {
   onExit?: () => void;
   selectedCell?: { row: number; col: number } | null;
   feedbackMessage?: FeedbackMessage | null;
+  // 游戏状态显示
+  score?: number;
+  combo?: number;
+  timeRemaining?: number;
+  isPlaying?: boolean;
 }
 
 export const ExcelHeader: React.FC<ExcelHeaderProps> = ({ 
@@ -15,6 +20,10 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
   onExit,
   selectedCell,
   feedbackMessage,
+  score,
+  combo,
+  timeRemaining,
+  isPlaying,
 }) => {
   if (isHidden) return null;
 
@@ -241,6 +250,60 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
             <span style={{ color: '#888' }}>=练习瞄准中...</span>
           )}
         </div>
+        
+        {/* 游戏状态显示 - 公示栏最右侧 */}
+        {isPlaying && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 16, 
+            marginLeft: 'auto',
+            padding: '0 12px',
+            borderLeft: '1px solid #d4d4d4',
+            background: '#f8f9fa',
+            height: '100%',
+          }}>
+            {combo !== undefined && combo > 0 && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 4,
+                color: combo >= 10 ? '#dc2626' : combo >= 5 ? '#f59e0b' : '#22c55e',
+                fontWeight: 'bold',
+                fontSize: 13,
+              }}>
+                <span>连击</span>
+                <span style={{ fontSize: 16 }}>{combo}</span>
+              </div>
+            )}
+            {score !== undefined && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 4,
+                color: '#107c41',
+                fontWeight: 'bold',
+                fontSize: 13,
+              }}>
+                <span>得分</span>
+                <span style={{ fontSize: 16 }}>{score}</span>
+              </div>
+            )}
+            {timeRemaining !== undefined && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 4,
+                color: timeRemaining <= 10 ? '#dc2626' : '#374151',
+                fontWeight: 'bold',
+                fontSize: 13,
+              }}>
+                <span>时间</span>
+                <span style={{ fontSize: 16 }}>{Math.floor(timeRemaining)}s</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

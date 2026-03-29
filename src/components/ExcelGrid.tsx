@@ -4,7 +4,6 @@ import React from 'react';
 import type { Target, HitEffect, MultiGridEnemy, LevelConfig, PartType } from '../types';
 import { playHitSound, playMissSound } from '../utils/soundUtils';
 import { GridTable, GameHUD, PauseOverlay } from './grid';
-import { ComboProgressBar } from './ComboProgressBar';
 
 interface ExcelGridProps {
   targets: Target[];
@@ -132,14 +131,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
           mode={gameState.mode}
           misses={gameState.misses}
           headshotLineRow={headshotLineRow}
-        />
-      )}
-
-      {/* 连击进度条 */}
-      {gameState.isPlaying && !gameState.isPaused && gameState.mode !== 'zen' && (
-        <ComboProgressBar 
-          combo={gameState.combo} 
-          maxCombo={gameState.maxCombo || 0} 
         />
       )}
 
