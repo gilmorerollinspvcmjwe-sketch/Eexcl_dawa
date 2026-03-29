@@ -8,8 +8,11 @@ import { StatusBar } from './components/StatusBar';
 import { Crosshair } from './components/Crosshair';
 import { GameHub } from './components/GameHub';
 import { FancyFeedback } from './components/FancyFeedback';
+import { FirstTimeGuide } from './components/FirstTimeGuide';
+import { ModeTutorialModal } from './components/ModeTutorialModal';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useFeedbackSystem } from './hooks/useFeedbackSystem';
+import { useTutorial } from './hooks/useTutorial';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 import type { FPSTrainingMode } from './components/TrainingModeSelector';
@@ -48,6 +51,14 @@ function AppContent() {
     levelStatus,
   } = useGameLogic();
 
+  // 新手引导系统
+  const { tutorialState, startTutorial, completeTutorial, skipTutorial } = useTutorial();
+  const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(() => {
+    // 检查是否是首次使用
+    return !localStorage.getItem('excel-aim-tutorial-completed');
+  });
+  const [showModeTutorial, setShowModeTutorial] = useState<string | null>(null);
+
   const { currentFeedback } = useFeedbackSystem({
     combo: gameState.combo,
     missStreak: gameState.missStreak || 0,
@@ -73,12 +84,26 @@ function AppContent() {
     level?: number,
     difficulty?: any
   ) => {
+    // 检查是否需要显示模式教程
+    const tutorialKey = `tutorial-shown-${mode}`;
+    if (!localStorage.getItem(tutorialKey)) {
+      setShowModeTutorial(mode);
+      return;
+    }
+    
     const finalDuration = duration || settings.trainingDuration || 60;
     startGame(mode, finalDuration as 30 | 60 | 120, level, difficulty || settings.difficulty);
   };
 
   // 从 GameHub 启动 FPS 训练
   const handleStartFPSTrainingFromHub = (mode: FPSTrainingMode, config?: any) => {
+    // 检查是否需要显示模式教程
+    const tutorialKey = `tutorial-shown-${mode}`;
+    if (!localStorage.getItem(tutorialKey)) {
+      setShowModeTutorial(mode);
+      return;
+    }
+    
     setCurrentMode(mode);
     const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
     setModeConfig(finalConfig);
@@ -330,6 +355,34 @@ function AppContent() {
           gameState={gameState}
         />
       </div>
+
+      {/* 首次使用引导 */}
+      {showFirstTimeGuide && (
+        <FirstTimeGuide
+          onComplete={() => {
+            setShowFirstTimeGuide(false);
+            localStorage.setItem('excel-aim-tutorial-completed', 'true');
+          }}
+        />
+      )}
+
+      {/* 模式教程弹窗 */}
+      {showModeTutorial && (
+        <ModeTutorialModal
+          mode={showModeTutorial}
+          isOpen={true}
+          onClose={() => {
+            localStorage.setItem(`tutorial-shown-${showModeTutorial}`, 'true');
+            setShowModeTutorial(null);
+            // 继续启动游戏
+            if (currentMode) {
+              startGameWithMode(currentMode, modeConfig);
+            } else {
+              startGame(showModeTutorial as any, settings.trainingDuration || 60);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
