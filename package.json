@@ -1,8 +1,30 @@
 {
   "name": "excel-aim-trainer",
-  "private": true,
-  "version": "0.0.0",
+  "version": "3.0.0",
+  "description": "A perfect Excel-disguised aim trainer for stealth practice at work",
   "type": "module",
+  "author": "Your Name",
+  "license": "MIT",
+  "homepage": "https://github.com/gilmorerollinspvcmjwe-sketch/Eexcl_dawa#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gilmorerollinspvcmjwe-sketch/Eexcl_dawa.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gilmorerollinspvcmjwe-sketch/Eexcl_dawa/issues"
+  },
+  "keywords": [
+    "aim-trainer",
+    "excel",
+    "game",
+    "fps",
+    "practice",
+    "react",
+    "typescript",
+    "stealth",
+    "摸鱼",
+    "练枪"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -28,5 +50,8 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.0",
     "vite": "^8.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
