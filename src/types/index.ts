@@ -50,3 +50,37 @@ export { GAME_PRESETS } from './settings';
 
 // 统计类型
 export type { ModeStat, GameStats, GameHistoryEntry, LevelDifficulty, LevelObjectiveType, LevelConfig, ReactionTimeStats } from './stats';
+
+// 视觉系统类型
+export type {
+  ColorConfig,
+  TextShadowConfig,
+  TextStyleConfig,
+  BlinkEffect,
+  GradientColorStop,
+  GradientEffect,
+  TypewriterEffect,
+  WaveEffect,
+  GlitchEffect,
+  BounceEffect,
+  TextEffect,
+  TextEffectConfig,
+  HSVColorConfig,
+  ColorHarmonyMode,
+  RandomColorGenerator,
+  SpawnAnimationType,
+  EasingType,
+  SpawnAnimationConfig,
+  AnimationConfig,
+  EnemyVisualConfig,
+  VisualSystemConfig,
+  ActiveAnimation,
+} from './visual';
+export {
+  PRESET_COLORS,
+  SPAWN_ANIMATION_PRESETS,
+  DEFAULT_TEXT_STYLE,
+  DEFAULT_HSV_CONFIG,
+  DEFAULT_COLOR_GENERATOR,
+  DEFAULT_VISUAL_CONFIG,
+} from './visual';
