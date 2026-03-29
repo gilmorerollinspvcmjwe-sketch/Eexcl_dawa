@@ -73,6 +73,7 @@ export function useGameLogic() {
     moveSpeed: settings.enemyMoveSpeed,
     movePattern: settings.enemyMovePattern,
     fpsMode: currentMode,
+    headshotLineRow: settings.headshotLineRow,
   });
 
   const { stats, recordGameEnd } = useStatsSystem();
@@ -165,6 +166,8 @@ export function useGameLogic() {
 
   const startGame = useCallback((mode: GameMode, duration?: TimedDuration, level?: number, difficulty?: string) => {
     gameStartTimeRef.current = Date.now();
+    
+    setCurrentMode(null);
     
     if (difficulty && difficulty !== settings.difficulty) {
       updateSetting('difficulty', difficulty as any);

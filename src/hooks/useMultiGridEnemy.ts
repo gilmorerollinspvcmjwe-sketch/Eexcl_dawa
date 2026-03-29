@@ -26,6 +26,7 @@ interface UseMultiGridEnemyProps {
   moveSpeed?: number;
   movePattern?: MovePattern;
   fpsMode?: string | null;
+  headshotLineRow?: number;
 }
 
 interface UseMultiGridEnemyReturn {
@@ -108,7 +109,7 @@ const SPEED_MAP = {
 };
 
 export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEnemyReturn {
-  const { isPlaying, isPaused, mode, moveSpeed = 1.0, movePattern = 'linear', fpsMode } = props;
+  const { isPlaying, isPaused, mode, moveSpeed = 1.0, movePattern = 'linear', fpsMode, headshotLineRow = 10 } = props;
   
   const [enemies, setEnemies] = useState<MultiGridEnemy[]>([]);
   const fpsConfigRef = useRef<FPSModeConfig>({});
@@ -133,13 +134,25 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
       finalOptions.targetScale = config.targetScale;
     }
 
+    const effectiveMode = fpsMode || mode;
+    
+    let anchorRow: number;
+    let anchorCol: number;
+    
+    if (effectiveMode === 'headshot' || mode === 'headshot') {
+      anchorRow = headshotLineRow;
+      anchorCol = finalOptions.anchorCol ?? (5 + Math.floor(Math.random() * (COLS - 10)));
+      console.log('[DEBUG] Headshot mode detected:', { effectiveMode, mode, headshotLineRow, anchorRow, anchorCol });
+    } else {
+      anchorRow = finalOptions.anchorRow ?? (5 + Math.floor(Math.random() * (ROWS - 10)));
+      anchorCol = finalOptions.anchorCol ?? (5 + Math.floor(Math.random() * (COLS - 10)));
+    }
+
     const enemy = createHumanoidEnemy({
       ...finalOptions,
-      anchorRow: finalOptions.anchorRow ?? (8 + Math.floor(Math.random() * (ROWS - 16))),
-      anchorCol: finalOptions.anchorCol ?? (8 + Math.floor(Math.random() * (COLS - 16))),
+      anchorRow,
+      anchorCol,
     });
-
-    const effectiveMode = fpsMode || mode;
     
     if (effectiveMode === 'moving_target' || effectiveMode === 'motion_track') {
       enemy.movePattern = finalOptions.movePattern ?? movePattern;
@@ -157,7 +170,7 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     }
 
     setEnemies(prev => [...prev, enemy]);
-  }, [isPlaying, isPaused, mode, movePattern, moveSpeed, fpsMode]);
+  }, [isPlaying, isPaused, mode, movePattern, moveSpeed, fpsMode, headshotLineRow]);
 
   const hitPart = useCallback((enemyId: string, partType: PartType, combo: number): PartHitResult | null => {
     let result: PartHitResult | null = null;
