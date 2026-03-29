@@ -58,6 +58,15 @@ function AppContent() {
     return !localStorage.getItem('excel-aim-tutorial-completed');
   });
   const [showModeTutorial, setShowModeTutorial] = useState<string | null>(null);
+  // 保存启动游戏的参数，用于教程关闭后启动
+  const [pendingGameStart, setPendingGameStart] = useState<{
+    mode: any;
+    duration?: 30 | 60 | 120;
+    level?: number;
+    difficulty?: any;
+    isFPSMode?: boolean;
+    fpsConfig?: any;
+  } | null>(null);
 
   const { currentFeedback } = useFeedbackSystem({
     combo: gameState.combo,
@@ -87,6 +96,8 @@ function AppContent() {
     // 检查是否需要显示模式教程
     const tutorialKey = `tutorial-shown-${mode}`;
     if (!localStorage.getItem(tutorialKey)) {
+      // 保存启动参数，显示教程
+      setPendingGameStart({ mode, duration, level, difficulty, isFPSMode: false });
       setShowModeTutorial(mode);
       return;
     }
@@ -100,6 +111,11 @@ function AppContent() {
     // 检查是否需要显示模式教程
     const tutorialKey = `tutorial-shown-${mode}`;
     if (!localStorage.getItem(tutorialKey)) {
+      // 保存启动参数，显示教程
+      setCurrentMode(mode);
+      const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
+      setModeConfig(finalConfig);
+      setPendingGameStart({ mode, isFPSMode: true, fpsConfig: finalConfig });
       setShowModeTutorial(mode);
       return;
     }
@@ -374,11 +390,20 @@ function AppContent() {
           onClose={() => {
             localStorage.setItem(`tutorial-shown-${showModeTutorial}`, 'true');
             setShowModeTutorial(null);
-            // 继续启动游戏
-            if (currentMode) {
-              startGameWithMode(currentMode, modeConfig);
-            } else {
-              startGame(showModeTutorial as any, settings.trainingDuration || 60);
+            // 使用保存的参数启动游戏
+            if (pendingGameStart) {
+              if (pendingGameStart.isFPSMode && pendingGameStart.fpsConfig) {
+                startGameWithMode(pendingGameStart.mode, pendingGameStart.fpsConfig);
+              } else {
+                const finalDuration = pendingGameStart.duration || settings.trainingDuration || 60;
+                startGame(
+                  pendingGameStart.mode,
+                  finalDuration as 30 | 60 | 120,
+                  pendingGameStart.level,
+                  pendingGameStart.difficulty || settings.difficulty
+                );
+              }
+              setPendingGameStart(null);
             }
           }}
         />
