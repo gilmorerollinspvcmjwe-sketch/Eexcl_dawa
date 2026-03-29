@@ -279,6 +279,7 @@ export function useGameLogic() {
           score: result.score,
           isCombo: result.combo >= 5,
           isHeadshot: result.partType === 'head',
+          combo: result.combo,
           createdAt: Date.now(),
         };
         setHitEffects(prev => [...prev, effect]);

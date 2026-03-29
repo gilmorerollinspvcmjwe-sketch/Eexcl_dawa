@@ -49,6 +49,7 @@ export interface HitEffect {
   score: number;
   isCombo: boolean;
   isHeadshot: boolean;
+  combo?: number;
   createdAt: number;
 }
 
