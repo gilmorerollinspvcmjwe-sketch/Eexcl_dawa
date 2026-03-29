@@ -22,7 +22,7 @@ export const HitEffectRenderer: React.FC<HitEffectRendererProps> = ({ effects })
               style={{
                 position: 'absolute',
                 left: `calc(${effect.col - 1} * var(--excel-cell-width) + var(--excel-row-header-width))`,
-                top: `calc(${effect.row - 1} * var(--excel-cell-height))`,
+                top: `calc(${effect.row - 1} * var(--excel-cell-height) + var(--excel-col-header-height))`,
                 width: 'var(--excel-cell-width)',
                 height: 'var(--excel-cell-height)',
                 pointerEvents: 'none',
@@ -35,7 +35,7 @@ export const HitEffectRenderer: React.FC<HitEffectRendererProps> = ({ effects })
               style={{
                 position: 'absolute',
                 left: `calc(${effect.col - 1} * var(--excel-cell-width) + var(--excel-row-header-width) + var(--excel-cell-width) / 2)`,
-                top: `calc(${effect.row - 1} * var(--excel-cell-height) + var(--excel-cell-height) / 2)`,
+                top: `calc(${effect.row - 1} * var(--excel-cell-height) + var(--excel-col-header-height) + var(--excel-cell-height) / 2)`,
                 transform: 'translate(-50%, -50%)',
               }}
             >

@@ -678,6 +678,22 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             {/* ========== 🎨 视觉设置 ========== */}
             {renderSectionHeader(32, '🎨', '视觉设置', '#ec4899')}
 
+            {/* 配置冲突提示 */}
+            {settings.colorlessMode && (
+              <tr>
+                <td className="excel-row-header"></td>
+                <td className="excel-cell" colSpan={7} style={{ 
+                  background: '#fef3c7', 
+                  color: '#92400e',
+                  fontSize: 11,
+                  fontStyle: 'italic',
+                  border: '1px solid #fcd34d',
+                }}>
+                  ⚠️ 无色模式已启用，颜色和谐设置将被忽略
+                </td>
+              </tr>
+            )}
+
             {/* 敌人颜色和谐模式 */}
             <tr>
               <td className="excel-row-header">33</td>
@@ -695,14 +711,25 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       key={mode.id}
                       className={`game-preset-btn ${(settings as any).colorHarmonyMode === mode.id ? 'active' : ''}`}
                       onClick={() => onUpdateSettings('colorHarmonyMode' as any, mode.id as any)}
+                      disabled={settings.colorlessMode}
                       style={{ 
                         minWidth: 80, 
                         fontSize: 11, 
                         padding: '5px 8px', 
-                        background: (settings as any).colorHarmonyMode === mode.id ? '#ec4899' : '#e5e7eb', 
-                        color: (settings as any).colorHarmonyMode === mode.id ? 'white' : '#333' 
+                        background: settings.colorlessMode 
+                          ? '#d1d5db' 
+                          : (settings as any).colorHarmonyMode === mode.id 
+                            ? '#ec4899' 
+                            : '#e5e7eb', 
+                        color: settings.colorlessMode 
+                          ? '#9ca3af' 
+                          : (settings as any).colorHarmonyMode === mode.id 
+                            ? 'white' 
+                            : '#333',
+                        cursor: settings.colorlessMode ? 'not-allowed' : 'pointer',
+                        opacity: settings.colorlessMode ? 0.6 : 1,
                       }}
-                      title={mode.desc}
+                      title={settings.colorlessMode ? '无色模式下不可用' : mode.desc}
                     >
                       {mode.name}
                     </button>
@@ -710,7 +737,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
               </td>
               <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
-                敌人各部位的颜色搭配方式
+                {settings.colorlessMode ? '⚠️ 无色模式下忽略' : '敌人各部位的颜色搭配方式'}
               </td>
             </tr>
 
