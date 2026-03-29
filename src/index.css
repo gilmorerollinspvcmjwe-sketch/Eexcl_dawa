@@ -319,6 +319,7 @@ body {
   flex-direction: column;
   background: #f3f3f3;
   overflow: hidden;
+  position: relative;
 }
 
 .excel-grid-wrapper {

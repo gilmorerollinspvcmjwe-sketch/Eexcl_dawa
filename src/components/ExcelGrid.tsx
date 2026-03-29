@@ -3,7 +3,7 @@
 import React from 'react';
 import type { Target, HitEffect, MultiGridEnemy, LevelConfig, PartType } from '../types';
 import { playHitSound, playMissSound } from '../utils/soundUtils';
-import { GridTable, HitEffectRenderer, GameHUD, PauseOverlay } from './grid';
+import { GridTable, GameHUD, PauseOverlay } from './grid';
 import { ComboProgressBar } from './ComboProgressBar';
 
 interface ExcelGridProps {
@@ -246,10 +246,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         <PauseOverlay onResume={togglePause} />
       )}
 
-      {/* 命中特效渲染 */}
-      <HitEffectRenderer effects={hitEffects} />
-
-      {/* 表格网格 */}
+      {/* 表格网格 - 包含命中特效 */}
       <GridTable
         COLS={COLS}
         ROWS={ROWS}
@@ -270,6 +267,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         colorlessMode={colorlessMode}
         // 视觉设置
         visualSettings={visualSettings}
+        // 命中特效
+        hitEffects={hitEffects}
       />
     </div>
   );

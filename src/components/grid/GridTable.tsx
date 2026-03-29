@@ -1,10 +1,11 @@
 // 基础表格渲染组件
 
 import React, { useCallback, useState, useEffect } from 'react';
-import type { Target, MultiGridEnemy, PartType } from '../../types';
+import type { Target, MultiGridEnemy, PartType, HitEffect } from '../../types';
 import { generateColLetters } from '../../utils/gridUtils';
 import { TargetRenderer } from './TargetRenderer';
 import { MultiGridEnemies } from './MultiGridEnemyRenderer';
+import { HitEffectRenderer } from './HitEffectRenderer';
 import { CELL_WIDTH, CELL_HEIGHT } from '../../constants';
 
 interface GridTableProps {
@@ -34,6 +35,8 @@ interface GridTableProps {
     enemyFontSize?: number;
     enemyFontWeight?: string;
   };
+  // 命中特效
+  hitEffects?: HitEffect[];
 }
 
 export const GridTable: React.FC<GridTableProps> = ({
@@ -57,6 +60,8 @@ export const GridTable: React.FC<GridTableProps> = ({
   colorlessMode = false,
   // 视觉设置
   visualSettings,
+  // 命中特效
+  hitEffects = [],
 }) => {
   const [missEffects, setMissEffects] = useState<Set<string>>(new Set());
 
@@ -216,6 +221,9 @@ export const GridTable: React.FC<GridTableProps> = ({
           visualSettings={visualSettings}
         />
       )}
+
+      {/* 命中特效层 - 与敌人同一坐标系 */}
+      <HitEffectRenderer effects={hitEffects} />
     </div>
   );
 };
