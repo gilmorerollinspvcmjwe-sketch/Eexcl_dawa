@@ -8,6 +8,7 @@ interface SettingsPanelProps {
   onUpdateSettings: <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => void;
   onApplyPreset: (preset: GamePreset) => void;
   onStartGame: (mode: 'timed' | 'endless' | 'zen' | 'headshot' | 'part_training' | 'peek_shot' | 'moving_target', duration?: 30 | 60 | 120, level?: number) => void;
+  onResetSettings?: () => void;
 }
 
 const CROSSHAIR_STYLES: { id: CrosshairStyle; name: string; preview: string }[] = [
@@ -23,7 +24,7 @@ const CROSSHAIR_STYLES: { id: CrosshairStyle; name: string; preview: string }[] 
 const DIFFICULTY_LEVELS = [
   { id: 'very_easy', name: '非常简单', color: '#22c55e', desc: '适合新手入门' },
   { id: 'easy', name: '简单', color: '#84cc16', desc: '目标较大较慢' },
-  { id: 'normal', name: '普通', color: '#eab308', desc: '标准难度' },
+  { id: 'normal', name: '普通', color: '#eab308', desc: '标准难度', recommended: true },
   { id: 'medium', name: '中等', color: '#f97316', desc: '有一定挑战' },
   { id: 'hard', name: '困难', color: '#ef4444', desc: '目标小速度快' },
   { id: 'expert', name: '专家', color: '#dc2626', desc: '极限挑战' },
@@ -34,6 +35,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onUpdateSettings,
   onApplyPreset,
   onStartGame,
+  onResetSettings,
 }) => {
   const updateSetting = <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
     onUpdateSettings(key, value);
@@ -107,6 +109,33 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
   };
 
+  const renderSectionHeader = (row: number, icon: string, title: string, bgColor: string = '#107c41') => (
+    <tr key={`header-${row}`}>
+      <td className="excel-row-header">{row}</td>
+      <td 
+        className="excel-cell" 
+        colSpan={7} 
+        style={{ 
+          background: bgColor, 
+          color: 'white', 
+          fontWeight: 'bold',
+          paddingLeft: 8,
+        }}
+      >
+        {icon} {title}
+      </td>
+    </tr>
+  );
+
+  const renderEmptyRow = (row: number) => (
+    <tr key={`empty-${row}`}>
+      <td className="excel-row-header">{row}</td>
+      {Array.from({ length: 7 }).map((_, i) => (
+        <td key={i} className="excel-cell" />
+      ))}
+    </tr>
+  );
+
   return (
     <div className="excel-grid-container settings-panel-container">
       <div className="excel-grid-wrapper settings-panel-wrapper" style={{ padding: 0 }}>
@@ -120,6 +149,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
           </thead>
           <tbody>
+            {/* 标题行 */}
             <tr>
               <td className="excel-row-header">1</td>
               <td 
@@ -138,29 +168,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </td>
             </tr>
 
-            <tr>
-              <td className="excel-row-header">2</td>
-              {Array.from({ length: 7 }).map((_, i) => (
-                <td key={i} className="excel-cell" />
-              ))}
-            </tr>
+            {renderEmptyRow(2)}
 
-            <tr>
-              <td className="excel-row-header">3</td>
-              <td 
-                className="excel-cell" 
-                colSpan={7} 
-                style={{ 
-                  background: '#107c41', 
-                  color: 'white', 
-                  fontWeight: 'bold',
-                  paddingLeft: 8,
-                }}
-              >
-                🎮 游戏设置
-              </td>
-            </tr>
-
+            {/* ========== 🎮 基础设置 ========== */}
+            {renderSectionHeader(3, '🎮', '基础设置')}
+            
+            {/* 训练时长 */}
             <tr>
               <td className="excel-row-header">4</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>训练时长</td>
@@ -177,18 +190,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         minWidth: 60
                       }}
                     >
-                      {d}秒
+                      {d}秒{d === 60 ? ' ⭐' : ''}
                     </button>
                   ))}
                 </div>
               </td>
-              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                限时模式的训练时间
+              <td className="excel-cell" colSpan={3} style={{ color: '#666', fontSize: 10 }}>
+                每局训练的时间长度，推荐60秒
               </td>
-              <td className="excel-cell" />
-              <td className="excel-cell" />
             </tr>
 
+            {/* 难度等级 */}
             <tr>
               <td className="excel-row-header">5</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>难度等级</td>
@@ -206,370 +218,19 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         minWidth: 65
                       }}
                     >
-                      {diff.name}
+                      {diff.name}{diff.recommended ? ' ⭐' : ''}
                     </button>
                   ))}
                 </div>
               </td>
-              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                影响：目标生成速度和持续时间
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                难度越高，目标越小、消失越快
               </td>
             </tr>
 
+            {/* 启用音效 */}
             <tr>
               <td className="excel-row-header">6</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>目标生成频率</td>
-              <td className="excel-cell">
-                <input
-                  type="range"
-                  className="settings-cell-range"
-                  min="1"
-                  max="10"
-                  value={settings.spawnRate}
-                  onChange={(e) => updateSetting('spawnRate', parseInt(e.target.value))}
-                />
-              </td>
-              <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#107c41' }}>{settings.spawnRate}</strong>
-              </td>
-              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                1=最慢，10=最快
-              </td>
-              <td className="excel-cell" />
-              <td className="excel-cell" />
-              <td className="excel-cell" />
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">7</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>目标持续时间</td>
-              <td className="excel-cell">
-                <input
-                  type="range"
-                  className="settings-cell-range"
-                  min="1"
-                  max="10"
-                  value={settings.targetDuration}
-                  onChange={(e) => updateSetting('targetDuration', parseInt(e.target.value))}
-                />
-              </td>
-              <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#107c41' }}>{settings.targetDuration}</strong>
-              </td>
-              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                秒数 = 值 × 0.5 + 1
-              </td>
-              <td className="excel-cell" />
-              <td className="excel-cell" />
-              <td className="excel-cell" />
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">8</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>目标大小 (px)</td>
-              <td className="excel-cell">
-                <input
-                  type="range"
-                  className="settings-cell-range"
-                  min="14"
-                  max="32"
-                  value={settings.targetSize}
-                  onChange={(e) => updateSetting('targetSize', parseInt(e.target.value))}
-                />
-              </td>
-              <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#107c41' }}>{settings.targetSize}px</strong>
-              </td>
-              <td className="excel-cell" />
-              <td className="excel-cell" />
-              <td className="excel-cell" />
-              <td className="excel-cell" />
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">9</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>移动速度</td>
-              <td className="excel-cell">
-                <input
-                  type="range"
-                  className="settings-cell-range"
-                  min="0.5"
-                  max="3"
-                  step="0.1"
-                  value={settings.enemyMoveSpeed || 1.0}
-                  onChange={(e) => updateSetting('enemyMoveSpeed', parseFloat(e.target.value))}
-                />
-              </td>
-              <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#107c41' }}>{(settings.enemyMoveSpeed || 1.0).toFixed(1)} 格/秒</strong>
-              </td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>移动模式</td>
-              <td className="excel-cell" colSpan={2}>
-                <select
-                  className="settings-cell-select"
-                  value={settings.enemyMovePattern || 'linear'}
-                  onChange={(e) => updateSetting('enemyMovePattern', e.target.value as 'linear' | 'sine' | 'bounce')}
-                >
-                  <option value="linear">直线</option>
-                  <option value="sine">正弦波</option>
-                  <option value="bounce">弹跳</option>
-                </select>
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">10</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>敌人显示</td>
-              <td className="excel-cell" colSpan={3}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className={`game-preset-btn ${(settings.enemyRenderMode || 'text') === 'text' ? 'active' : ''}`}
-                    onClick={() => updateSetting('enemyRenderMode', 'text')}
-                    style={{ background: (settings.enemyRenderMode || 'text') === 'text' ? '#107c41' : '#e5e7eb', color: (settings.enemyRenderMode || 'text') === 'text' ? 'white' : '#333' }}
-                  >
-                    文字模式
-                  </button>
-                  <button
-                    className={`game-preset-btn ${settings.enemyRenderMode === 'icon' ? 'active' : ''}`}
-                    onClick={() => updateSetting('enemyRenderMode', 'icon')}
-                    style={{ background: settings.enemyRenderMode === 'icon' ? '#107c41' : '#e5e7eb', color: settings.enemyRenderMode === 'icon' ? 'white' : '#333' }}
-                  >
-                    图标模式
-                  </button>
-                </div>
-              </td>
-              <td className="excel-cell" colSpan={2} style={{ color: '#888', fontSize: 10 }}>
-                文字：显示中文部位名称
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">11</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>无色模式</td>
-              <td className="excel-cell">
-                <input
-                  type="checkbox"
-                  checked={settings.colorlessMode || false}
-                  onChange={(e) => updateSetting('colorlessMode', e.target.checked)}
-                  style={{ width: 16, height: 16, cursor: 'pointer' }}
-                />
-              </td>
-              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                ✓ 启用后敌人显示为纯文字
-              </td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>反馈模式</td>
-              <td className="excel-cell" colSpan={2}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className={`game-preset-btn ${(settings.feedbackMode || 'fancy') === 'fancy' ? 'active' : ''}`}
-                    onClick={() => updateSetting('feedbackMode', 'fancy')}
-                    style={{ 
-                      background: (settings.feedbackMode || 'fancy') === 'fancy' ? '#8b5cf6' : '#e5e7eb', 
-                      color: (settings.feedbackMode || 'fancy') === 'fancy' ? 'white' : '#333'
-                    }}
-                  >
-                    ✨ 炫酷
-                  </button>
-                  <button
-                    className={`game-preset-btn ${settings.feedbackMode === 'excel' ? 'active' : ''}`}
-                    onClick={() => updateSetting('feedbackMode', 'excel')}
-                    style={{ 
-                      background: settings.feedbackMode === 'excel' ? '#107c41' : '#e5e7eb', 
-                      color: settings.feedbackMode === 'excel' ? 'white' : '#333'
-                    }}
-                  >
-                    📝 Excel
-                  </button>
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">12</td>
-              {Array.from({ length: 7 }).map((_, i) => (
-                <td key={i} className="excel-cell" />
-              ))}
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">13</td>
-              <td 
-                className="excel-cell" 
-                colSpan={7} 
-                style={{ 
-                  background: '#107c41', 
-                  color: 'white', 
-                  fontWeight: 'bold',
-                  paddingLeft: 8,
-                }}
-              >
-                🎯 灵敏度设置
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">14</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>游戏预设</td>
-              <td className="excel-cell" colSpan={5}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {(Object.keys(GAME_PRESETS) as GamePreset[]).map(preset => (
-                    <button
-                      key={preset}
-                      className={`game-preset-btn ${settings.gamePreset === preset ? 'active' : ''}`}
-                      onClick={() => applyPreset(preset)}
-                      title={`${GAME_PRESETS[preset].name} - X: ${GAME_PRESETS[preset].sensitivityX}, Y: ${GAME_PRESETS[preset].sensitivityY}`}
-                    >
-                      {GAME_PRESETS[preset].name}
-                    </button>
-                  ))}
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">15</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>X 轴灵敏度</td>
-              <td className="excel-cell">
-                <input
-                  type="range"
-                  className="settings-cell-range"
-                  min="0.1"
-                  max="5"
-                  step="0.1"
-                  value={settings.sensitivityX}
-                  onChange={(e) => updateSetting('sensitivityX', parseFloat(e.target.value))}
-                />
-              </td>
-              <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#107c41' }}>{settings.sensitivityX.toFixed(1)}</strong>
-              </td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>Y 轴灵敏度</td>
-              <td className="excel-cell">
-                <input
-                  type="range"
-                  className="settings-cell-range"
-                  min="0.1"
-                  max="5"
-                  step="0.1"
-                  value={settings.sensitivityY}
-                  onChange={(e) => updateSetting('sensitivityY', parseFloat(e.target.value))}
-                />
-              </td>
-              <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#107c41' }}>{settings.sensitivityY.toFixed(1)}</strong>
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">16</td>
-              <td className="excel-cell" colSpan={7} style={{ color: '#888', fontSize: 10, fontStyle: 'italic' }}>
-                💡 注：本游戏为点击式瞄准训练，灵敏度设置用于模拟不同游戏的鼠标移动手感。预设已配置常用游戏的灵敏度倍率。
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">17</td>
-              {Array.from({ length: 7 }).map((_, i) => (
-                <td key={i} className="excel-cell" />
-              ))}
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">18</td>
-              <td 
-                className="excel-cell" 
-                colSpan={7} 
-                style={{ 
-                  background: '#107c41', 
-                  color: 'white', 
-                  fontWeight: 'bold',
-                  paddingLeft: 8,
-                }}
-              >
-                ✨ 准星设置
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">19</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>准星样式</td>
-              <td className="excel-cell" colSpan={5}>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {CROSSHAIR_STYLES.map(style => (
-                    <button
-                      key={style.id}
-                      className={`game-preset-btn ${settings.crosshairStyle === style.id ? 'active' : ''}`}
-                      onClick={() => updateSetting('crosshairStyle', style.id)}
-                      style={{ minWidth: 70, fontSize: 14, padding: '6px 10px' }}
-                      title={style.name}
-                    >
-                      <span style={{ fontSize: 18, marginRight: 4 }}>{style.preview}</span>
-                      <span style={{ fontSize: 11 }}>{style.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">20</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>准星大小</td>
-              <td className="excel-cell">
-                <input
-                  type="range"
-                  className="settings-cell-range"
-                  min="8"
-                  max="24"
-                  step="1"
-                  value={settings.crosshairSize || 12}
-                  onChange={(e) => updateSetting('crosshairSize', parseInt(e.target.value))}
-                />
-              </td>
-              <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#107c41' }}>{settings.crosshairSize || 12}px</strong>
-              </td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>准星颜色</td>
-              <td className="excel-cell">
-                <input
-                  type="color"
-                  value={settings.crosshairColor}
-                  onChange={(e) => updateSetting('crosshairColor', e.target.value)}
-                  style={{ width: 50, height: 28, cursor: 'pointer', border: '1px solid #d4d4d4', borderRadius: 3 }}
-                />
-              </td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>预览</td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">21</td>
-              <td className="excel-cell" style={{ fontWeight: 500 }}>使用准星光标</td>
-              <td className="excel-cell">
-                <input
-                  type="checkbox"
-                  checked={settings.customCursor}
-                  onChange={(e) => updateSetting('customCursor', e.target.checked)}
-                  style={{ width: 16, height: 16, cursor: 'pointer' }}
-                />
-              </td>
-              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                ✓ 启用后隐藏系统鼠标
-              </td>
-              <td className="excel-cell" colSpan={2}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 16,
-                  padding: '8px 12px',
-                  background: '#f9fafb',
-                  borderRadius: 4,
-                  border: '1px solid #e5e7eb',
-                }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
-                    {renderCrosshairPreview()}
-                  </svg>
-                  <span style={{ fontSize: 10, color: '#6b7280' }}>实时预览</span>
-                </div>
-              </td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>启用音效</td>
               <td className="excel-cell">
                 <input
@@ -579,33 +240,96 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   style={{ width: 16, height: 16, cursor: 'pointer' }}
                 />
               </td>
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">22</td>
-              {Array.from({ length: 7 }).map((_, i) => (
-                <td key={i} className="excel-cell" />
-              ))}
-            </tr>
-
-            <tr>
-              <td className="excel-row-header">21</td>
-              <td 
-                className="excel-cell" 
-                colSpan={7} 
-                style={{ 
-                  background: '#dc2626', 
-                  color: 'white', 
-                  fontWeight: 'bold',
-                  paddingLeft: 8,
-                }}
-              >
-                💥 爆头线专项模式
+              <td className="excel-cell" colSpan={5} style={{ color: '#666', fontSize: 10 }}>
+                开启后点击和命中会有音效提示
               </td>
             </tr>
 
+            {renderEmptyRow(7)}
+
+            {/* ========== 👁️ 显示设置 ========== */}
+            {renderSectionHeader(8, '👁️', '显示设置', '#059669')}
+
+            {/* 敌人显示 */}
             <tr>
-              <td className="excel-row-header">22</td>
+              <td className="excel-row-header">9</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>敌人显示</td>
+              <td className="excel-cell" colSpan={3}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className={`game-preset-btn ${(settings.enemyRenderMode || 'text') === 'text' ? 'active' : ''}`}
+                    onClick={() => updateSetting('enemyRenderMode', 'text')}
+                    style={{ background: (settings.enemyRenderMode || 'text') === 'text' ? '#059669' : '#e5e7eb', color: (settings.enemyRenderMode || 'text') === 'text' ? 'white' : '#333' }}
+                  >
+                    文字模式 ⭐
+                  </button>
+                  <button
+                    className={`game-preset-btn ${settings.enemyRenderMode === 'icon' ? 'active' : ''}`}
+                    onClick={() => updateSetting('enemyRenderMode', 'icon')}
+                    style={{ background: settings.enemyRenderMode === 'icon' ? '#059669' : '#e5e7eb', color: settings.enemyRenderMode === 'icon' ? 'white' : '#333' }}
+                  >
+                    图标模式
+                  </button>
+                </div>
+              </td>
+              <td className="excel-cell" colSpan={3} style={{ color: '#666', fontSize: 10 }}>
+                文字模式显示中文部位名，图标模式更简洁
+              </td>
+            </tr>
+
+            {/* 无色模式 */}
+            <tr>
+              <td className="excel-row-header">10</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>无色模式</td>
+              <td className="excel-cell">
+                <input
+                  type="checkbox"
+                  checked={settings.colorlessMode || false}
+                  onChange={(e) => updateSetting('colorlessMode', e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: 'pointer' }}
+                />
+              </td>
+              <td className="excel-cell" colSpan={5} style={{ color: '#666', fontSize: 10 }}>
+                纯黑白显示，更像真实Excel表格，适合办公环境
+              </td>
+            </tr>
+
+            {/* 反馈模式 */}
+            <tr>
+              <td className="excel-row-header">11</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>反馈模式</td>
+              <td className="excel-cell" colSpan={3}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className={`game-preset-btn ${(settings.feedbackMode || 'fancy') === 'fancy' ? 'active' : ''}`}
+                    onClick={() => updateSetting('feedbackMode', 'fancy')}
+                    style={{ 
+                      background: (settings.feedbackMode || 'fancy') === 'fancy' ? '#8b5cf6' : '#e5e7eb', 
+                      color: (settings.feedbackMode || 'fancy') === 'fancy' ? 'white' : '#333'
+                    }}
+                  >
+                    ✨ 炫酷 ⭐
+                  </button>
+                  <button
+                    className={`game-preset-btn ${settings.feedbackMode === 'excel' ? 'active' : ''}`}
+                    onClick={() => updateSetting('feedbackMode', 'excel')}
+                    style={{ 
+                      background: settings.feedbackMode === 'excel' ? '#059669' : '#e5e7eb', 
+                      color: settings.feedbackMode === 'excel' ? 'white' : '#333'
+                    }}
+                  >
+                    📝 Excel
+                  </button>
+                </div>
+              </td>
+              <td className="excel-cell" colSpan={3} style={{ color: '#666', fontSize: 10 }}>
+                炫酷模式有动画特效，Excel模式仅文字提示
+              </td>
+            </tr>
+
+            {/* 启用爆头线 */}
+            <tr>
+              <td className="excel-row-header">12</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>启用爆头线</td>
               <td className="excel-cell">
                 <input
@@ -627,38 +351,295 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   style={{ width: 60, textAlign: 'center' }}
                 />
               </td>
-              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                行号 (1-50)
+              <td className="excel-cell" colSpan={3} style={{ color: '#666', fontSize: 10 }}>
+                显示一条参考线，帮助练习爆头瞄准
               </td>
-              <td className="excel-cell" />
-              <td className="excel-cell" />
             </tr>
 
+            {renderEmptyRow(13)}
+
+            {/* ========== 🎯 准星设置 ========== */}
+            {renderSectionHeader(14, '🎯', '准星设置', '#0891b2')}
+
+            {/* 准星样式 */}
             <tr>
-              <td className="excel-row-header">23</td>
-              {Array.from({ length: 7 }).map((_, i) => (
-                <td key={i} className="excel-cell" />
-              ))}
+              <td className="excel-row-header">15</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>准星样式</td>
+              <td className="excel-cell" colSpan={5}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {CROSSHAIR_STYLES.map(style => (
+                    <button
+                      key={style.id}
+                      className={`game-preset-btn ${settings.crosshairStyle === style.id ? 'active' : ''}`}
+                      onClick={() => updateSetting('crosshairStyle', style.id)}
+                      style={{ minWidth: 70, fontSize: 14, padding: '6px 10px', background: settings.crosshairStyle === style.id ? '#0891b2' : '#e5e7eb', color: settings.crosshairStyle === style.id ? 'white' : '#333' }}
+                      title={style.name}
+                    >
+                      <span style={{ fontSize: 18, marginRight: 4 }}>{style.preview}</span>
+                      <span style={{ fontSize: 11 }}>{style.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                选择你习惯的准星外观
+              </td>
             </tr>
 
+            {/* 准星大小和颜色 */}
+            <tr>
+              <td className="excel-row-header">16</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>准星大小</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="8"
+                  max="24"
+                  step="1"
+                  value={settings.crosshairSize || 12}
+                  onChange={(e) => updateSetting('crosshairSize', parseInt(e.target.value))}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#0891b2' }}>{settings.crosshairSize || 12}px</strong>
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>准星颜色</td>
+              <td className="excel-cell">
+                <input
+                  type="color"
+                  value={settings.crosshairColor}
+                  onChange={(e) => updateSetting('crosshairColor', e.target.value)}
+                  style={{ width: 50, height: 28, cursor: 'pointer', border: '1px solid #d4d4d4', borderRadius: 3 }}
+                />
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                推荐绿色或青色
+              </td>
+            </tr>
+
+            {/* 使用准星光标 */}
+            <tr>
+              <td className="excel-row-header">17</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>使用准星光标</td>
+              <td className="excel-cell">
+                <input
+                  type="checkbox"
+                  checked={settings.customCursor}
+                  onChange={(e) => updateSetting('customCursor', e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: 'pointer' }}
+                />
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                隐藏系统鼠标，使用自定义准星
+              </td>
+              <td className="excel-cell" colSpan={3}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 16,
+                  padding: '8px 12px',
+                  background: '#f9fafb',
+                  borderRadius: 4,
+                  border: '1px solid #e5e7eb',
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                    {renderCrosshairPreview()}
+                  </svg>
+                  <span style={{ fontSize: 10, color: '#6b7280' }}>实时预览</span>
+                </div>
+              </td>
+            </tr>
+
+            {renderEmptyRow(18)}
+
+            {/* ========== 🏃 移动设置 ========== */}
+            {renderSectionHeader(19, '🏃', '移动设置', '#7c3aed')}
+
+            {/* 移动速度 */}
+            <tr>
+              <td className="excel-row-header">20</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>移动速度</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="0.5"
+                  max="3"
+                  step="0.1"
+                  value={settings.enemyMoveSpeed || 1.0}
+                  onChange={(e) => updateSetting('enemyMoveSpeed', parseFloat(e.target.value))}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#7c3aed' }}>{(settings.enemyMoveSpeed || 1.0).toFixed(1)} 格/秒</strong>
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>移动模式</td>
+              <td className="excel-cell" colSpan={2}>
+                <select
+                  className="settings-cell-select"
+                  value={settings.enemyMovePattern || 'linear'}
+                  onChange={(e) => updateSetting('enemyMovePattern', e.target.value as 'linear' | 'sine' | 'bounce')}
+                >
+                  <option value="linear">直线</option>
+                  <option value="sine">波浪</option>
+                  <option value="bounce">弹跳</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td className="excel-row-header">21</td>
+              <td className="excel-cell" colSpan={7} style={{ color: '#666', fontSize: 10, fontStyle: 'italic' }}>
+                💡 仅在FPS移动射击模式中生效：移动速度控制目标移动快慢，移动模式控制目标移动轨迹
+              </td>
+            </tr>
+
+            {renderEmptyRow(22)}
+
+            {/* ========== ⚙️ 高级设置 ========== */}
+            {renderSectionHeader(23, '⚙️', '高级设置', '#6b7280')}
+
+            {/* 目标生成频率 */}
             <tr>
               <td className="excel-row-header">24</td>
-              <td 
-                className="excel-cell" 
-                colSpan={7} 
-                style={{ 
-                  background: '#3b82f6', 
-                  color: 'white', 
-                  fontWeight: 'bold',
-                  paddingLeft: 8,
-                }}
-              >
-                🖼️ 老板键伪装图片
+              <td className="excel-cell" style={{ fontWeight: 500 }}>目标生成频率</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="1"
+                  max="10"
+                  value={settings.spawnRate}
+                  onChange={(e) => updateSetting('spawnRate', parseInt(e.target.value))}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#6b7280' }}>{settings.spawnRate}</strong>
+              </td>
+              <td className="excel-cell" colSpan={4} style={{ color: '#666', fontSize: 10 }}>
+                新目标出现的速度，数字越大越频繁
               </td>
             </tr>
 
+            {/* 目标持续时间 */}
             <tr>
               <td className="excel-row-header">25</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>目标持续时间</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="1"
+                  max="10"
+                  value={settings.targetDuration}
+                  onChange={(e) => updateSetting('targetDuration', parseInt(e.target.value))}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#6b7280' }}>{settings.targetDuration}</strong>
+              </td>
+              <td className="excel-cell" colSpan={4} style={{ color: '#666', fontSize: 10 }}>
+                目标在屏幕上停留的时间，值越大停留越久
+              </td>
+            </tr>
+
+            {/* 目标大小 */}
+            <tr>
+              <td className="excel-row-header">26</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>目标大小</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="14"
+                  max="32"
+                  value={settings.targetSize}
+                  onChange={(e) => updateSetting('targetSize', parseInt(e.target.value))}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#6b7280' }}>{settings.targetSize}px</strong>
+              </td>
+              <td className="excel-cell" colSpan={4} style={{ color: '#666', fontSize: 10 }}>
+                目标的大小，影响命中难度
+              </td>
+            </tr>
+
+            {renderEmptyRow(27)}
+
+            {/* 游戏预设 */}
+            <tr>
+              <td className="excel-row-header">28</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>游戏预设</td>
+              <td className="excel-cell" colSpan={5}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(Object.keys(GAME_PRESETS) as GamePreset[]).map(preset => (
+                    <button
+                      key={preset}
+                      className={`game-preset-btn ${settings.gamePreset === preset ? 'active' : ''}`}
+                      onClick={() => applyPreset(preset)}
+                      title={`${GAME_PRESETS[preset].name} - X: ${GAME_PRESETS[preset].sensitivityX}, Y: ${GAME_PRESETS[preset].sensitivityY}`}
+                      style={{ background: settings.gamePreset === preset ? '#6b7280' : '#e5e7eb', color: settings.gamePreset === preset ? 'white' : '#333' }}
+                    >
+                      {GAME_PRESETS[preset].name}
+                    </button>
+                  ))}
+                </div>
+              </td>
+              <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
+                快速应用常用游戏的灵敏度配置
+              </td>
+            </tr>
+
+            {/* X/Y轴灵敏度 */}
+            <tr>
+              <td className="excel-row-header">29</td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>X轴灵敏度</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="0.1"
+                  max="5"
+                  step="0.1"
+                  value={settings.sensitivityX}
+                  onChange={(e) => updateSetting('sensitivityX', parseFloat(e.target.value))}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#6b7280' }}>{settings.sensitivityX.toFixed(1)}</strong>
+              </td>
+              <td className="excel-cell" style={{ fontWeight: 500 }}>Y轴灵敏度</td>
+              <td className="excel-cell">
+                <input
+                  type="range"
+                  className="settings-cell-range"
+                  min="0.1"
+                  max="5"
+                  step="0.1"
+                  value={settings.sensitivityY}
+                  onChange={(e) => updateSetting('sensitivityY', parseFloat(e.target.value))}
+                />
+              </td>
+              <td className="excel-cell" style={{ textAlign: 'center' }}>
+                <strong style={{ color: '#6b7280' }}>{settings.sensitivityY.toFixed(1)}</strong>
+              </td>
+            </tr>
+            <tr>
+              <td className="excel-row-header">30</td>
+              <td className="excel-cell" colSpan={7} style={{ color: '#666', fontSize: 10, fontStyle: 'italic' }}>
+                💡 灵敏度用于模拟不同游戏的鼠标手感，一般保持默认即可
+              </td>
+            </tr>
+
+            {renderEmptyRow(31)}
+
+            {/* ========== 🖼️ 伪装设置 ========== */}
+            {renderSectionHeader(32, '🖼️', '伪装设置', '#3b82f6')}
+
+            {/* 上传伪装图片 */}
+            <tr>
+              <td className="excel-row-header">33</td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>上传伪装图片</td>
               <td className="excel-cell" colSpan={4}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -707,17 +688,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   )}
                 </div>
               </td>
-              <td className="excel-cell" style={{ color: '#888', fontSize: 10 }}>
-                按 Esc 隐藏时显示此图片
+              <td className="excel-cell" colSpan={2} style={{ color: '#666', fontSize: 10 }}>
+                上传一张Excel截图，按Esc隐藏时显示
               </td>
-              <td className="excel-cell" />
             </tr>
 
+            {/* 图片预览 */}
             {settings.coverImage && (
               <tr>
-                <td className="excel-row-header">26</td>
+                <td className="excel-row-header">34</td>
                 <td className="excel-cell" style={{ fontWeight: 500 }}>图片预览</td>
-                <td className="excel-cell" colSpan={5}>
+                <td className="excel-cell" colSpan={6}>
                   <div style={{ 
                     maxWidth: 300, 
                     maxHeight: 150, 
@@ -734,22 +715,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     />
                   </div>
                 </td>
-                <td className="excel-cell" />
               </tr>
             )}
 
-            <tr>
-              <td className="excel-row-header">27</td>
-              {Array.from({ length: 7 }).map((_, i) => (
-                <td key={i} className="excel-cell" />
-              ))}
-            </tr>
+            {renderEmptyRow(35)}
 
+            {/* 操作说明和恢复默认 */}
             <tr>
-              <td className="excel-row-header">28</td>
+              <td className="excel-row-header">36</td>
               <td 
                 className="excel-cell" 
-                colSpan={7} 
+                colSpan={5} 
                 style={{ 
                   background: '#f3f4f6', 
                   color: '#6b7280',
@@ -759,6 +735,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               >
                 📝 操作说明：Esc = 隐藏/恢复游戏 | P = 暂停 | 点击目标进行射击 | 左上角悬停 3 秒 = 快速隐藏
               </td>
+              <td className="excel-cell" colSpan={2}>
+                {onResetSettings && (
+                  <button
+                    onClick={onResetSettings}
+                    style={{
+                      padding: '6px 12px',
+                      background: '#6b7280',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      fontSize: 11,
+                    }}
+                  >
+                    🔄 恢复默认设置
+                  </button>
+                )}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -766,3 +760,5 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     </div>
   );
 };
+
+export default SettingsPanel;

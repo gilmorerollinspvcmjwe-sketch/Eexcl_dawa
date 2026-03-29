@@ -15,7 +15,7 @@ import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 import type { FPSTrainingMode } from './components/TrainingModeSelector';
 
 function AppContent() {
-  const { settings, updateSetting, applyPreset } = useSettings();
+  const { settings, updateSetting, applyPreset, resetSettings } = useSettings();
   const { mousePosition, isCrosshairVisible, setCrosshairVisible } = useCrosshair();
 
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
@@ -307,6 +307,7 @@ function AppContent() {
               onUpdateSettings={updateSetting}
               onApplyPreset={applyPreset}
               onStartGame={startGame}
+              onResetSettings={resetSettings}
             />
           )}
         </div>
