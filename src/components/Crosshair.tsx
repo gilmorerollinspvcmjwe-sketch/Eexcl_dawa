@@ -62,6 +62,43 @@ const CFCrosshair: React.FC<{ color: string }> = memo(({ color }) => (
   </>
 ));
 
+const ApexCrosshair: React.FC<{ color: string }> = memo(({ color }) => (
+  <>
+    <line x1="12" y1="2" x2="12" y2="8" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="12" y1="16" x2="12" y2="22" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="2" y1="12" x2="8" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="16" y1="12" x2="22" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <circle cx="12" cy="12" r="3" stroke={color} strokeWidth={1.5} fill="none" />
+  </>
+));
+
+const OverwatchCrosshair: React.FC<{ color: string }> = memo(({ color }) => (
+  <>
+    <circle cx="12" cy="12" r="4" stroke={color} strokeWidth={2} fill="none" />
+    <line x1="12" y1="4" x2="12" y2="7" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="12" y1="17" x2="12" y2="20" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="4" y1="12" x2="7" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="17" y1="12" x2="20" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </>
+));
+
+const SplitCrosshair: React.FC<{ color: string }> = memo(({ color }) => (
+  <>
+    <line x1="12" y1="2" x2="12" y2="9" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="12" y1="15" x2="12" y2="22" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="2" y1="12" x2="9" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <line x1="15" y1="12" x2="22" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    <circle cx="12" cy="12" r="1" fill={color} />
+  </>
+));
+
+const SquircleCrosshair: React.FC<{ color: string }> = memo(({ color }) => (
+  <>
+    <rect x="6" y="6" width="12" height="12" rx="3" stroke={color} strokeWidth={2} fill="none" />
+    <circle cx="12" cy="12" r="1.5" fill={color} />
+  </>
+));
+
 // Main Crosshair component
 export const Crosshair: React.FC<CrosshairProps> = memo(({ 
   x, 
@@ -87,6 +124,14 @@ export const Crosshair: React.FC<CrosshairProps> = memo(({
         return <CS2Crosshair color={color} />;
       case 'cf':
         return <CFCrosshair color={color} />;
+      case 'apex':
+        return <ApexCrosshair color={color} />;
+      case 'overwatch':
+        return <OverwatchCrosshair color={color} />;
+      case 'split':
+        return <SplitCrosshair color={color} />;
+      case 'squircle':
+        return <SquircleCrosshair color={color} />;
       case 'cross':
       default:
         return <CrossCrosshair color={color} size={size} />;
@@ -121,3 +166,7 @@ TShapeCrosshair.displayName = 'TShapeCrosshair';
 ValorantCrosshair.displayName = 'ValorantCrosshair';
 CS2Crosshair.displayName = 'CS2Crosshair';
 CFCrosshair.displayName = 'CFCrosshair';
+ApexCrosshair.displayName = 'ApexCrosshair';
+OverwatchCrosshair.displayName = 'OverwatchCrosshair';
+SplitCrosshair.displayName = 'SplitCrosshair';
+SquircleCrosshair.displayName = 'SquircleCrosshair';

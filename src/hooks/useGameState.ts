@@ -54,6 +54,10 @@ export function useGameState(initialHeadshotLineRow: number = 10): UseGameStateR
       headshotLineRow: headshotLineRow || 10,
       missStreak: 0,
       headshotStreak: 0,
+      lives: mode === 'survival' ? 3 : undefined,
+      wave: mode === 'survival' ? 1 : undefined,
+      headshotOnlyHits: mode === 'headshot_only' ? 0 : undefined,
+      headshotOnlyMisses: mode === 'headshot_only' ? 0 : undefined,
     });
   }, []);
 

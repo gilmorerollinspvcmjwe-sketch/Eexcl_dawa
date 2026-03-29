@@ -4,6 +4,7 @@ import React from 'react';
 import type { Target, HitEffect, MultiGridEnemy, LevelConfig, PartType } from '../types';
 import { playHitSound, playMissSound } from '../utils/soundUtils';
 import { GridTable, HitEffectRenderer, GameHUD, PauseOverlay } from './grid';
+import { ComboProgressBar } from './ComboProgressBar';
 
 interface ExcelGridProps {
   targets: Target[];
@@ -26,6 +27,10 @@ interface ExcelGridProps {
     totalClicks?: number;
     maxCombo?: number;
     headHits?: number;
+    lives?: number;
+    wave?: number;
+    headshotOnlyHits?: number;
+    headshotOnlyMisses?: number;
   };
   headshotLineEnabled?: boolean;
   headshotLineRow?: number;
@@ -34,16 +39,13 @@ interface ExcelGridProps {
   togglePause?: () => void;
   soundEnabled?: boolean;
   onExit?: () => void;
-  // 多格敌人支持
   multiGridEnemies?: MultiGridEnemy[];
   enemyRenderMode?: 'text' | 'icon';
   showEnemyPriority?: boolean;
   showEnemyHp?: boolean;
-  // 关卡系统
   currentLevel?: number | null;
   levelConfig?: LevelConfig | null;
   levelStatus?: 'playing' | 'completed' | 'failed' | null;
-  // 无色模式
   colorlessMode?: boolean;
 }
 
@@ -123,6 +125,54 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
           misses={gameState.misses}
           headshotLineRow={headshotLineRow}
         />
+      )}
+
+      {/* 连击进度条 */}
+      {gameState.isPlaying && !gameState.isPaused && gameState.mode !== 'zen' && (
+        <ComboProgressBar 
+          combo={gameState.combo} 
+          maxCombo={gameState.maxCombo || 0} 
+        />
+      )}
+
+      {/* 生存模式 HUD */}
+      {gameState.isPlaying && !gameState.isPaused && gameState.mode === 'survival' && (
+        <div className="survival-hud">
+          <div className="survival-lives">
+            {[1, 2, 3].map(i => (
+              <span 
+                key={i} 
+                className={`survival-life ${(gameState.lives || 3) < i ? 'lost' : ''}`}
+              >
+                ❤️
+              </span>
+            ))}
+          </div>
+          <div className="survival-wave">
+            波次: <span>{gameState.wave || 1}</span>
+          </div>
+        </div>
+      )}
+
+      {/* 仅头部模式 HUD */}
+      {gameState.isPlaying && !gameState.isPaused && gameState.mode === 'headshot_only' && (
+        <>
+          <div className="headshot-only-indicator">仅 头 部</div>
+          <div className="headshot-only-stats">
+            <div className="headshot-stat">
+              <span className="headshot-stat-label">爆头:</span>
+              <span className="headshot-stat-value highlight">{gameState.headshotOnlyHits || 0}</span>
+            </div>
+            <div className="headshot-stat">
+              <span className="headshot-stat-label">失误:</span>
+              <span className="headshot-stat-value">{gameState.headshotOnlyMisses || 0}</span>
+            </div>
+            <div className="headshot-stat">
+              <span className="headshot-stat-label">连击:</span>
+              <span className="headshot-stat-value">{gameState.combo}</span>
+            </div>
+          </div>
+        </>
       )}
 
       {/* 关卡进度显示 */}

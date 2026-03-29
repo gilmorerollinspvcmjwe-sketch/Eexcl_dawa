@@ -1530,3 +1530,225 @@ body {
   font-weight: bold;
   color: #333;
 }
+
+/* ==================== 连击进度条 ==================== */
+.combo-progress-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 160px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--excel-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+  font-family: var(--excel-font-family);
+}
+
+.combo-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.combo-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.combo-value {
+  font-size: 24px;
+  font-weight: bold;
+  transition: transform 0.2s ease, color 0.3s ease;
+}
+
+.combo-value.pulse {
+  animation: comboPulse 0.3s ease-out;
+}
+
+@keyframes comboPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.combo-multiplier {
+  font-size: 14px;
+  font-weight: bold;
+  margin-left: auto;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.combo-progress-bar-wrapper {
+  margin: 6px 0;
+}
+
+.combo-progress-bar-bg {
+  height: 8px;
+  border-radius: 4px;
+  position: relative;
+  overflow: visible;
+}
+
+.combo-progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.combo-progress-marker {
+  position: absolute;
+  top: -4px;
+  transform: translateX(-50%);
+}
+
+.combo-progress-marker::before {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  margin: 0 auto;
+}
+
+.marker-label {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.combo-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.combo-level-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.combo-next-hint {
+  font-size: 10px;
+  color: #999;
+}
+
+.combo-max-record {
+  font-size: 10px;
+  color: #999;
+  text-align: center;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #eee;
+}
+
+/* ==================== 生存模式样式 ==================== */
+.survival-hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+}
+
+.survival-lives {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--excel-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.survival-life {
+  font-size: 18px;
+  transition: transform 0.2s ease, opacity 0.3s ease;
+}
+
+.survival-life.lost {
+  opacity: 0.3;
+  transform: scale(0.8);
+}
+
+.survival-wave {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--excel-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.survival-wave span {
+  color: var(--excel-green);
+}
+
+/* ==================== 仅头部模式样式 ==================== */
+.headshot-only-indicator {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.9) 0%, rgba(185, 28, 28, 0.9) 100%);
+  color: white;
+  padding: 12px 6px;
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  box-shadow: 2px 0 8px rgba(220, 38, 38, 0.3);
+  z-index: 150;
+}
+
+.headshot-only-stats {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--excel-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  z-index: 200;
+}
+
+.headshot-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.headshot-stat-label {
+  color: #666;
+}
+
+.headshot-stat-value {
+  font-weight: bold;
+  color: #333;
+}
+
+.headshot-stat-value.highlight {
+  color: #dc2626;
+}

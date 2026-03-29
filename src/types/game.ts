@@ -8,10 +8,12 @@ export type GameMode =
   | 'peek_shot' 
   | 'moving_target' 
   | 'part_training'
-  | 'motion_track'    // 移动射击训练
-  | 'switch_track'    // 目标切换训练
-  | 'reaction'        // 反应测试
-  | 'precision';      // 精准射击
+  | 'motion_track'
+  | 'switch_track'
+  | 'reaction'
+  | 'precision'
+  | 'survival'
+  | 'headshot_only';
 
 export type TimedDuration = 30 | 60 | 120;
 
@@ -34,6 +36,10 @@ export interface GameState {
   headshotLineRow: number;
   missStreak?: number;
   headshotStreak?: number;
+  lives?: number;
+  wave?: number;
+  headshotOnlyHits?: number;
+  headshotOnlyMisses?: number;
 }
 
 export interface CellPosition {

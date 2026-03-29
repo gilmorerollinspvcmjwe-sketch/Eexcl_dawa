@@ -272,13 +272,24 @@ export function useGameLogic() {
       const result = hitPart(enemy.id, part.type, gameState.combo);
       
       if (result) {
+        const isHeadshot = result.partType === 'head';
+        
+        if (gameState.mode === 'headshot_only' && !isHeadshot) {
+          setGameState(prev => ({
+            ...prev,
+            combo: 0,
+            headshotOnlyMisses: (prev.headshotOnlyMisses || 0) + 1,
+          }));
+          return;
+        }
+        
         const effect: HitEffect = {
           id: `${Date.now()}-${Math.random()}`,
           row,
           col,
           score: result.score,
           isCombo: result.combo >= 5,
-          isHeadshot: result.partType === 'head',
+          isHeadshot,
           combo: result.combo,
           createdAt: Date.now(),
         };
@@ -290,9 +301,12 @@ export function useGameLogic() {
           combo: result.combo,
           maxCombo: Math.max(prev.maxCombo, result.combo),
           hits: prev.hits + 1,
-          headHits: result.partType === 'head' ? prev.headHits + 1 : prev.headHits,
+          headHits: isHeadshot ? prev.headHits + 1 : prev.headHits,
           missStreak: 0,
-          headshotStreak: result.partType === 'head' ? (prev.headshotStreak || 0) + 1 : 0,
+          headshotStreak: isHeadshot ? (prev.headshotStreak || 0) + 1 : 0,
+          headshotOnlyHits: prev.mode === 'headshot_only' && isHeadshot 
+            ? (prev.headshotOnlyHits || 0) + 1 
+            : prev.headshotOnlyHits,
         }));
 
         if (result.isEnemyDead) {
@@ -316,6 +330,28 @@ export function useGameLogic() {
           headshotStreak: 0,
         };
       });
+    } else if (gameState.mode === 'survival') {
+      setGameState(prev => {
+        const newLives = (prev.lives || 3) - 1;
+        if (newLives <= 0) {
+          setTimeout(() => endGame(), 100);
+        }
+        return {
+          ...prev,
+          lives: newLives,
+          combo: 0,
+          missStreak: (prev.missStreak || 0) + 1,
+          headshotStreak: 0,
+        };
+      });
+    } else if (gameState.mode === 'headshot_only') {
+      setGameState(prev => ({
+        ...prev,
+        combo: 0,
+        headshotOnlyMisses: (prev.headshotOnlyMisses || 0) + 1,
+        missStreak: (prev.missStreak || 0) + 1,
+        headshotStreak: 0,
+      }));
     } else {
       setGameState(prev => ({
         ...prev,

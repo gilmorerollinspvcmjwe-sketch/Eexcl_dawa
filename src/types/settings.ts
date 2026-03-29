@@ -2,7 +2,7 @@
 
 import type { Difficulty } from './game';
 
-export type CrosshairStyle = 'dot' | 'cross' | 'circle' | 't-shape' | 'valorant' | 'cs2' | 'cf';
+export type CrosshairStyle = 'dot' | 'cross' | 'circle' | 't-shape' | 'valorant' | 'cs2' | 'cf' | 'apex' | 'overwatch' | 'split' | 'squircle';
 
 export type GamePreset = 'valorant' | 'cs2' | 'cf' | 'custom';
 

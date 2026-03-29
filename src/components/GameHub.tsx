@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import type { FPSTrainingMode } from './TrainingModeSelector';
 import '../styles/gamehub.css';
 
-export type GameModeType = 'timed' | 'endless' | 'zen' | 'headshot';
+export type GameModeType = 'timed' | 'endless' | 'zen' | 'headshot' | 'survival' | 'headshot_only';
 
 export type DifficultyLevel = 'very_easy' | 'easy' | 'normal' | 'medium' | 'hard' | 'expert';
 
@@ -146,6 +146,8 @@ export const GameHub: React.FC<GameHubProps> = ({
                 { id: 'endless', icon: '♾️', name: '无限', desc: '「没有尽头，只有突破」' },
                 { id: 'zen', icon: '🧘', name: '禅', desc: '「心无旁骛，万物皆空」' },
                 { id: 'headshot', icon: '🎯', name: '爆头线', desc: '「一击必杀，瞄准即正义」' },
+                { id: 'survival', icon: '❤️', name: '生存', desc: '「三条命，失误即出局」' },
+                { id: 'headshot_only', icon: '💀', name: '仅头部', desc: '「非头即失，极致精准」' },
               ].map(mode => (
                 <div key={mode.id} className="excel-mode-item">
                   <button
