@@ -295,6 +295,12 @@ function AppContent() {
               levelConfig={levelConfig}
               levelStatus={levelStatus}
               colorlessMode={settings.colorlessMode}
+              visualSettings={{
+                colorHarmonyMode: settings.colorHarmonyMode,
+                spawnAnimation: settings.spawnAnimation,
+                enemyFontSize: settings.enemyFontSize,
+                enemyFontWeight: settings.enemyFontWeight,
+              }}
             />
           ) : currentSheet === 'stats' ? (
             // Sheet3: 统计

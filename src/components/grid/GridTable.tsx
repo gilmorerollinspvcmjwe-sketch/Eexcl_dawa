@@ -27,6 +27,13 @@ interface GridTableProps {
   showEnemyHp?: boolean;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
   colorlessMode?: boolean;
+  // 视觉设置
+  visualSettings?: {
+    colorHarmonyMode?: 'none' | 'complementary' | 'analogous' | 'triadic' | 'split-complementary';
+    spawnAnimation?: 'none' | 'fadeIn' | 'popIn' | 'slideUp' | 'bounceIn' | 'flashIn';
+    enemyFontSize?: number;
+    enemyFontWeight?: string;
+  };
 }
 
 export const GridTable: React.FC<GridTableProps> = ({
@@ -48,6 +55,8 @@ export const GridTable: React.FC<GridTableProps> = ({
   showEnemyHp = true,
   onPartClick,
   colorlessMode = false,
+  // 视觉设置
+  visualSettings,
 }) => {
   const [missEffects, setMissEffects] = useState<Set<string>>(new Set());
 
@@ -204,6 +213,7 @@ export const GridTable: React.FC<GridTableProps> = ({
           showHp={showEnemyHp}
           onPartClick={onPartClick}
           colorlessMode={colorlessMode}
+          visualSettings={visualSettings}
         />
       )}
     </div>

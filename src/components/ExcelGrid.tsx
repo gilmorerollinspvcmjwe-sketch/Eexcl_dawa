@@ -47,6 +47,12 @@ interface ExcelGridProps {
   levelConfig?: LevelConfig | null;
   levelStatus?: 'playing' | 'completed' | 'failed' | null;
   colorlessMode?: boolean;
+  visualSettings?: {
+    colorHarmonyMode?: 'none' | 'complementary' | 'analogous' | 'triadic' | 'split-complementary';
+    spawnAnimation?: 'none' | 'fadeIn' | 'popIn' | 'slideUp' | 'bounceIn' | 'flashIn';
+    enemyFontSize?: number;
+    enemyFontWeight?: string;
+  };
 }
 
 export const ExcelGrid: React.FC<ExcelGridProps> = ({
@@ -76,6 +82,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   levelStatus,
   // 无色模式
   colorlessMode = false,
+  // 视觉设置
+  visualSettings,
 }) => {
   // 处理 miss 音效
   const handleMiss = () => {
@@ -260,6 +268,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         showEnemyHp={showEnemyHp}
         onPartClick={handlePartClick}
         colorlessMode={colorlessMode}
+        // 视觉设置
+        visualSettings={visualSettings}
       />
     </div>
   );

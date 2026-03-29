@@ -15,6 +15,12 @@ interface MultiGridEnemyRendererProps {
   showHp?: boolean;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
   colorlessMode?: boolean;
+  visualSettings?: {
+    colorHarmonyMode?: 'none' | 'complementary' | 'analogous' | 'triadic' | 'split-complementary';
+    spawnAnimation?: 'none' | 'fadeIn' | 'popIn' | 'slideUp' | 'bounceIn' | 'flashIn';
+    enemyFontSize?: number;
+    enemyFontWeight?: string;
+  };
 }
 
 interface PartCellProps {
@@ -27,6 +33,12 @@ interface PartCellProps {
   absoluteCol: number;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
   colorlessMode?: boolean;
+  visualSettings?: {
+    colorHarmonyMode?: 'none' | 'complementary' | 'analogous' | 'triadic' | 'split-complementary';
+    enemyFontSize?: number;
+    enemyFontWeight?: string;
+  };
+  partIndex?: number;
 }
 
 const PartCell: React.FC<PartCellProps> = ({
@@ -39,6 +51,8 @@ const PartCell: React.FC<PartCellProps> = ({
   absoluteCol,
   onPartClick,
   colorlessMode = false,
+  visualSettings,
+  partIndex = 0,
 }) => {
   if (part.state === 'destroyed') {
     return null;
@@ -47,6 +61,34 @@ const PartCell: React.FC<PartCellProps> = ({
   const baseColor = PART_COLORS[part.type];
   const stateColor = PART_STATE_COLORS[part.state];
   const isDamaged = part.state === 'damaged' || part.state === 'critical';
+
+  const getHarmonyColor = (baseHue: number, index: number): string => {
+    const mode = visualSettings?.colorHarmonyMode || 'none';
+    let hue = baseHue;
+    
+    switch (mode) {
+      case 'complementary':
+        hue = index === 0 ? baseHue : (baseHue + 180) % 360;
+        break;
+      case 'analogous':
+        hue = (baseHue + index * 30) % 360;
+        break;
+      case 'triadic':
+        hue = (baseHue + index * 120) % 360;
+        break;
+      case 'split-complementary':
+        hue = index === 0 ? baseHue : (baseHue + 150 + (index - 1) * 60) % 360;
+        break;
+      default:
+        return baseColor;
+    }
+    
+    return `hsl(${hue}, 80%, 50%)`;
+  };
+
+  const partColor = visualSettings?.colorHarmonyMode && visualSettings.colorHarmonyMode !== 'none'
+    ? getHarmonyColor(0, partIndex)
+    : baseColor;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -66,8 +108,8 @@ const PartCell: React.FC<PartCellProps> = ({
       border: 'none',
       color: '#000000',
       fontFamily: 'SimSun, 宋体, serif',
-      fontSize: 14,
-      fontWeight: 'normal',
+      fontSize: visualSettings?.enemyFontSize || 14,
+      fontWeight: (visualSettings?.enemyFontWeight as any) || 'normal',
       cursor: 'crosshair',
       pointerEvents: 'auto',
     };
@@ -93,13 +135,13 @@ const PartCell: React.FC<PartCellProps> = ({
     alignItems: 'center',
     justifyContent: 'center',
     background: part.state === 'critical' 
-      ? `linear-gradient(135deg, ${baseColor} 0%, #ef4444 100%)`
-      : baseColor,
+      ? `linear-gradient(135deg, ${partColor} 0%, #ef4444 100%)`
+      : partColor,
     border: `2px solid ${isDamaged ? stateColor : 'rgba(0,0,0,0.3)'}`,
     borderRadius: part.type === 'head' ? '50%' : '4px',
     color: 'white',
-    fontWeight: 'bold',
-    fontSize: 11,
+    fontWeight: (visualSettings?.enemyFontWeight as any) || 'bold',
+    fontSize: visualSettings?.enemyFontSize || 11,
     textShadow: '0 1px 2px rgba(0,0,0,0.5)',
     transition: 'all 0.15s ease-out',
     boxShadow: isDamaged 
@@ -213,6 +255,7 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   showHp = true,
   onPartClick,
   colorlessMode = false,
+  visualSettings,
 }) => {
   if (enemy.peekState === 'hidden') return null;
 
@@ -276,6 +319,8 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
             absoluteCol={absoluteCol}
             onPartClick={onPartClick}
             colorlessMode={colorlessMode}
+            visualSettings={visualSettings}
+            partIndex={index}
           />
         );
       })}
@@ -294,6 +339,12 @@ interface MultiGridEnemiesProps {
   showHp?: boolean;
   onPartClick?: (enemyId: string, partType: PartType, row: number, col: number) => void;
   colorlessMode?: boolean;
+  visualSettings?: {
+    colorHarmonyMode?: 'none' | 'complementary' | 'analogous' | 'triadic' | 'split-complementary';
+    spawnAnimation?: 'none' | 'fadeIn' | 'popIn' | 'slideUp' | 'bounceIn' | 'flashIn';
+    enemyFontSize?: number;
+    enemyFontWeight?: string;
+  };
 }
 
 export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
@@ -307,6 +358,7 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
   showHp = true,
   onPartClick,
   colorlessMode = false,
+  visualSettings,
 }) => {
   return (
     <div className="multi-grid-enemies-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -323,6 +375,7 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
           showHp={showHp}
           onPartClick={onPartClick}
           colorlessMode={colorlessMode}
+          visualSettings={visualSettings}
         />
       ))}
 
