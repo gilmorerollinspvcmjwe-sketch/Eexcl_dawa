@@ -31,7 +31,7 @@ function AppContent() {
   const { mousePosition, isCrosshairVisible, setCrosshairVisible } = useCrosshair();
 
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
-  const [modeConfig, setModeConfig] = useState<any>({});
+  const [, setModeConfig] = useState<any>({});
 
   const {
     gameState,
@@ -58,10 +58,11 @@ function AppContent() {
     currentLevel,
     levelConfig,
     levelStatus,
+    currentPriorityTarget,
   } = useGameLogic();
 
   // 新手引导系统
-  const { tutorialState, startTutorial, completeTutorial, skipTutorial } = useTutorial();
+  useTutorial();
   const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(() => {
     // 检查是否是首次使用
     return !localStorage.getItem('excel-aim-tutorial-completed');
@@ -352,10 +353,12 @@ function AppContent() {
                 enemyFontWeight: settings.enemyFontWeight,
               }}
               cellSettings={settings.cellSettings}
+              currentPriorityTarget={currentPriorityTarget}
+              fpsMode={currentMode}
             />
           ) : currentSheet === 'stats' ? (
             // Sheet3: 统计
-            <StatsPanel stats={stats} onReset={handleResetStats} onExit={() => switchSheet('hub')} />
+            <StatsPanel stats={stats} onReset={handleResetStats} onExit={() => exitToHub()} />
           ) : (
             // Sheet4: 设置
             <SettingsPanel

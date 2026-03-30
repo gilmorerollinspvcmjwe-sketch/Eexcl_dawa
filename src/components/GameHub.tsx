@@ -384,6 +384,49 @@ const FPSConfigInline: React.FC<{
               </button>
             ))}
           </div>
+          <label style={{ marginLeft: 16, fontSize: 12, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={config.showPriority !== false}
+              onChange={(e) => onChange({ ...config, showPriority: e.target.checked })}
+              style={{ marginRight: 4 }}
+            />
+            显示优先级
+          </label>
+        </div>
+      );
+
+    case 'reaction':
+      return (
+        <div className="excel-inline-config">
+          <span className="config-label">测试轮数：</span>
+          <div className="excel-button-group">
+            {[10, 20, 30].map(rounds => (
+              <button
+                key={rounds}
+                className={`excel-mini-btn ${config.rounds === rounds ? 'selected' : ''}`}
+                onClick={() => onChange({ ...config, rounds })}
+              >
+                {rounds}轮
+              </button>
+            ))}
+          </div>
+          <span className="config-label config-label-right">间隔：</span>
+          <div className="excel-button-group">
+            {[
+              { id: 1.5, name: '短' },
+              { id: 2, name: '中' },
+              { id: 3, name: '长' },
+            ].map(d => (
+              <button
+                key={d.id}
+                className={`excel-mini-btn ${config.interval === d.id ? 'selected' : ''}`}
+                onClick={() => onChange({ ...config, interval: d.id })}
+              >
+                {d.name}
+              </button>
+            ))}
+          </div>
         </div>
       );
 
@@ -399,6 +442,22 @@ const FPSConfigInline: React.FC<{
                 onClick={() => onChange({ ...config, targetCount: count })}
               >
                 {count}
+              </button>
+            ))}
+          </div>
+          <span className="config-label config-label-right">大小：</span>
+          <div className="excel-button-group">
+            {[
+              { id: 0.25, name: '25%' },
+              { id: 0.5, name: '50%' },
+              { id: 0.75, name: '75%' },
+            ].map(s => (
+              <button
+                key={s.id}
+                className={`excel-mini-btn ${config.targetScale === s.id ? 'selected' : ''}`}
+                onClick={() => onChange({ ...config, targetScale: s.id })}
+              >
+                {s.name}
               </button>
             ))}
           </div>

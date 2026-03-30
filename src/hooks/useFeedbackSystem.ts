@@ -19,14 +19,14 @@ interface UseFeedbackSystemReturn {
 }
 
 export function useFeedbackSystem(props: UseFeedbackSystemProps): UseFeedbackSystemReturn {
-  const { combo, missStreak, headshotStreak, headshotRate, score, bestScore, isPlaying, feedbackMode } = props;
+  const { combo, missStreak, headshotStreak, headshotRate, score, bestScore, isPlaying } = props;
 
   const [currentFeedback, setCurrentFeedback] = useState<FeedbackMessage | null>(null);
   const prevComboRef = useRef(0);
   const prevMissStreakRef = useRef(0);
   const prevHeadshotStreakRef = useRef(0);
   const prevIsPlayingRef = useRef(false);
-  const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastFeedbackIdRef = useRef<string>('');
 
   const showFeedback = useCallback((feedback: FeedbackMessage) => {

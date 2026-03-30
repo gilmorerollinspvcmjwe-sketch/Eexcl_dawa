@@ -21,6 +21,7 @@ interface MultiGridEnemyRendererProps {
     enemyFontSize?: number;
     enemyFontWeight?: string;
   };
+  isCurrentTarget?: boolean;
 }
 
 interface PartCellProps {
@@ -191,9 +192,38 @@ function getPartIcon(partType: PartType): string {
   }
 }
 
-const PriorityLabel: React.FC<{ priority: Priority; colorlessMode?: boolean }> = ({ priority, colorlessMode = false }) => {
+const PriorityLabel: React.FC<{ priority: Priority; colorlessMode?: boolean; isCurrentTarget?: boolean }> = ({ 
+  priority, 
+  colorlessMode = false,
+  isCurrentTarget = false 
+}) => {
   if (colorlessMode) return null;
-  const config = PRIORITY_CONFIG[priority];
+  // Handle FPS mode priorities (A, B, C, D, E)
+  if (['A', 'B', 'C', 'D', 'E'].includes(priority)) {
+    return (
+      <div style={{
+        position: 'absolute',
+        top: -24,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        background: isCurrentTarget ? 'rgba(255, 215, 0, 0.9)' : 'rgba(0,0,0,0.8)',
+        padding: '2px 8px',
+        borderRadius: 4,
+        fontSize: isCurrentTarget ? 12 : 10,
+        color: isCurrentTarget ? '#000' : '#fff',
+        fontWeight: 'bold',
+        boxShadow: isCurrentTarget ? '0 0 10px rgba(255, 215, 0, 0.8)' : 'none',
+        animation: isCurrentTarget ? 'pulse 1s ease-in-out infinite' : 'none',
+      }}>
+        {priority}
+        {isCurrentTarget && <span style={{ marginLeft: 2 }}>👈</span>}
+      </div>
+    );
+  }
+  const config = PRIORITY_CONFIG[priority as 'critical' | 'high' | 'medium' | 'low'];
   return (
     <div style={{
       position: 'absolute',
@@ -256,6 +286,7 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   onPartClick,
   colorlessMode = false,
   visualSettings,
+  isCurrentTarget = false,
 }) => {
   if (enemy.peekState === 'hidden') return null;
 
@@ -274,21 +305,23 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
 
   return (
     <div
-      className={`multi-grid-enemy ${isDying ? 'enemy-dying' : ''}`}
+      className={`multi-grid-enemy ${isDying ? 'enemy-dying' : ''} ${isCurrentTarget ? 'current-target' : ''}`}
       data-enemy-id={enemy.id}
       style={{
         position: 'absolute',
         left: baseLeft,
         top: baseTop,
         pointerEvents: 'auto',
-        zIndex: 100,
+        zIndex: isCurrentTarget ? 200 : 100,
         opacity: isDying ? 0 : 1,
-        transform: isDying ? 'scale(1.2)' : 'scale(1)',
+        transform: isDying ? 'scale(1.2)' : isCurrentTarget ? 'scale(1.1)' : 'scale(1)',
         transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
+        boxShadow: isCurrentTarget ? '0 0 20px 5px rgba(255, 215, 0, 0.8), 0 0 40px 10px rgba(255, 215, 0, 0.4)' : 'none',
+        borderRadius: 8,
       }}
     >
       {showPriority && enemy.priority && !isDying && !colorlessMode && (
-        <PriorityLabel priority={enemy.priority} colorlessMode={colorlessMode} />
+        <PriorityLabel priority={enemy.priority} colorlessMode={colorlessMode} isCurrentTarget={isCurrentTarget} />
       )}
 
       {!isDying && !colorlessMode && <HealthBar enemy={enemy} colorlessMode={colorlessMode} />}
@@ -345,6 +378,8 @@ interface MultiGridEnemiesProps {
     enemyFontSize?: number;
     enemyFontWeight?: string;
   };
+  currentPriorityTarget?: Priority | null;
+  fpsMode?: string | null;
 }
 
 export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
@@ -359,25 +394,35 @@ export const MultiGridEnemies: React.FC<MultiGridEnemiesProps> = ({
   onPartClick,
   colorlessMode = false,
   visualSettings,
+  currentPriorityTarget,
+  fpsMode,
 }) => {
   return (
     <div className="multi-grid-enemies-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      {enemies.map(enemy => (
-        <MultiGridEnemyRenderer
-          key={enemy.id}
-          enemy={enemy}
-          cellWidth={cellWidth}
-          cellHeight={cellHeight}
-          rowHeaderWidth={rowHeaderWidth}
-          colHeaderHeight={colHeaderHeight}
-          renderMode={renderMode}
-          showPriority={showPriority}
-          showHp={showHp}
-          onPartClick={onPartClick}
-          colorlessMode={colorlessMode}
-          visualSettings={visualSettings}
-        />
-      ))}
+      {enemies.map(enemy => {
+        // switch_track 模式：检查是否是当前应该击中的目标
+        const isCurrentTarget = fpsMode === 'switch_track' && 
+          enemy.priority === currentPriorityTarget &&
+          enemy.isAlive;
+        
+        return (
+          <MultiGridEnemyRenderer
+            key={enemy.id}
+            enemy={enemy}
+            cellWidth={cellWidth}
+            cellHeight={cellHeight}
+            rowHeaderWidth={rowHeaderWidth}
+            colHeaderHeight={colHeaderHeight}
+            renderMode={renderMode}
+            showPriority={showPriority}
+            showHp={showHp}
+            onPartClick={onPartClick}
+            colorlessMode={colorlessMode}
+            visualSettings={visualSettings}
+            isCurrentTarget={isCurrentTarget}
+          />
+        );
+      })}
 
       <style>{`
         @keyframes pulse {

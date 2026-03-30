@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type RefObject } from 'react';
+import { useState, useEffect, type RefObject } from 'react';
 import { COLS, ROWS, CELL_WIDTH, CELL_HEIGHT, SAFE_ZONE_ROWS, SAFE_ZONE_COLS, BOTTOM_SAFE_ROWS } from '../constants';
 
 interface GridDimensions {

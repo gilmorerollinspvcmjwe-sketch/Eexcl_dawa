@@ -17,7 +17,7 @@ interface UseCellEffectsReturn {
 export function useCellEffects(cellSettings?: CellSettings): UseCellEffectsReturn {
   const [timeOffset, setTimeOffset] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 根据速度获取动画间隔（毫秒）
   const getInterval = useCallback((): number => {

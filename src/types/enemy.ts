@@ -9,7 +9,7 @@ export type PartType = 'head' | 'body' | 'leftHand' | 'rightHand' | 'foot';
 export type PartState = 'normal' | 'damaged' | 'critical' | 'destroyed';
 
 // 敌人状态
-export type EnemyState = 'idle' | 'dragging' | 'moving' | 'peeking' | 'hidden' | 'dead';
+export type EnemyState = 'idle' | 'dragging' | 'moving' | 'peeking' | 'hidden' | 'dead' | 'dying';
 
 // 移动模式
 export type MovePattern = 'static' | 'linear' | 'sine' | 'bounce' | 'random' | 'zigzag';
@@ -24,7 +24,7 @@ export type PeekState = 'hidden' | 'peeking' | 'visible' | 'returning';
 export type PopState = 'hidden' | 'rising' | 'visible' | 'falling';
 
 // 优先级
-export type Priority = 'critical' | 'high' | 'medium' | 'low';
+export type Priority = 'critical' | 'high' | 'medium' | 'low' | 'A' | 'B' | 'C' | 'D' | 'E';
 
 export interface Target {
   id: string;
@@ -82,9 +82,19 @@ export interface MultiGridEnemy {
   spawnTime?: number;
   timeLimit?: number;
 
+  // FPS 模式相关
+  // Reaction 模式
+  isVisible?: boolean;
+  reactionDelay?: number;
+  reactionStartTime?: number;
+
+  // Precision 模式
+  targetScale?: number;
+
   // 统计
   totalDamageDealt: number;
   partsDestroyed: number;
+  diedAt?: number;
 }
 
 // 移动配置
@@ -252,7 +262,7 @@ export const PEEK_DURATION_LEVELS: Record<'long' | 'normal' | 'short' | 'blink',
 };
 
 // 优先级颜色和图标
-export const PRIORITY_CONFIG: Record<Priority, { color: string; icon: string; timeLimit: number }> = {
+export const PRIORITY_CONFIG: Record<'critical' | 'high' | 'medium' | 'low', { color: string; icon: string; timeLimit: number }> = {
   critical: { color: '#dc2626', icon: '🔴', timeLimit: 1500 },
   high: { color: '#f97316', icon: '🟠', timeLimit: 2500 },
   medium: { color: '#eab308', icon: '🟡', timeLimit: 4000 },
@@ -269,3 +279,20 @@ export const REACTION_RATINGS: { max: number; rating: string; percentile: number
   { max: 350, rating: '较慢', percentile: 10 },
   { max: Infinity, rating: '需要练习', percentile: 0 },
 ];
+
+// FPS模式计分配置
+// 反应测试模式：基于反应时间的分数
+export const REACTION_SCORES: { max: number; score: number }[] = [
+  { max: 200, score: 100 },
+  { max: 300, score: 80 },
+  { max: 400, score: 60 },
+  { max: 500, score: 40 },
+  { max: Infinity, score: 20 },
+];
+
+// 精准射击模式：基于目标大小的倍数
+export const PRECISION_MULTIPLIERS: Record<number, number> = {
+  0.25: 4.0,
+  0.5: 2.0,
+  0.75: 1.5,
+};

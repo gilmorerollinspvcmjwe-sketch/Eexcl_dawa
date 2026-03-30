@@ -7,18 +7,8 @@ interface ColorCache {
   [key: string]: string;
 }
 
-/**
- * 生成缓存键
- */
-function generateCacheKey(
-  row: number,
-  col: number,
-  mode: CellColorMode,
-  intensity: number,
-  timeOffset: number = 0
-): string {
-  return `${row}-${col}-${mode}-${intensity}-${timeOffset}`;
-}
+// Note: _generateCacheKey function removed as it was unused
+// If needed in the future, it can be re-added here
 
 /**
  * 默认颜色 - Excel 经典风格

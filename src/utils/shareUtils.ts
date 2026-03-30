@@ -1,5 +1,3 @@
-import type { GameStats } from '../types';
-
 export interface ShareData {
   score: number;
   accuracy: number;

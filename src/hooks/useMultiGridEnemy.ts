@@ -14,7 +14,9 @@ import {
   PART_MAX_HP, 
   PART_SCORES, 
   HUMANOID_PART_POSITIONS,
-  PRIORITY_CONFIG
+  PRIORITY_CONFIG,
+  REACTION_SCORES,
+  PRECISION_MULTIPLIERS
 } from '../types/enemy';
 import { COLS, ROWS, SAFE_ZONE_ROWS, SAFE_ZONE_COLS, BOTTOM_SAFE_ROWS } from '../constants';
 
@@ -38,6 +40,9 @@ interface UseMultiGridEnemyReturn {
   clearEnemies: () => void;
   updateEnemies: (deltaTime: number) => void;
   getEnemyAtPosition: (row: number, col: number) => { enemy: MultiGridEnemy; part: EnemyPart } | null;
+  setFPSConfig: (config: FPSModeConfig) => void;
+  currentPriorityTarget: Priority | null;
+  resetPriorityOrder: () => void;
 }
 
 interface SpawnOptions {
@@ -49,6 +54,8 @@ interface SpawnOptions {
   moveSpeed?: number;
   peekDuration?: number;
   targetScale?: number;
+  isVisible?: boolean; // for reaction mode
+  reactionDelay?: number; // for reaction mode
 }
 
 interface FPSModeConfig {
@@ -92,9 +99,11 @@ function createHumanoidEnemy(options: SpawnOptions): MultiGridEnemy {
     createdAt: Date.now(),
     totalDamageDealt: 0,
     partsDestroyed: 0,
-    priority: options.priority,
+    priority: options.priority as Priority,
     spawnTime: Date.now(),
-    timeLimit: options.priority ? PRIORITY_CONFIG[options.priority].timeLimit : undefined,
+    timeLimit: options.priority && ['critical', 'high', 'medium', 'low'].includes(options.priority) 
+      ? PRIORITY_CONFIG[options.priority as 'critical' | 'high' | 'medium' | 'low'].timeLimit 
+      : undefined,
     movePattern: options.movePattern ?? 'static',
     moveSpeed: options.moveSpeed ?? 1.0,
     peekDirection: options.peekDirection,
@@ -114,6 +123,14 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
   
   const [enemies, setEnemies] = useState<MultiGridEnemy[]>([]);
   const fpsConfigRef = useRef<FPSModeConfig>({});
+  
+  // switch_track 模式：当前应该击中的优先级
+  const [currentPriorityTarget, setCurrentPriorityTarget] = useState<Priority>('A');
+  
+  // 重置优先级顺序
+  const resetPriorityOrder = useCallback(() => {
+    setCurrentPriorityTarget('A');
+  }, []);
 
   const setFPSConfig = useCallback((config: FPSModeConfig) => {
     fpsConfigRef.current = config;
@@ -188,6 +205,25 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
       enemy.peekDirection = options?.peekDirection ?? (Math.random() > 0.5 ? 'left' : 'right');
     }
 
+    // switch_track mode: set priority for each target
+    if (effectiveMode === 'switch_track') {
+      enemy.priority = options?.priority || 'A';
+    }
+
+    // reaction mode: initially hidden
+    if (effectiveMode === 'reaction') {
+      enemy.isVisible = options?.isVisible ?? false;
+      enemy.reactionDelay = options?.reactionDelay ?? 0;
+      enemy.reactionStartTime = options?.isVisible ? Date.now() : undefined;
+    }
+
+    // precision mode: smaller target
+    if (effectiveMode === 'precision') {
+      enemy.targetScale = options?.targetScale ?? 0.5;
+      // Shorter duration for precision mode
+      enemy.expiresAt = Date.now() + (targetDuration * 0.5) * 1000;
+    }
+
     setEnemies(prev => [...prev, enemy]);
   }, [isPlaying, isPaused, mode, movePattern, moveSpeed, fpsMode, headshotLineRow]);
 
@@ -210,6 +246,15 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
 
     if (!foundEnemy || partIndex === -1) return null;
 
+    // switch_track 模式：检查优先级顺序
+    if (fpsMode === 'switch_track') {
+      const enemyPriority = foundEnemy.priority;
+      if (enemyPriority !== currentPriorityTarget) {
+        // 击中错误优先级，不算击中
+        return null;
+      }
+    }
+
     const part = foundEnemy.parts[partIndex];
     const newHp = part.currentHp - 1;
     
@@ -222,7 +267,25 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
       newState = 'damaged';
     }
 
-    const baseScore = PART_SCORES[partType];
+    let baseScore = PART_SCORES[partType];
+    
+    // 反应测试模式：基于反应时间计分
+    if (fpsMode === 'reaction' && foundEnemy.reactionStartTime) {
+      const reactionTime = Date.now() - foundEnemy.reactionStartTime;
+      for (const { max, score } of REACTION_SCORES) {
+        if (reactionTime <= max) {
+          baseScore = score;
+          break;
+        }
+      }
+    }
+    
+    // 精准射击模式：基于目标大小倍数
+    if (fpsMode === 'precision' && foundEnemy.targetScale) {
+      const multiplier = PRECISION_MULTIPLIERS[foundEnemy.targetScale] || 1.0;
+      baseScore = Math.floor(baseScore * multiplier);
+    }
+
     const comboMultiplier = getComboMultiplier(combo + 1);
     const score = Math.floor(baseScore * comboMultiplier);
 
@@ -243,29 +306,45 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     };
 
     // 更新状态
-    setEnemies(prev => prev.map(enemy => {
-      if (enemy.id !== enemyId || !enemy.isAlive) return enemy;
+    setEnemies(prev => {
+      const updatedEnemies = prev.map(enemy => {
+        if (enemy.id !== enemyId || !enemy.isAlive) return enemy;
 
-      const updatedParts = [...enemy.parts];
-      updatedParts[partIndex] = {
-        ...part,
-        currentHp: Math.max(0, newHp),
-        state: newState,
-      };
+        const updatedParts = [...enemy.parts];
+        updatedParts[partIndex] = {
+          ...part,
+          currentHp: Math.max(0, newHp),
+          state: newState,
+        };
 
-      return {
-        ...enemy,
-        parts: updatedParts,
-        isAlive: !isEnemyDead,
-        state: isEnemyDead ? 'dying' : enemy.state,
-        diedAt: isEnemyDead ? Date.now() : undefined,
-        totalDamageDealt: enemy.totalDamageDealt + 1,
-        partsDestroyed: enemy.partsDestroyed + (isDestroyed ? 1 : 0),
-      };
-    }));
+        return {
+          ...enemy,
+          parts: updatedParts,
+          isAlive: !isEnemyDead,
+          state: isEnemyDead ? 'dying' : enemy.state,
+          diedAt: isEnemyDead ? Date.now() : undefined,
+          totalDamageDealt: enemy.totalDamageDealt + 1,
+          partsDestroyed: enemy.partsDestroyed + (isDestroyed ? 1 : 0),
+        };
+      });
+      
+      // switch_track 模式：更新到下一个优先级
+      if (fpsMode === 'switch_track' && isEnemyDead) {
+        const priorities: Priority[] = ['A', 'B', 'C', 'D', 'E'];
+        const currentIndex = priorities.indexOf(currentPriorityTarget);
+        if (currentIndex < priorities.length - 1) {
+          setCurrentPriorityTarget(priorities[currentIndex + 1]);
+        } else {
+          // 完成一轮，重置
+          setCurrentPriorityTarget('A');
+        }
+      }
+      
+      return updatedEnemies;
+    });
 
     return result;
-  }, [enemies]);
+  }, [enemies, fpsMode, currentPriorityTarget]);
 
   const removeEnemy = useCallback((id: string) => {
     setEnemies(prev => prev.filter(e => e.id !== id));
@@ -289,6 +368,21 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
 
       if (enemy.peekState !== undefined) {
         updated = updatePeekingEnemy(updated, deltaTime);
+      }
+
+      // reaction mode: update visibility based on delay
+      if (enemy.reactionDelay !== undefined && !enemy.isVisible) {
+        const newDelay = enemy.reactionDelay - deltaTime * 1000;
+        if (newDelay <= 0) {
+          updated = {
+            ...updated,
+            isVisible: true,
+            reactionDelay: 0,
+            reactionStartTime: Date.now(),
+          };
+        } else {
+          updated = { ...updated, reactionDelay: newDelay };
+        }
       }
 
       return updated;
@@ -339,7 +433,9 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     updateEnemies,
     getEnemyAtPosition,
     setFPSConfig,
-  } as UseMultiGridEnemyReturn & { setFPSConfig: (config: FPSModeConfig) => void };
+    currentPriorityTarget,
+    resetPriorityOrder,
+  };
 }
 
 function getComboMultiplier(combo: number): number {

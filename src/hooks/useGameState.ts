@@ -87,7 +87,7 @@ export function useGameState(initialHeadshotLineRow: number = 10): UseGameStateR
     setGameState(prev => ({
       ...prev,
       misses: prev.misses + 1,
-      missStreak: prev.missStreak + 1,
+      missStreak: (prev.missStreak || 0) + 1,
       headshotStreak: 0,
     }));
   }, []);
@@ -105,7 +105,7 @@ export function useGameState(initialHeadshotLineRow: number = 10): UseGameStateR
       hits: prev.hits + 1,
       headHits: isHead ? prev.headHits + 1 : prev.headHits,
       missStreak: 0,
-      headshotStreak: isHead ? prev.headshotStreak + 1 : 0,
+      headshotStreak: isHead ? (prev.headshotStreak || 0) + 1 : 0,
     }));
   }, []);
 

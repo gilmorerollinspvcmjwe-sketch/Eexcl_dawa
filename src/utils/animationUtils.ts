@@ -1,9 +1,7 @@
 import type { 
   SpawnAnimationConfig, 
   EasingType, 
-  AnimationConfig,
   ActiveAnimation,
-  TextEffect,
   BlinkEffect,
   WaveEffect,
   BounceEffect,
@@ -16,7 +14,10 @@ export const EASING_FUNCTIONS: Record<EasingType, EasingFunction> = {
   'ease-in': (t: number) => t * t,
   'ease-out': (t: number) => t * (2 - t),
   'ease-in-out': (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-  'cubic-bezier': (t: number, p1: number = 0.25, p2: number = 0.1, p3: number = 0.25, p4: number = 1) => {
+  'cubic-bezier': (t: number) => {
+    // Simplified cubic-bezier with default values (0.25, 0.1, 0.25, 1)
+    const p1 = 0.25;
+    const p3 = 0.25;
     const cx = 3 * p1;
     const bx = 3 * (p3 - p1) - cx;
     const ax = 1 - cx - bx;
@@ -38,8 +39,10 @@ export const EASING_FUNCTIONS: Record<EasingType, EasingFunction> = {
 
 export function getEasingFunction(config: SpawnAnimationConfig): EasingFunction {
   if (config.easing === 'cubic-bezier' && config.customEasing) {
-    const [p1, p2, p3, p4] = config.customEasing;
-    return (t: number) => EASING_FUNCTIONS['cubic-bezier'](t, p1, p2, p3, p4);
+    return (t: number) => {
+      // Simplified implementation - just use the default cubic-bezier
+      return EASING_FUNCTIONS['cubic-bezier'](t);
+    };
   }
   return EASING_FUNCTIONS[config.easing];
 }
@@ -266,58 +269,19 @@ export function generateAnimationCSS(
     ? `cubic-bezier(${config.customEasing.join(', ')})`
     : config.easing;
   
-  let keyframes = '';
-  
   switch (config.type) {
     case 'fade':
-      keyframes = `
-        @keyframes ${animationName} {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-      `;
       break;
     case 'scale':
-      keyframes = `
-        @keyframes ${animationName} {
-          0% { transform: scale(0); opacity: 0; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-      `;
       break;
     case 'slide':
-      keyframes = `
-        @keyframes ${animationName} {
-          0% { transform: translateY(30px); opacity: 0; }
-          100% { transform: translateY(0); opacity: 1; }
-        }
-      `;
       break;
     case 'bounce':
-      keyframes = `
-        @keyframes ${animationName} {
-          0% { transform: scale(0.3); opacity: 0; }
-          50% { transform: scale(1.1); }
-          70% { transform: scale(0.9); }
-          100% { transform: scale(1); opacity: 1; }
-        }
-      `;
       break;
     case 'flip':
-      keyframes = `
-        @keyframes ${animationName} {
-          0% { transform: rotateY(90deg); opacity: 0; }
-          100% { transform: rotateY(0deg); opacity: 1; }
-        }
-      `;
       break;
     default:
-      keyframes = `
-        @keyframes ${animationName} {
-          0% { opacity: 0; transform: scale(0.8); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-      `;
+      break;
   }
   
   const animationCSS = `${animationName} ${duration}ms ${easing} forwards`;

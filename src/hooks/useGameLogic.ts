@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GameMode, TimedDuration, HitEffect, LevelConfig, MultiGridEnemy, EnemyPart } from '../types';
-import { DIFFICULTY_SETTINGS, COMBO_MULTIPLIERS } from '../types';
+import { DIFFICULTY_SETTINGS } from '../types';
 import { useGameState } from './useGameState';
 import { useMultiGridEnemy } from './useMultiGridEnemy';
 import { useStatsSystem } from './useStatsSystem';
@@ -17,15 +17,6 @@ import {
 } from '../constants';
 import { generateLevel, checkLevelCompletion } from '../levelGenerator';
 import type { FPSTrainingMode } from '../components/TrainingModeSelector';
-
-function getComboMultiplier(combo: number): number {
-  for (let i = COMBO_MULTIPLIERS.length - 1; i >= 0; i--) {
-    if (combo >= COMBO_MULTIPLIERS[i].threshold) {
-      return COMBO_MULTIPLIERS[i].multiplier;
-    }
-  }
-  return 1.0;
-}
 
 export function useGameLogic() {
   const { settings, updateSetting } = useSettings();
@@ -47,13 +38,11 @@ export function useGameLogic() {
   const cornerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameStartTimeRef = useRef<number>(0);
   const gameTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pendingDifficultyRef = useRef<string | null>(null);
 
   const {
     gameState,
     setGameState,
     resetGameState,
-    resetCombo,
     incrementClicks,
   } = useGameState(settings.headshotLineRow);
 
@@ -65,6 +54,8 @@ export function useGameLogic() {
     clearEnemies,
     updateEnemies,
     setFPSConfig,
+    currentPriorityTarget,
+    resetPriorityOrder,
   } = useMultiGridEnemy({
     isPlaying: gameState.isPlaying,
     isPaused: gameState.isPaused,
@@ -122,6 +113,69 @@ export function useGameLogic() {
     };
   }, [gameState.isPlaying, gameState.isPaused, gameState.mode]);
 
+  // FPS mode spawn logic
+  const spawnFPSModeEnemy = useCallback(() => {
+    if (!currentMode) return;
+
+    const config = modeConfig;
+
+    switch (currentMode) {
+      case 'switch_track':
+        // Spawn multiple targets with priorities
+        const targetCount = config?.targetCount || 3;
+        const priorities = ['A', 'B', 'C', 'D', 'E'] as const;
+        for (let i = 0; i < Math.min(targetCount, 5); i++) {
+          setTimeout(() => {
+            spawnEnemy({
+              priority: priorities[i],
+              anchorRow: 5 + Math.floor(Math.random() * 15),
+              anchorCol: 3 + i * 5 + Math.floor(Math.random() * 3),
+            });
+          }, i * 200);
+        }
+        break;
+
+      case 'reaction':
+        // Random delay before showing target
+        const randomDelay = 1000 + Math.random() * 2000;
+        setTimeout(() => {
+          spawnEnemy({
+            isVisible: true,
+            anchorRow: 5 + Math.floor(Math.random() * 15),
+            anchorCol: 5 + Math.floor(Math.random() * 20),
+          });
+        }, randomDelay);
+        break;
+
+      case 'precision':
+        // Spawn small targets
+        const precisionCount = config?.targetCount || 3;
+        for (let i = 0; i < precisionCount; i++) {
+          setTimeout(() => {
+            spawnEnemy({
+              targetScale: config?.targetScale || 0.5,
+              anchorRow: 5 + Math.floor(Math.random() * 15),
+              anchorCol: 3 + i * 6 + Math.floor(Math.random() * 3),
+            });
+          }, i * 300);
+        }
+        break;
+
+      case 'peek_shot':
+        // Peek shot is handled by spawnEnemy with peekState
+        spawnEnemy({});
+        break;
+
+      case 'motion_track':
+        // Moving targets
+        spawnEnemy({});
+        break;
+
+      default:
+        spawnEnemy({});
+    }
+  }, [currentMode, modeConfig, spawnEnemy]);
+
   useEffect(() => {
     if (!gameState.isPlaying || gameState.isPaused || isHidden) {
       if (spawnTimerRef.current) {
@@ -131,6 +185,36 @@ export function useGameLogic() {
       return;
     }
 
+    // FPS mode: use special spawn logic
+    if (currentMode) {
+      const scheduleNextSpawn = () => {
+        const interval = (modeConfig?.interval || 2) * 1000;
+        
+        spawnTimerRef.current = setTimeout(() => {
+          if (gameState.isPlaying && !gameState.isPaused && !isHidden) {
+            spawnFPSModeEnemy();
+            scheduleNextSpawn();
+          }
+        }, interval);
+      };
+
+      const initialSpawnTimer = setTimeout(() => {
+        if (!isHidden) {
+          spawnFPSModeEnemy();
+          scheduleNextSpawn();
+        }
+      }, INITIAL_SPAWN_DELAY_MS);
+
+      return () => {
+        if (spawnTimerRef.current) {
+          clearTimeout(spawnTimerRef.current);
+          spawnTimerRef.current = null;
+        }
+        clearTimeout(initialSpawnTimer);
+      };
+    }
+
+    // Classic mode: use difficulty-based spawn logic
     const diffSettings = DIFFICULTY_SETTINGS[settings.difficulty];
     const [minInterval, maxInterval] = diffSettings.spawnInterval;
     
@@ -163,7 +247,7 @@ export function useGameLogic() {
       }
       clearTimeout(initialSpawnTimer);
     };
-  }, [gameState.isPlaying, gameState.isPaused, isHidden, settings.difficulty, settings.spawnRate, spawnEnemy]);
+  }, [gameState.isPlaying, gameState.isPaused, isHidden, settings.difficulty, settings.spawnRate, spawnEnemy, currentMode, modeConfig, spawnFPSModeEnemy]);
 
   const startGame = useCallback((mode: GameMode, duration?: TimedDuration, level?: number, difficulty?: string) => {
     gameStartTimeRef.current = Date.now();
@@ -199,6 +283,11 @@ export function useGameLogic() {
       setFPSConfig(config);
     }
     
+    // switch_track 模式：重置优先级顺序
+    if (mode === 'switch_track') {
+      resetPriorityOrder();
+    }
+    
     const duration = config?.duration || 60;
     resetGameState('timed', duration as TimedDuration, settings.headshotLineRow);
     clearEnemies();
@@ -208,7 +297,7 @@ export function useGameLogic() {
     setCurrentLevel(null);
     setLevelConfig(null);
     setLevelStatus(null);
-  }, [resetGameState, clearEnemies, settings.headshotLineRow, setFPSConfig]);
+  }, [resetGameState, clearEnemies, settings.headshotLineRow, setFPSConfig, resetPriorityOrder]);
 
   const endGame = useCallback(() => {
     const gameDuration = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
@@ -367,7 +456,7 @@ export function useGameLogic() {
     setSelectedCell({ row, col });
   }, []);
 
-  const switchSheet = useCallback((sheet: 'game' | 'stats' | 'settings') => {
+  const switchSheet = useCallback((sheet: 'hub' | 'game' | 'stats' | 'settings') => {
     setCurrentSheet(sheet);
   }, []);
 
@@ -463,5 +552,6 @@ export function useGameLogic() {
     currentLevel,
     levelConfig,
     levelStatus,
+    currentPriorityTarget,
   };
 }

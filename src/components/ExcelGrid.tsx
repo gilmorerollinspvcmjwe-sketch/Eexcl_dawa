@@ -1,8 +1,9 @@
 // Excel 表格网格组件 - 整合各子组件
 
 import React from 'react';
-import type { Target, HitEffect, MultiGridEnemy, LevelConfig, PartType } from '../types';
+import type { Target, HitEffect, MultiGridEnemy, LevelConfig, PartType, Priority } from '../types';
 import type { CellSettings } from '../types/settings';
+import type { FPSTrainingMode } from '../components/TrainingModeSelector';
 import { playHitSound, playMissSound } from '../utils/soundUtils';
 import { GridTable, GameHUD, PauseOverlay } from './grid';
 
@@ -55,6 +56,10 @@ interface ExcelGridProps {
   };
   // 单元格设置
   cellSettings?: CellSettings;
+  // switch_track 模式当前优先级
+  currentPriorityTarget?: Priority | null;
+  // FPS 模式
+  fpsMode?: FPSTrainingMode | null;
 }
 
 export const ExcelGrid: React.FC<ExcelGridProps> = ({
@@ -72,7 +77,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   hitEffects = [],
   togglePause,
   soundEnabled = true,
-  onExit,
   // 多格敌人支持
   multiGridEnemies = [],
   enemyRenderMode = 'text',
@@ -88,6 +92,9 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   visualSettings,
   // 单元格设置
   cellSettings,
+  // switch_track 模式
+  currentPriorityTarget,
+  fpsMode,
 }) => {
   // 处理 miss 音效
   const handleMiss = () => {
@@ -106,7 +113,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
   };
 
   // 处理多格敌人部位点击
-  const handlePartClick = (enemyId: string, partType: PartType, row: number, col: number) => {
+  const handlePartClick = (_enemyId: string, partType: PartType, row: number, col: number) => {
     playHitSound(partType === 'head', gameState.combo, soundEnabled);
     onCellClick(row, col);
   };
@@ -267,6 +274,9 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         hitEffects={hitEffects}
         // 单元格设置
         cellSettings={cellSettings}
+        // switch_track 模式
+        currentPriorityTarget={currentPriorityTarget}
+        fpsMode={fpsMode}
       />
     </div>
   );

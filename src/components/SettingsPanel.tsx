@@ -43,7 +43,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   settings,
   onUpdateSettings,
   onApplyPreset,
-  onStartGame,
+  onStartGame: _onStartGame,
   onResetSettings,
   // 临时设置相关
   tempSettings,
@@ -857,7 +857,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   value={displaySettings.cellSettings?.cellWidth || 64}
                   onChange={(e) => {
                     const newSettings = {
-                      ...displaySettings.cellSettings,
+                      cellHeight: displaySettings.cellSettings?.cellHeight || 20,
+                      colorMode: displaySettings.cellSettings?.colorMode || 'default',
+                      colorIntensity: displaySettings.cellSettings?.colorIntensity || 50,
+                      enableAnimation: displaySettings.cellSettings?.enableAnimation || false,
+                      animationSpeed: displaySettings.cellSettings?.animationSpeed || 'normal',
+                      colorShift: displaySettings.cellSettings?.colorShift || false,
                       cellWidth: parseInt(e.target.value)
                     };
                     updateSetting('cellSettings', newSettings);
@@ -878,7 +883,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   value={displaySettings.cellSettings?.cellHeight || 20}
                   onChange={(e) => {
                     const newSettings = {
-                      ...displaySettings.cellSettings,
+                      cellWidth: displaySettings.cellSettings?.cellWidth || 64,
+                      colorMode: displaySettings.cellSettings?.colorMode || 'default',
+                      colorIntensity: displaySettings.cellSettings?.colorIntensity || 50,
+                      enableAnimation: displaySettings.cellSettings?.enableAnimation || false,
+                      animationSpeed: displaySettings.cellSettings?.animationSpeed || 'normal',
+                      colorShift: displaySettings.cellSettings?.colorShift || false,
                       cellHeight: parseInt(e.target.value)
                     };
                     updateSetting('cellSettings', newSettings);
@@ -915,7 +925,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       className={`game-preset-btn ${displaySettings.cellSettings?.colorMode === mode.id ? 'active' : ''}`}
                       onClick={() => {
                         const newSettings = {
-                          ...displaySettings.cellSettings,
+                          cellWidth: displaySettings.cellSettings?.cellWidth || 64,
+                          cellHeight: displaySettings.cellSettings?.cellHeight || 20,
+                          colorIntensity: displaySettings.cellSettings?.colorIntensity || 50,
+                          enableAnimation: displaySettings.cellSettings?.enableAnimation || false,
+                          animationSpeed: displaySettings.cellSettings?.animationSpeed || 'normal',
+                          colorShift: displaySettings.cellSettings?.colorShift || false,
                           colorMode: mode.id as any
                         };
                         updateSetting('cellSettings', newSettings);
@@ -953,7 +968,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   value={displaySettings.cellSettings?.colorIntensity || 50}
                   onChange={(e) => {
                     const newSettings = {
-                      ...displaySettings.cellSettings,
+                      cellWidth: displaySettings.cellSettings?.cellWidth || 64,
+                      cellHeight: displaySettings.cellSettings?.cellHeight || 20,
+                      colorMode: displaySettings.cellSettings?.colorMode || 'default',
+                      enableAnimation: displaySettings.cellSettings?.enableAnimation || false,
+                      animationSpeed: displaySettings.cellSettings?.animationSpeed || 'normal',
+                      colorShift: displaySettings.cellSettings?.colorShift || false,
                       colorIntensity: parseInt(e.target.value)
                     };
                     updateSetting('cellSettings', newSettings);
@@ -979,7 +999,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     checked={displaySettings.cellSettings?.enableAnimation || false}
                     onChange={(e) => {
                       const newSettings = {
-                        ...displaySettings.cellSettings,
+                        cellWidth: displaySettings.cellSettings?.cellWidth || 64,
+                        cellHeight: displaySettings.cellSettings?.cellHeight || 20,
+                        colorMode: displaySettings.cellSettings?.colorMode || 'default',
+                        colorIntensity: displaySettings.cellSettings?.colorIntensity || 50,
+                        animationSpeed: displaySettings.cellSettings?.animationSpeed || 'normal',
+                        colorShift: displaySettings.cellSettings?.colorShift || false,
                         enableAnimation: e.target.checked
                       };
                       updateSetting('cellSettings', newSettings);
@@ -994,7 +1019,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   value={displaySettings.cellSettings?.animationSpeed || 'normal'}
                   onChange={(e) => {
                     const newSettings = {
-                      ...displaySettings.cellSettings,
+                      cellWidth: displaySettings.cellSettings?.cellWidth || 64,
+                      cellHeight: displaySettings.cellSettings?.cellHeight || 20,
+                      colorMode: displaySettings.cellSettings?.colorMode || 'default',
+                      colorIntensity: displaySettings.cellSettings?.colorIntensity || 50,
+                      enableAnimation: displaySettings.cellSettings?.enableAnimation || false,
+                      colorShift: displaySettings.cellSettings?.colorShift || false,
                       animationSpeed: e.target.value as 'slow' | 'normal' | 'fast'
                     };
                     updateSetting('cellSettings', newSettings);

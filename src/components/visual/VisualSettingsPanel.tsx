@@ -2,17 +2,14 @@ import React, { useState, useCallback } from 'react';
 import type { 
   VisualSystemConfig, 
   TextStyleConfig, 
-  SpawnAnimationConfig,
   ColorHarmonyMode,
-  HSVColorConfig,
-} from '../types/visual';
+} from '../../types/visual';
 import { 
   DEFAULT_VISUAL_CONFIG, 
   PRESET_COLORS, 
   SPAWN_ANIMATION_PRESETS,
-} from '../types/visual';
-import { rgbToHex, hexToRgb } from '../utils/colorUtils';
-import '../styles/visual-effects.css';
+} from '../../types/visual';
+import '../../styles/visual-effects.css';
 
 interface VisualSettingsPanelProps {
   config?: VisualSystemConfig;
@@ -165,7 +162,7 @@ const TextStyleSection: React.FC<{
           颜色
         </label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {PRESET_COLORS.map(color => (
+          {PRESET_COLORS.map((color: { id: string; name: string; value: string }) => (
             <button
               key={color.id}
               onClick={() => onChange({ color: { mode: 'preset', preset: color.id } })}
@@ -264,7 +261,7 @@ const TextStyleSection: React.FC<{
         <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>预览</div>
         <div style={{
           color: config.color.mode === 'preset' 
-            ? PRESET_COLORS.find(c => c.id === config.color.preset)?.value ?? '#dc2626'
+            ? PRESET_COLORS.find((c: { id: string; name: string; value: string }) => c.id === config.color.preset)?.value ?? '#dc2626'
             : '#dc2626',
           fontSize: config.fontSize,
           fontWeight: config.fontWeight,
@@ -566,7 +563,7 @@ const EnemyPreview: React.FC<{ config: typeof DEFAULT_VISUAL_CONFIG.enemyVisual 
 const EffectsSection: React.FC<{
   config: typeof DEFAULT_VISUAL_CONFIG.effects;
   onChange: (effects: typeof DEFAULT_VISUAL_CONFIG.effects) => void;
-}> = ({ config, onChange }) => {
+}> = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ color: '#6b7280', fontSize: 13 }}>

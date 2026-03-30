@@ -1,8 +1,9 @@
 // 基础表格渲染组件
 
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
-import type { Target, MultiGridEnemy, PartType, HitEffect } from '../../types';
+import type { Target, MultiGridEnemy, PartType, HitEffect, Priority } from '../../types';
 import type { CellSettings } from '../../types/settings';
+import type { FPSTrainingMode } from '../TrainingModeSelector';
 import { generateColLetters } from '../../utils/gridUtils';
 import { generateCellCSSVariables } from '../../utils/cellColorUtils';
 import { useCellEffects } from '../../hooks/useCellEffects';
@@ -42,6 +43,10 @@ interface GridTableProps {
   hitEffects?: HitEffect[];
   // 单元格设置
   cellSettings?: CellSettings;
+  // switch_track 模式当前优先级
+  currentPriorityTarget?: Priority | null;
+  // FPS 模式
+  fpsMode?: FPSTrainingMode | null;
 }
 
 export const GridTable: React.FC<GridTableProps> = ({
@@ -69,6 +74,9 @@ export const GridTable: React.FC<GridTableProps> = ({
   hitEffects = [],
   // 单元格设置
   cellSettings,
+  // switch_track 模式
+  currentPriorityTarget,
+  fpsMode,
 }) => {
   const [missEffects, setMissEffects] = useState<Set<string>>(new Set());
 
@@ -259,6 +267,8 @@ export const GridTable: React.FC<GridTableProps> = ({
           onPartClick={onPartClick}
           colorlessMode={colorlessMode}
           visualSettings={visualSettings}
+          currentPriorityTarget={currentPriorityTarget}
+          fpsMode={fpsMode}
         />
       )}
 
