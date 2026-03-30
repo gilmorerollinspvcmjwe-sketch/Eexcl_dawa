@@ -176,7 +176,7 @@ function AppContent() {
       )}
 
       {/* 紧急隐藏触发区域 */}
-      {!isHidden && (
+      {!isHidden && currentSheet === 'game' && (
         <div
           className="fixed top-0 left-0 w-24 h-24 z-50"
           onMouseEnter={handleCornerEnter}

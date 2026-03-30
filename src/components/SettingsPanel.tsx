@@ -243,11 +243,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   {[30, 60, 120].map(d => (
                     <button
                       key={d}
-                      className={`game-preset-btn ${(settings.trainingDuration || 60) === d ? 'active' : ''}`}
+                      className={`game-preset-btn ${(displaySettings.trainingDuration || 60) === d ? 'active' : ''}`}
                       onClick={() => updateSetting('trainingDuration', d as 30 | 60 | 120)}
                       style={{ 
-                        background: (settings.trainingDuration || 60) === d ? '#107c41' : '#e5e7eb', 
-                        color: (settings.trainingDuration || 60) === d ? 'white' : '#333',
+                        background: (displaySettings.trainingDuration || 60) === d ? '#107c41' : '#e5e7eb', 
+                        color: (displaySettings.trainingDuration || 60) === d ? 'white' : '#333',
                         minWidth: 60
                       }}
                     >
@@ -270,12 +270,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   {DIFFICULTY_LEVELS.map(diff => (
                     <button
                       key={diff.id}
-                      className={`game-preset-btn ${settings.difficulty === diff.id ? 'active' : ''}`}
+                      className={`game-preset-btn ${displaySettings.difficulty === diff.id ? 'active' : ''}`}
                       onClick={() => updateSetting('difficulty', diff.id as GameSettings['difficulty'])}
                       title={diff.desc}
                       style={{ 
-                        background: settings.difficulty === diff.id ? diff.color : '#e5e7eb', 
-                        color: settings.difficulty === diff.id ? 'white' : '#333',
+                        background: displaySettings.difficulty === diff.id ? diff.color : '#e5e7eb', 
+                        color: displaySettings.difficulty === diff.id ? 'white' : '#333',
                         minWidth: 65
                       }}
                     >
@@ -296,7 +296,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell">
                 <input
                   type="checkbox"
-                  checked={settings.soundEnabled}
+                  checked={displaySettings.soundEnabled}
                   onChange={(e) => updateSetting('soundEnabled', e.target.checked)}
                   style={{ width: 16, height: 16, cursor: 'pointer' }}
                 />
@@ -318,16 +318,16 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell" colSpan={3}>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
-                    className={`game-preset-btn ${(settings.enemyRenderMode || 'text') === 'text' ? 'active' : ''}`}
+                    className={`game-preset-btn ${(displaySettings.enemyRenderMode || 'text') === 'text' ? 'active' : ''}`}
                     onClick={() => updateSetting('enemyRenderMode', 'text')}
-                    style={{ background: (settings.enemyRenderMode || 'text') === 'text' ? '#059669' : '#e5e7eb', color: (settings.enemyRenderMode || 'text') === 'text' ? 'white' : '#333' }}
+                    style={{ background: (displaySettings.enemyRenderMode || 'text') === 'text' ? '#059669' : '#e5e7eb', color: (displaySettings.enemyRenderMode || 'text') === 'text' ? 'white' : '#333' }}
                   >
                     文字模式 ⭐
                   </button>
                   <button
-                    className={`game-preset-btn ${settings.enemyRenderMode === 'icon' ? 'active' : ''}`}
+                    className={`game-preset-btn ${displaySettings.enemyRenderMode === 'icon' ? 'active' : ''}`}
                     onClick={() => updateSetting('enemyRenderMode', 'icon')}
-                    style={{ background: settings.enemyRenderMode === 'icon' ? '#059669' : '#e5e7eb', color: settings.enemyRenderMode === 'icon' ? 'white' : '#333' }}
+                    style={{ background: displaySettings.enemyRenderMode === 'icon' ? '#059669' : '#e5e7eb', color: displaySettings.enemyRenderMode === 'icon' ? 'white' : '#333' }}
                   >
                     图标模式
                   </button>
@@ -345,7 +345,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell">
                 <input
                   type="checkbox"
-                  checked={settings.colorlessMode || false}
+                  checked={displaySettings.colorlessMode || false}
                   onChange={(e) => updateSetting('colorlessMode', e.target.checked)}
                   style={{ width: 16, height: 16, cursor: 'pointer' }}
                 />
@@ -362,21 +362,21 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell" colSpan={3}>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
-                    className={`game-preset-btn ${(settings.feedbackMode || 'fancy') === 'fancy' ? 'active' : ''}`}
+                    className={`game-preset-btn ${(displaySettings.feedbackMode || 'fancy') === 'fancy' ? 'active' : ''}`}
                     onClick={() => updateSetting('feedbackMode', 'fancy')}
                     style={{ 
-                      background: (settings.feedbackMode || 'fancy') === 'fancy' ? '#8b5cf6' : '#e5e7eb', 
-                      color: (settings.feedbackMode || 'fancy') === 'fancy' ? 'white' : '#333'
+                      background: (displaySettings.feedbackMode || 'fancy') === 'fancy' ? '#8b5cf6' : '#e5e7eb', 
+                      color: (displaySettings.feedbackMode || 'fancy') === 'fancy' ? 'white' : '#333'
                     }}
                   >
                     ✨ 炫酷 ⭐
                   </button>
                   <button
-                    className={`game-preset-btn ${settings.feedbackMode === 'excel' ? 'active' : ''}`}
+                    className={`game-preset-btn ${displaySettings.feedbackMode === 'excel' ? 'active' : ''}`}
                     onClick={() => updateSetting('feedbackMode', 'excel')}
                     style={{ 
-                      background: settings.feedbackMode === 'excel' ? '#059669' : '#e5e7eb', 
-                      color: settings.feedbackMode === 'excel' ? 'white' : '#333'
+                      background: displaySettings.feedbackMode === 'excel' ? '#059669' : '#e5e7eb', 
+                      color: displaySettings.feedbackMode === 'excel' ? 'white' : '#333'
                     }}
                   >
                     📝 Excel
@@ -395,7 +395,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell">
                 <input
                   type="checkbox"
-                  checked={settings.headshotLineEnabled}
+                  checked={displaySettings.headshotLineEnabled}
                   onChange={(e) => updateSetting('headshotLineEnabled', e.target.checked)}
                   style={{ width: 16, height: 16, cursor: 'pointer' }}
                 />
@@ -406,7 +406,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type="number"
                   min="1"
                   max={50}
-                  value={settings.headshotLineRow}
+                  value={displaySettings.headshotLineRow}
                   onChange={(e) => updateSetting('headshotLineRow', parseInt(e.target.value) || 10)}
                   className="settings-cell-input"
                   style={{ width: 60, textAlign: 'center' }}
@@ -431,9 +431,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   {CROSSHAIR_STYLES.map(style => (
                     <button
                       key={style.id}
-                      className={`game-preset-btn ${settings.crosshairStyle === style.id ? 'active' : ''}`}
+                      className={`game-preset-btn ${displaySettings.crosshairStyle === style.id ? 'active' : ''}`}
                       onClick={() => updateSetting('crosshairStyle', style.id)}
-                      style={{ minWidth: 70, fontSize: 14, padding: '6px 10px', background: settings.crosshairStyle === style.id ? '#0891b2' : '#e5e7eb', color: settings.crosshairStyle === style.id ? 'white' : '#333' }}
+                      style={{ minWidth: 70, fontSize: 14, padding: '6px 10px', background: displaySettings.crosshairStyle === style.id ? '#0891b2' : '#e5e7eb', color: displaySettings.crosshairStyle === style.id ? 'white' : '#333' }}
                       title={style.name}
                     >
                       <span style={{ fontSize: 18, marginRight: 4 }}>{style.preview}</span>
@@ -458,18 +458,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="8"
                   max="24"
                   step="1"
-                  value={settings.crosshairSize || 12}
+                  value={displaySettings.crosshairSize || 12}
                   onChange={(e) => updateSetting('crosshairSize', parseInt(e.target.value))}
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#0891b2' }}>{settings.crosshairSize || 12}px</strong>
+                <strong style={{ color: '#0891b2' }}>{displaySettings.crosshairSize || 12}px</strong>
               </td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>准星颜色</td>
               <td className="excel-cell">
                 <input
                   type="color"
-                  value={settings.crosshairColor}
+                  value={displaySettings.crosshairColor}
                   onChange={(e) => updateSetting('crosshairColor', e.target.value)}
                   style={{ width: 50, height: 28, cursor: 'pointer', border: '1px solid #d4d4d4', borderRadius: 3 }}
                 />
@@ -486,7 +486,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell">
                 <input
                   type="checkbox"
-                  checked={settings.customCursor}
+                  checked={displaySettings.customCursor}
                   onChange={(e) => updateSetting('customCursor', e.target.checked)}
                   style={{ width: 16, height: 16, cursor: 'pointer' }}
                 />
@@ -528,18 +528,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="0.5"
                   max="3"
                   step="0.1"
-                  value={settings.enemyMoveSpeed || 1.0}
+                  value={displaySettings.enemyMoveSpeed || 1.0}
                   onChange={(e) => updateSetting('enemyMoveSpeed', parseFloat(e.target.value))}
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#7c3aed' }}>{(settings.enemyMoveSpeed || 1.0).toFixed(1)} 格/秒</strong>
+                <strong style={{ color: '#7c3aed' }}>{(displaySettings.enemyMoveSpeed || 1.0).toFixed(1)} 格/秒</strong>
               </td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>移动模式</td>
               <td className="excel-cell" colSpan={2}>
                 <select
                   className="settings-cell-select"
-                  value={settings.enemyMovePattern || 'linear'}
+                  value={displaySettings.enemyMovePattern || 'linear'}
                   onChange={(e) => updateSetting('enemyMovePattern', e.target.value as 'linear' | 'sine' | 'bounce')}
                 >
                   <option value="linear">直线</option>
@@ -570,12 +570,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   className="settings-cell-range"
                   min="1"
                   max="10"
-                  value={settings.spawnRate}
+                  value={displaySettings.spawnRate}
                   onChange={(e) => updateSetting('spawnRate', parseInt(e.target.value))}
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#6b7280' }}>{settings.spawnRate}</strong>
+                <strong style={{ color: '#6b7280' }}>{displaySettings.spawnRate}</strong>
               </td>
               <td className="excel-cell" colSpan={4} style={{ color: '#666', fontSize: 10 }}>
                 新目标出现的速度，数字越大越频繁
@@ -592,12 +592,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   className="settings-cell-range"
                   min="1"
                   max="10"
-                  value={settings.targetDuration}
+                  value={displaySettings.targetDuration}
                   onChange={(e) => updateSetting('targetDuration', parseInt(e.target.value))}
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#6b7280' }}>{settings.targetDuration}</strong>
+                <strong style={{ color: '#6b7280' }}>{displaySettings.targetDuration}</strong>
               </td>
               <td className="excel-cell" colSpan={4} style={{ color: '#666', fontSize: 10 }}>
                 目标在屏幕上停留的时间，值越大停留越久
@@ -614,12 +614,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   className="settings-cell-range"
                   min="14"
                   max="32"
-                  value={settings.targetSize}
+                  value={displaySettings.targetSize}
                   onChange={(e) => updateSetting('targetSize', parseInt(e.target.value))}
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#6b7280' }}>{settings.targetSize}px</strong>
+                <strong style={{ color: '#6b7280' }}>{displaySettings.targetSize}px</strong>
               </td>
               <td className="excel-cell" colSpan={4} style={{ color: '#666', fontSize: 10 }}>
                 目标的大小，影响命中难度
@@ -637,10 +637,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   {(Object.keys(GAME_PRESETS) as GamePreset[]).map(preset => (
                     <button
                       key={preset}
-                      className={`game-preset-btn ${settings.gamePreset === preset ? 'active' : ''}`}
+                      className={`game-preset-btn ${displaySettings.gamePreset === preset ? 'active' : ''}`}
                       onClick={() => applyPreset(preset)}
                       title={`${GAME_PRESETS[preset].name} - X: ${GAME_PRESETS[preset].sensitivityX}, Y: ${GAME_PRESETS[preset].sensitivityY}`}
-                      style={{ background: settings.gamePreset === preset ? '#6b7280' : '#e5e7eb', color: settings.gamePreset === preset ? 'white' : '#333' }}
+                      style={{ background: displaySettings.gamePreset === preset ? '#6b7280' : '#e5e7eb', color: displaySettings.gamePreset === preset ? 'white' : '#333' }}
                     >
                       {GAME_PRESETS[preset].name}
                     </button>
@@ -663,12 +663,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="0.1"
                   max="5"
                   step="0.1"
-                  value={settings.sensitivityX}
+                  value={displaySettings.sensitivityX}
                   onChange={(e) => updateSetting('sensitivityX', parseFloat(e.target.value))}
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#6b7280' }}>{settings.sensitivityX.toFixed(1)}</strong>
+                <strong style={{ color: '#6b7280' }}>{displaySettings.sensitivityX.toFixed(1)}</strong>
               </td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>Y轴灵敏度</td>
               <td className="excel-cell">
@@ -678,12 +678,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="0.1"
                   max="5"
                   step="0.1"
-                  value={settings.sensitivityY}
+                  value={displaySettings.sensitivityY}
                   onChange={(e) => updateSetting('sensitivityY', parseFloat(e.target.value))}
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#6b7280' }}>{settings.sensitivityY.toFixed(1)}</strong>
+                <strong style={{ color: '#6b7280' }}>{displaySettings.sensitivityY.toFixed(1)}</strong>
               </td>
             </tr>
             <tr>
@@ -699,7 +699,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             {renderSectionHeader(32, '🎨', '视觉设置', '#ec4899')}
 
             {/* 配置冲突提示 */}
-            {settings.colorlessMode && (
+            {displaySettings.colorlessMode && (
               <tr>
                 <td className="excel-row-header"></td>
                 <td className="excel-cell" colSpan={7} style={{ 
@@ -731,25 +731,25 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       key={mode.id}
                       className={`game-preset-btn ${(settings as any).colorHarmonyMode === mode.id ? 'active' : ''}`}
                       onClick={() => onUpdateSettings('colorHarmonyMode' as any, mode.id as any)}
-                      disabled={settings.colorlessMode}
+                      disabled={displaySettings.colorlessMode}
                       style={{ 
                         minWidth: 80, 
                         fontSize: 11, 
                         padding: '5px 8px', 
-                        background: settings.colorlessMode 
+                        background: displaySettings.colorlessMode 
                           ? '#d1d5db' 
-                          : (settings as any).colorHarmonyMode === mode.id 
+                          : (displaySettings as any).colorHarmonyMode === mode.id 
                             ? '#ec4899' 
                             : '#e5e7eb', 
-                        color: settings.colorlessMode 
+                        color: displaySettings.colorlessMode 
                           ? '#9ca3af' 
-                          : (settings as any).colorHarmonyMode === mode.id 
+                          : (displaySettings as any).colorHarmonyMode === mode.id 
                             ? 'white' 
                             : '#333',
-                        cursor: settings.colorlessMode ? 'not-allowed' : 'pointer',
-                        opacity: settings.colorlessMode ? 0.6 : 1,
+                        cursor: displaySettings.colorlessMode ? 'not-allowed' : 'pointer',
+                        opacity: displaySettings.colorlessMode ? 0.6 : 1,
                       }}
-                      title={settings.colorlessMode ? '无色模式下不可用' : mode.desc}
+                      title={displaySettings.colorlessMode ? '无色模式下不可用' : mode.desc}
                     >
                       {mode.name}
                     </button>
@@ -757,7 +757,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
               </td>
               <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
-                {settings.colorlessMode ? '⚠️ 无色模式下忽略' : '敌人各部位的颜色搭配方式'}
+                {displaySettings.colorlessMode ? '⚠️ 无色模式下忽略' : '敌人各部位的颜色搭配方式'}
               </td>
             </tr>
 
@@ -854,10 +854,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="40"
                   max="100"
                   step="4"
-                  value={settings.cellSettings?.cellWidth || 64}
+                  value={displaySettings.cellSettings?.cellWidth || 64}
                   onChange={(e) => {
                     const newSettings = {
-                      ...settings.cellSettings,
+                      ...displaySettings.cellSettings,
                       cellWidth: parseInt(e.target.value)
                     };
                     updateSetting('cellSettings', newSettings);
@@ -865,7 +865,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#8b5cf6' }}>{settings.cellSettings?.cellWidth || 64}px</strong>
+                <strong style={{ color: '#8b5cf6' }}>{displaySettings.cellSettings?.cellWidth || 64}px</strong>
               </td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>单元格高度</td>
               <td className="excel-cell">
@@ -875,10 +875,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="15"
                   max="40"
                   step="1"
-                  value={settings.cellSettings?.cellHeight || 20}
+                  value={displaySettings.cellSettings?.cellHeight || 20}
                   onChange={(e) => {
                     const newSettings = {
-                      ...settings.cellSettings,
+                      ...displaySettings.cellSettings,
                       cellHeight: parseInt(e.target.value)
                     };
                     updateSetting('cellSettings', newSettings);
@@ -886,7 +886,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#8b5cf6' }}>{settings.cellSettings?.cellHeight || 20}px</strong>
+                <strong style={{ color: '#8b5cf6' }}>{displaySettings.cellSettings?.cellHeight || 20}px</strong>
               </td>
             </tr>
             <tr>
@@ -912,10 +912,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   ].map(mode => (
                     <button
                       key={mode.id}
-                      className={`game-preset-btn ${settings.cellSettings?.colorMode === mode.id ? 'active' : ''}`}
+                      className={`game-preset-btn ${displaySettings.cellSettings?.colorMode === mode.id ? 'active' : ''}`}
                       onClick={() => {
                         const newSettings = {
-                          ...settings.cellSettings,
+                          ...displaySettings.cellSettings,
                           colorMode: mode.id as any
                         };
                         updateSetting('cellSettings', newSettings);
@@ -924,8 +924,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         minWidth: 70, 
                         fontSize: 11, 
                         padding: '5px 8px', 
-                        background: settings.cellSettings?.colorMode === mode.id ? '#8b5cf6' : '#e5e7eb', 
-                        color: settings.cellSettings?.colorMode === mode.id ? 'white' : '#333' 
+                        background: displaySettings.cellSettings?.colorMode === mode.id ? '#8b5cf6' : '#e5e7eb', 
+                        color: displaySettings.cellSettings?.colorMode === mode.id ? 'white' : '#333' 
                       }}
                       title={mode.desc}
                     >
@@ -950,10 +950,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="0"
                   max="100"
                   step="5"
-                  value={settings.cellSettings?.colorIntensity || 50}
+                  value={displaySettings.cellSettings?.colorIntensity || 50}
                   onChange={(e) => {
                     const newSettings = {
-                      ...settings.cellSettings,
+                      ...displaySettings.cellSettings,
                       colorIntensity: parseInt(e.target.value)
                     };
                     updateSetting('cellSettings', newSettings);
@@ -961,7 +961,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#8b5cf6' }}>{settings.cellSettings?.colorIntensity || 50}%</strong>
+                <strong style={{ color: '#8b5cf6' }}>{displaySettings.cellSettings?.colorIntensity || 50}%</strong>
               </td>
               <td className="excel-cell" colSpan={4} style={{ color: '#666', fontSize: 10 }}>
                 控制颜色变化的强度和对比度，0% = 几乎无色，100% = 最鲜艳
@@ -976,10 +976,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                   <input
                     type="checkbox"
-                    checked={settings.cellSettings?.enableAnimation || false}
+                    checked={displaySettings.cellSettings?.enableAnimation || false}
                     onChange={(e) => {
                       const newSettings = {
-                        ...settings.cellSettings,
+                        ...displaySettings.cellSettings,
                         enableAnimation: e.target.checked
                       };
                       updateSetting('cellSettings', newSettings);
@@ -991,21 +991,21 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <td className="excel-cell" style={{ fontWeight: 500 }}>闪烁速度</td>
               <td className="excel-cell">
                 <select
-                  value={settings.cellSettings?.animationSpeed || 'normal'}
+                  value={displaySettings.cellSettings?.animationSpeed || 'normal'}
                   onChange={(e) => {
                     const newSettings = {
-                      ...settings.cellSettings,
+                      ...displaySettings.cellSettings,
                       animationSpeed: e.target.value as 'slow' | 'normal' | 'fast'
                     };
                     updateSetting('cellSettings', newSettings);
                   }}
-                  disabled={!settings.cellSettings?.enableAnimation}
+                  disabled={!displaySettings.cellSettings?.enableAnimation}
                   style={{ 
                     padding: '4px 8px', 
                     borderRadius: 4, 
                     border: '1px solid #d4d4d4',
                     fontSize: 12,
-                    opacity: settings.cellSettings?.enableAnimation ? 1 : 0.5,
+                    opacity: displaySettings.cellSettings?.enableAnimation ? 1 : 0.5,
                   }}
                 >
                   <option value="slow">慢</option>
@@ -1014,7 +1014,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </select>
               </td>
               <td className="excel-cell" style={{ color: '#666', fontSize: 10 }}>
-                {settings.cellSettings?.enableAnimation ? '单元格会闪烁变化' : '动态效果已关闭'}
+                {displaySettings.cellSettings?.enableAnimation ? '单元格会闪烁变化' : '动态效果已关闭'}
               </td>
             </tr>
 
@@ -1056,7 +1056,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       style={{ display: 'none' }}
                     />
                   </label>
-                  {settings.coverImage && (
+                  {displaySettings.coverImage && (
                     <button
                       onClick={() => updateSetting('coverImage', '')}
                       style={{ 
@@ -1080,7 +1080,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </tr>
 
             {/* 图片预览 */}
-            {settings.coverImage && (
+            {displaySettings.coverImage && (
               <tr>
                 <td className="excel-row-header">39</td>
                 <td className="excel-cell" style={{ fontWeight: 500 }}>图片预览</td>
@@ -1095,7 +1095,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     background: '#f9fafb',
                   }}>
                     <img 
-                      src={settings.coverImage} 
+                      src={displaySettings.coverImage} 
                       alt="伪装图片预览" 
                       style={{ maxWidth: '100%', maxHeight: 140, display: 'block' }}
                     />

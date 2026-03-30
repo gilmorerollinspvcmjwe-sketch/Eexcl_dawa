@@ -432,23 +432,23 @@ body {
   cursor: crosshair;
 }
 
-/* GridTable 作用域限定 - 防止被 gamehub.css 覆盖 */
-.excel-grid-wrapper .excel-cell {
+/* GridTable 作用域限定 - 只针对训练场表格，排除 SettingsPanel 和 StatsPanel */
+.excel-grid-wrapper:not(.settings-panel-wrapper):not(.stats-panel-wrapper) .excel-cell {
   min-width: var(--excel-cell-width) !important;
   width: var(--excel-cell-width) !important;
 }
 
-.excel-grid-wrapper .excel-row-header {
+.excel-grid-wrapper:not(.settings-panel-wrapper):not(.stats-panel-wrapper) .excel-row-header {
   min-width: var(--excel-row-header-width) !important;
   width: var(--excel-row-header-width) !important;
 }
 
-.excel-grid-wrapper .excel-col-header {
+.excel-grid-wrapper:not(.settings-panel-wrapper):not(.stats-panel-wrapper) .excel-col-header {
   min-width: var(--excel-cell-width) !important;
   width: var(--excel-cell-width) !important;
 }
 
-.excel-grid-wrapper .excel-corner-cell {
+.excel-grid-wrapper:not(.settings-panel-wrapper):not(.stats-panel-wrapper) .excel-corner-cell {
   min-width: var(--excel-row-header-width) !important;
   width: var(--excel-row-header-width) !important;
 }
@@ -1129,8 +1129,8 @@ body {
   min-width: 100%;
 }
 
-/* GridTable 训练场表格 - 确保完整显示所有列 */
-.excel-grid-wrapper .excel-table {
+/* GridTable 训练场表格 - 确保完整显示所有列，排除 SettingsPanel 和 StatsPanel */
+.excel-grid-wrapper:not(.settings-panel-wrapper):not(.stats-panel-wrapper) .excel-table {
   /* 计算宽度: 行头(24px) + 30列 × 64px = 1944px */
   width: calc(var(--excel-row-header-width) + var(--excel-cell-width) * 30);
   min-width: calc(var(--excel-row-header-width) + var(--excel-cell-width) * 30);
@@ -1152,8 +1152,17 @@ body {
   overflow: auto !important;
 }
 
-.stats-panel-container .excel-table {
+.stats-panel-wrapper .excel-table {
   table-layout: auto !important;
+  width: 100% !important;
+}
+
+.stats-panel-wrapper .excel-cell {
+  min-width: 80px !important;
+  width: auto !important;
+  cursor: default !important;
+  height: auto !important;
+  min-height: 28px !important;
 }
 
 /* SettingsPanel 特定样式 */
@@ -1165,8 +1174,17 @@ body {
   overflow: auto !important;
 }
 
-.settings-panel-container .excel-table {
+.settings-panel-wrapper .excel-table {
   table-layout: auto !important;
+  width: 100% !important;
+}
+
+.settings-panel-wrapper .excel-cell {
+  min-width: 80px !important;
+  width: auto !important;
+  cursor: default !important;
+  height: auto !important;
+  min-height: 28px !important;
 }
 
 .stats-chart {
