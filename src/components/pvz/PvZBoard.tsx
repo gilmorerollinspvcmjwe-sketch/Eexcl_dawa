@@ -29,6 +29,15 @@ export const PvZBoard: React.FC<PvZBoardProps> = ({ state, onCellClick }) => {
             })}
 
             <div className="pvz-zombie-lane">
+              {state.projectiles
+                .filter((projectile) => projectile.row === row)
+                .map((projectile) => (
+                  <div
+                    key={projectile.projectileId}
+                    className={`pvz-projectile kind-${projectile.kind}`}
+                    style={{ left: `${(projectile.x / state.cols) * 100}%` }}
+                  />
+                ))}
               {state.zombies
                 .filter((zombie) => zombie.row === row)
                 .map((zombie) => (
@@ -48,4 +57,3 @@ export const PvZBoard: React.FC<PvZBoardProps> = ({ state, onCellClick }) => {
     </div>
   );
 };
-
