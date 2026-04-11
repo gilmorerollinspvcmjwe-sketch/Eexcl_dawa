@@ -3,7 +3,7 @@ import { perlerTemplates, filterPerlerTemplates } from '../../features/perler/pe
 import type { PerlerFilterState, PerlerTemplate, PerlerWorkspace as PerlerWorkspaceState } from '../../features/perler/perlerTypes';
 import { applyColorToCell, createPerlerWorkspace, eraseColorFromCell, getWorkspaceMismatchCount, getWorkspacePaletteUsage } from '../../features/perler/perlerWorkspaceState';
 import { buildPixelPatternFromPixels } from '../../features/perler/pixelPatternParser.ts';
-import { getDefaultCanvasZoom } from '../../features/perler/perlerCanvasUtils.ts';
+import { getDefaultCanvasZoom, getPerlerFocusVisibility } from '../../features/perler/perlerCanvasUtils.ts';
 import type { PerlerProgressSummary } from '../../features/hub/hubData';
 import { PerlerTemplateTable } from './PerlerTemplateTable';
 import { PerlerPalettePanel } from './PerlerPalettePanel';
@@ -99,6 +99,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
   const [selectedColor, setSelectedColor] = useState<string>(persisted.currentColor || '#223A6A');
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
   const [canvasZoom, setCanvasZoom] = useState<number>(persisted.workspace ? getDefaultCanvasZoom(persisted.workspace.width) : 1);
+  const [focusMode, setFocusMode] = useState(false);
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
   const [filters, setFilters] = useState<PerlerFilterState>({
@@ -117,6 +118,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
     : paletteEntries[0]?.color || '#223A6A';
   const usage = useMemo(() => (workspace ? getWorkspacePaletteUsage(workspace) : {}), [workspace]);
   const mismatchCount = useMemo(() => (workspace ? getWorkspaceMismatchCount(workspace) : 0), [workspace]);
+  const focusVisibility = getPerlerFocusVisibility(focusMode);
 
   useEffect(() => {
     persistPerlerState({
@@ -176,12 +178,18 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
           <span>模板样式固定，玩家按图纸施工；上传图片也会先解析成拼豆图纸。</span>
         </div>
         <div className="perler-topbar-actions">
+          {workspace && (
+            <button className="perler-inline-btn" onClick={() => setFocusMode((prev) => !prev)}>
+              {focusMode ? '退出专注' : '专注拼图'}
+            </button>
+          )}
           <button className="perler-inline-btn" onClick={() => setShowImportWizard(true)}>导入图片</button>
           <button className="perler-inline-btn" onClick={onExit}>返回首页</button>
         </div>
       </div>
 
-      <div className="perler-layout">
+      <div className={`perler-layout ${focusMode ? 'focus-layout' : ''}`}>
+        {focusVisibility.showSidebar && (
         <aside className="perler-left-panel">
           <div className="perler-panel-title">模板筛选</div>
           <div className="perler-filter-stack">
@@ -240,6 +248,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
             </div>
           )}
         </aside>
+        )}
 
         <main className="perler-main-panel">
           {workspace ? (
@@ -248,6 +257,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
               selectedColor={effectiveSelectedColor}
               activeCell={activeCell}
               zoom={canvasZoom}
+              focusMode={focusMode}
               onPaint={(row, col) => {
                 commitWorkspace(workspace ? applyColorToCell(workspace, row, col, effectiveSelectedColor) : workspace);
                 setActiveCell({ row, col });
@@ -270,6 +280,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
           )}
         </main>
 
+        {focusVisibility.showSidebar && (
         <aside className="perler-right-panel">
           <div className="perler-panel-title">图纸信息</div>
           <div className="perler-meta-block">
@@ -296,6 +307,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
             </>
           )}
         </aside>
+        )}
       </div>
 
       <PerlerImportWizard

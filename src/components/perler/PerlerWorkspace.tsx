@@ -7,6 +7,7 @@ interface PerlerWorkspaceProps {
   selectedColor: string;
   activeCell: { row: number; col: number } | null;
   zoom: number;
+  focusMode: boolean;
   onPaint: (row: number, col: number) => void;
   onErase: (row: number, col: number) => void;
   onSelectCell: (cell: { row: number; col: number } | null) => void;
@@ -92,6 +93,7 @@ export const PerlerWorkspace: React.FC<PerlerWorkspaceProps> = ({
   workspace,
   activeCell,
   zoom,
+  focusMode,
   onPaint,
   onErase,
   onSelectCell,
@@ -130,7 +132,7 @@ export const PerlerWorkspace: React.FC<PerlerWorkspaceProps> = ({
   };
 
   return (
-    <div className="perler-workspace-shell guided-workspace canvas-workspace">
+    <div className={`perler-workspace-shell guided-workspace canvas-workspace ${focusMode ? 'focus-mode' : ''}`}>
       <div className="perler-workspace-toolbar">
         <span>尺寸：{workspace.width}×{workspace.height}</span>
         <label>
@@ -147,14 +149,16 @@ export const PerlerWorkspace: React.FC<PerlerWorkspaceProps> = ({
         </label>
       </div>
 
-      <div className="perler-board-block">
-        <div className="perler-board-title">模板样式</div>
-        <div className="perler-canvas-shell">
-          <canvas ref={referenceCanvasRef} className="perler-canvas-board" style={{ width: scaledWidth, height: scaledHeight }} />
+      {!focusMode && (
+        <div className="perler-board-block reference-panel">
+          <div className="perler-board-title">模板样式</div>
+          <div className="perler-canvas-shell">
+            <canvas ref={referenceCanvasRef} className="perler-canvas-board" style={{ width: scaledWidth, height: scaledHeight }} />
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="perler-board-block">
+      <div className="perler-board-block player-panel">
         <div className="perler-board-title">玩家拼图区</div>
         <div className="perler-canvas-shell">
           <canvas

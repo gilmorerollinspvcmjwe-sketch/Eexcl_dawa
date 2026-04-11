@@ -51,3 +51,38 @@ test('convertImageSourceToPattern returns a fixed grid pattern for imported imag
   assert.notEqual(pattern.cells[1], pattern.cells[2]);
 });
 
+test('convertImageSourceToPattern preserves major color groups instead of collapsing to grayscale', () => {
+  const width = 70;
+  const height = 70;
+  const pixels = new Uint8ClampedArray(width * height * 4);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const offset = (y * width + x) * 4;
+      const color =
+        y < 20
+          ? [40, 40, 40]
+          : x < 23
+            ? [220, 40, 40]
+            : x < 46
+              ? [40, 220, 40]
+              : [40, 40, 220];
+
+      pixels[offset] = color[0];
+      pixels[offset + 1] = color[1];
+      pixels[offset + 2] = color[2];
+      pixels[offset + 3] = 255;
+    }
+  }
+
+  const pattern = convertImageSourceToPattern(
+    { title: 'hero', width, height, pixels },
+    6,
+    'standard',
+  );
+
+  const palette = pattern.palette.map((entry) => entry.color);
+  assert.ok(palette.some((color) => color.startsWith('#D')));
+  assert.ok(palette.some((color) => color.includes('DC') || color.endsWith('DC')));
+  assert.ok(palette.some((color) => color[3] === 'D' || color[5] === 'D'));
+});

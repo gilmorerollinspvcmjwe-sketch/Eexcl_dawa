@@ -1,5 +1,21 @@
 export const IMPORT_SIZE_OPTIONS = [16, 24, 32, 48, 64, 80, 96, 120, 160, 200, 240, 300] as const;
 
+export function getPerlerFocusVisibility(focusMode: boolean) {
+  if (focusMode) {
+    return {
+      showSidebar: false,
+      showReference: false,
+      playerOnly: true,
+    };
+  }
+
+  return {
+    showSidebar: true,
+    showReference: true,
+    playerOnly: false,
+  };
+}
+
 // 根据模板宽度选择基础像素格大小，尺寸越大格子越小。
 export function getCanvasCellSize(width: number): number {
   if (width <= 32) return 14;
@@ -16,4 +32,3 @@ export function getDefaultCanvasZoom(width: number): number {
   if (width <= 160) return 1.5;
   return 2;
 }
-

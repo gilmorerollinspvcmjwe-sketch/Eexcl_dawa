@@ -387,3 +387,19 @@
 .perler-canvas-shell {
   border: 1px solid #d4d4d4;
 }
+
+.perler-layout.focus-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.canvas-workspace.focus-mode {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.canvas-workspace.focus-mode .player-panel {
+  grid-column: 1 / -1;
+}
+
+.canvas-workspace.focus-mode .perler-canvas-shell {
+  max-height: calc(100vh - 230px);
+}
