@@ -4,9 +4,15 @@ export type PvZPlantId =
   | 'wallnut'
   | 'cherryBomb'
   | 'potatoMine'
-  | 'repeater';
+  | 'repeater'
+  | 'snowPea'
+  | 'cabbagePult'
+  | 'chomper'
+  | 'threepeater'
+  | 'torchwood'
+  | 'kernelPult';
 
-export type PvZZombieId = 'normal' | 'flag' | 'conehead' | 'buckethead';
+export type PvZZombieId = 'normal' | 'flag' | 'conehead' | 'buckethead' | 'newspaper' | 'pole' | 'football' | 'screenDoor';
 
 export interface PvZPlantDefinition {
   id: PvZPlantId;
@@ -22,6 +28,8 @@ export interface PvZPlantDefinition {
   sunAmount?: number;
   laneBlocker?: boolean;
   explodeRadius?: 1 | 3;
+  projectileKind?: PvZProjectileKind;
+  projectileCount?: number;
 }
 
 export interface PvZZombieDefinition {
@@ -52,6 +60,18 @@ export interface PvZZombieInstance {
   hp: number;
 }
 
+export type PvZProjectileKind = 'pea' | 'double-pea' | 'snow-pea' | 'lobbed';
+
+export interface PvZProjectile {
+  projectileId: string;
+  kind: PvZProjectileKind;
+  row: number;
+  x: number;
+  speed: number;
+  damage: number;
+  targetZombieId?: string;
+}
+
 export interface PvZSpawnEvent {
   id: string;
   zombieId: PvZZombieId;
@@ -63,14 +83,16 @@ export interface PvZBoardState {
   rows: number;
   cols: number;
   sun: number;
+  phase: 'setup' | 'playing' | 'won' | 'lost';
   status: 'playing' | 'won' | 'lost';
   elapsedMs: number;
   waveProgress: number;
   selectedPlantId: PvZPlantId | null;
+  selectedCards: PvZPlantId[];
   plants: PvZPlantInstance[];
   zombies: PvZZombieInstance[];
+  projectiles: PvZProjectile[];
   spawnQueue: PvZSpawnEvent[];
   lawnMowers: boolean[];
   cardCooldownsMs: Partial<Record<PvZPlantId, number>>;
 }
-

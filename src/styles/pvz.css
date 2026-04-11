@@ -14,6 +14,31 @@
   flex-wrap: wrap;
 }
 
+.pvz-setup-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #d4d4d4;
+  background: white;
+  padding: 10px 12px;
+}
+
+.pvz-setup-copy {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.pvz-start-btn {
+  border: 1px solid #0c5a2f;
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: white;
+  padding: 8px 14px;
+  font-size: 12px;
+}
+
 .pvz-hud-item,
 .pvz-card {
   border: 1px solid #d4d4d4;
@@ -51,6 +76,17 @@
   background: white;
 }
 
+.pvz-setup-board-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d4d4d4;
+  background: white;
+  color: #64748b;
+  font-size: 13px;
+}
+
 .pvz-board {
   display: grid;
   gap: 4px;
@@ -76,6 +112,33 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+.pvz-projectile {
+  position: absolute;
+  top: 26px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
+
+.pvz-projectile.kind-pea {
+  background: #16a34a;
+}
+
+.pvz-projectile.kind-double-pea {
+  background: #15803d;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
+}
+
+.pvz-projectile.kind-snow-pea {
+  background: #38bdf8;
+}
+
+.pvz-projectile.kind-lobbed {
+  background: #84cc16;
+  border-radius: 4px;
 }
 
 .pvz-plant,
@@ -143,4 +206,3 @@
   font-size: 12px;
   color: #334155;
 }
-
