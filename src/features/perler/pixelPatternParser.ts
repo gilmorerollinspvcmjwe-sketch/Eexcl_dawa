@@ -40,9 +40,83 @@ function colorDistance(a: { r: number; g: number; b: number }, b: { r: number; g
   return (a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2;
 }
 
+function rgbToHsl(color: { r: number; g: number; b: number }) {
+  const r = color.r / 255;
+  const g = color.g / 255;
+  const b = color.b / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const lightness = (max + min) / 2;
+  const delta = max - min;
+
+  if (delta === 0) {
+    return { h: 0, s: 0, l: lightness };
+  }
+
+  const saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+  let hue = 0;
+
+  switch (max) {
+    case r:
+      hue = (g - b) / delta + (g < b ? 6 : 0);
+      break;
+    case g:
+      hue = (b - r) / delta + 2;
+      break;
+    default:
+      hue = (r - g) / delta + 4;
+      break;
+  }
+
+  return { h: hue / 6, s: saturation, l: lightness };
+}
+
+function hslToRgb(color: { h: number; s: number; l: number }) {
+  const hueToRgb = (p: number, q: number, t: number) => {
+    let next = t;
+    if (next < 0) next += 1;
+    if (next > 1) next -= 1;
+    if (next < 1 / 6) return p + (q - p) * 6 * next;
+    if (next < 1 / 2) return q;
+    if (next < 2 / 3) return p + (q - p) * (2 / 3 - next) * 6;
+    return p;
+  };
+
+  if (color.s === 0) {
+    const gray = clamp(color.l * 255);
+    return { r: gray, g: gray, b: gray };
+  }
+
+  const q = color.l < 0.5 ? color.l * (1 + color.s) : color.l + color.s - color.l * color.s;
+  const p = 2 * color.l - q;
+
+  return {
+    r: clamp(hueToRgb(p, q, color.h + 1 / 3) * 255),
+    g: clamp(hueToRgb(p, q, color.h) * 255),
+    b: clamp(hueToRgb(p, q, color.h - 1 / 3) * 255),
+  };
+}
+
 // 给图纸中的颜色生成简短色号，便于十字绣/拼豆式阅读。
 function buildColorCode(index: number): string {
   return `C${String(index + 1).padStart(2, '0')}`;
+}
+
+// 角色图鲜艳优先：中性色基本不动，有色区域提饱和并略提亮。
+export function boostCharacterPalette(colors: string[]): string[] {
+  return colors.map((hex) => {
+    const rgb = hexToRgb(hex);
+    const hsl = rgbToHsl(rgb);
+    if (hsl.s < 0.08) return hex.toUpperCase();
+
+    const boosted = {
+      h: hsl.h,
+      s: Math.min(1, hsl.s * 1.28 + 0.06),
+      l: Math.min(0.78, hsl.l * 1.04 + 0.015),
+    };
+    const vivid = hslToRgb(boosted);
+    return toHex(vivid.r, vivid.g, vivid.b);
+  });
 }
 
 // 从像素颜色列表构建完整图纸。
@@ -184,7 +258,8 @@ export function convertImageSourceToPattern(
 
   const pixelized = pixelizeImportedBitmap(source, paletteSize, style);
   const palette = reduceImagePalette(Uint8ClampedArray.from(source.pixels), paletteSize, style);
-  const normalizedPixels = pixelized.map((color) => pickNearestPaletteColor(hexToRgb(color), palette));
+  const preferredPalette = source.width >= 80 || source.height >= 80 ? boostCharacterPalette(palette) : palette;
+  const normalizedPixels = pixelized.map((color) => pickNearestPaletteColor(hexToRgb(color), preferredPalette));
 
   return buildPixelPatternFromPixels({
     title: source.title,

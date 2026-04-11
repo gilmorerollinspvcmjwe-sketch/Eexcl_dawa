@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPixelPatternFromPixels, convertImageSourceToPattern, materializePatternPixels } from '../src/features/perler/pixelPatternParser.ts';
+import { boostCharacterPalette, buildPixelPatternFromPixels, convertImageSourceToPattern, materializePatternPixels } from '../src/features/perler/pixelPatternParser.ts';
 
 test('buildPixelPatternFromPixels creates palette entries and indexed cells', () => {
   const pattern = buildPixelPatternFromPixels({
@@ -85,4 +85,13 @@ test('convertImageSourceToPattern preserves major color groups instead of collap
   assert.ok(palette.some((color) => color.startsWith('#D')));
   assert.ok(palette.some((color) => color.includes('DC') || color.endsWith('DC')));
   assert.ok(palette.some((color) => color[3] === 'D' || color[5] === 'D'));
+});
+
+test('boostCharacterPalette makes colorful character tones more vivid without altering neutrals wildly', () => {
+  const boosted = boostCharacterPalette(['#6E5A5A', '#5F6E9A', '#C8B8A0', '#3A3A3A']);
+
+  assert.equal(boosted.length, 4);
+  assert.equal(boosted[3], '#3A3A3A');
+  assert.notEqual(boosted[0], '#6E5A5A');
+  assert.notEqual(boosted[1], '#5F6E9A');
 });
