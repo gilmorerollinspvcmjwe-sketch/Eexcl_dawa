@@ -378,6 +378,13 @@
   color: #475569;
 }
 
+.perler-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .perler-workspace-toolbar label {
   display: flex;
   align-items: center;
@@ -392,14 +399,17 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.canvas-workspace.focus-mode {
+.canvas-workspace.view-focus,
+.canvas-workspace.view-reference {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.canvas-workspace.focus-mode .player-panel {
+.canvas-workspace.view-focus .player-panel,
+.canvas-workspace.view-reference .reference-panel {
   grid-column: 1 / -1;
 }
 
-.canvas-workspace.focus-mode .perler-canvas-shell {
+.canvas-workspace.view-focus .perler-canvas-shell,
+.canvas-workspace.view-reference .perler-canvas-shell {
   max-height: calc(100vh - 230px);
 }

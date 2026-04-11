@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef } from 'react';
 import type { PerlerWorkspace as PerlerWorkspaceState } from '../../features/perler/perlerTypes';
+import type { PerlerRegion, PerlerViewMode } from '../../features/perler/perlerCanvasUtils.ts';
 import { getCanvasCellSize } from '../../features/perler/perlerCanvasUtils.ts';
 
 interface PerlerWorkspaceProps {
@@ -7,11 +8,15 @@ interface PerlerWorkspaceProps {
   selectedColor: string;
   activeCell: { row: number; col: number } | null;
   zoom: number;
-  focusMode: boolean;
+  viewMode: PerlerViewMode;
+  regions: PerlerRegion[];
+  selectedRegionId: string;
   onPaint: (row: number, col: number) => void;
   onErase: (row: number, col: number) => void;
   onSelectCell: (cell: { row: number; col: number } | null) => void;
   onZoomChange: (zoom: number) => void;
+  onViewModeChange: (mode: PerlerViewMode) => void;
+  onRegionChange: (regionId: string) => void;
 }
 
 function drawBeadCell(
@@ -21,7 +26,12 @@ function drawBeadCell(
   size: number,
   fill: string,
   border: string,
+  highlight = false,
 ) {
+  if (highlight) {
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.22)';
+    ctx.fillRect(x, y, size, size);
+  }
   ctx.fillStyle = fill;
   ctx.fillRect(x, y, size, size);
   ctx.strokeStyle = border;
@@ -34,7 +44,24 @@ function drawBeadCell(
   ctx.fill();
 }
 
-function paintTemplateCanvas(canvas: HTMLCanvasElement, workspace: PerlerWorkspaceState, cellSize: number) {
+function drawRegionFrame(ctx: CanvasRenderingContext2D, region: PerlerRegion, cellSize: number) {
+  ctx.strokeStyle = 'rgba(37, 99, 235, 0.9)';
+  ctx.lineWidth = Math.max(1, cellSize / 3);
+  ctx.strokeRect(
+    region.startCol * cellSize + 1,
+    region.startRow * cellSize + 1,
+    region.width * cellSize - 2,
+    region.height * cellSize - 2,
+  );
+}
+
+function paintTemplateCanvas(
+  canvas: HTMLCanvasElement,
+  workspace: PerlerWorkspaceState,
+  cellSize: number,
+  selectedColor: string,
+  selectedRegion: PerlerRegion | null,
+) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   canvas.width = workspace.width * cellSize;
@@ -44,8 +71,12 @@ function paintTemplateCanvas(canvas: HTMLCanvasElement, workspace: PerlerWorkspa
   workspace.pattern.previewPixels.forEach((color, index) => {
     const row = Math.floor(index / workspace.width);
     const col = index % workspace.width;
-    drawBeadCell(ctx, col * cellSize, row * cellSize, cellSize, color, '#cbd5e1');
+    drawBeadCell(ctx, col * cellSize, row * cellSize, cellSize, color, '#cbd5e1', color === selectedColor);
   });
+
+  if (selectedRegion) {
+    drawRegionFrame(ctx, selectedRegion, cellSize);
+  }
 }
 
 function paintPlayerCanvas(
@@ -53,6 +84,8 @@ function paintPlayerCanvas(
   workspace: PerlerWorkspaceState,
   activeCell: { row: number; col: number } | null,
   cellSize: number,
+  selectedColor: string,
+  selectedRegion: PerlerRegion | null,
 ) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -68,7 +101,7 @@ function paintPlayerCanvas(
     const isCorrect = !!workspace.userPixels[index] && workspace.userPixels[index] === targetColor;
     const border = isMismatch ? '#dc2626' : isCorrect ? '#16a34a' : '#d4d4d4';
 
-    drawBeadCell(ctx, col * cellSize, row * cellSize, cellSize, userColor, border);
+    drawBeadCell(ctx, col * cellSize, row * cellSize, cellSize, userColor, border, targetColor === selectedColor);
 
     if (isMismatch) {
       ctx.strokeStyle = 'rgba(220,38,38,0.75)';
@@ -82,6 +115,10 @@ function paintPlayerCanvas(
     }
   });
 
+  if (selectedRegion) {
+    drawRegionFrame(ctx, selectedRegion, cellSize);
+  }
+
   if (activeCell) {
     ctx.strokeStyle = '#2563eb';
     ctx.lineWidth = Math.max(1, cellSize / 5);
@@ -91,31 +128,65 @@ function paintPlayerCanvas(
 
 export const PerlerWorkspace: React.FC<PerlerWorkspaceProps> = ({
   workspace,
+  selectedColor,
   activeCell,
   zoom,
-  focusMode,
+  viewMode,
+  regions,
+  selectedRegionId,
   onPaint,
   onErase,
   onSelectCell,
   onZoomChange,
+  onViewModeChange,
+  onRegionChange,
 }) => {
   const referenceCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const playerCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const referenceShellRef = useRef<HTMLDivElement | null>(null);
+  const playerShellRef = useRef<HTMLDivElement | null>(null);
+  const syncSourceRef = useRef<'reference' | 'player' | null>(null);
   const cellSize = useMemo(() => getCanvasCellSize(workspace.width), [workspace.width]);
   const scaledWidth = workspace.width * cellSize * zoom;
   const scaledHeight = workspace.height * cellSize * zoom;
+  const selectedRegion = regions.find((region) => region.id === selectedRegionId) || regions[0] || null;
 
   useEffect(() => {
     if (referenceCanvasRef.current) {
-      paintTemplateCanvas(referenceCanvasRef.current, workspace, cellSize);
+      paintTemplateCanvas(referenceCanvasRef.current, workspace, cellSize, selectedColor, selectedRegion);
     }
-  }, [workspace, cellSize]);
+  }, [workspace, cellSize, selectedColor, selectedRegion]);
 
   useEffect(() => {
     if (playerCanvasRef.current) {
-      paintPlayerCanvas(playerCanvasRef.current, workspace, activeCell, cellSize);
+      paintPlayerCanvas(playerCanvasRef.current, workspace, activeCell, cellSize, selectedColor, selectedRegion);
     }
-  }, [workspace, activeCell, cellSize]);
+  }, [workspace, activeCell, cellSize, selectedColor, selectedRegion]);
+
+  useEffect(() => {
+    if (!selectedRegion) return;
+    const top = selectedRegion.startRow * cellSize * zoom;
+    const left = selectedRegion.startCol * cellSize * zoom;
+    if (referenceShellRef.current) {
+      referenceShellRef.current.scrollTo({ top, left, behavior: 'smooth' });
+    }
+    if (playerShellRef.current) {
+      playerShellRef.current.scrollTo({ top, left, behavior: 'smooth' });
+    }
+  }, [selectedRegion, cellSize, zoom]);
+
+  const syncScroll = (source: 'reference' | 'player') => {
+    const from = source === 'reference' ? referenceShellRef.current : playerShellRef.current;
+    const to = source === 'reference' ? playerShellRef.current : referenceShellRef.current;
+    if (!from || !to) return;
+    if (syncSourceRef.current && syncSourceRef.current !== source) return;
+    syncSourceRef.current = source;
+    to.scrollLeft = from.scrollLeft;
+    to.scrollTop = from.scrollTop;
+    requestAnimationFrame(() => {
+      syncSourceRef.current = null;
+    });
+  };
 
   const handlePointer = (
     event: React.MouseEvent<HTMLCanvasElement>,
@@ -132,49 +203,63 @@ export const PerlerWorkspace: React.FC<PerlerWorkspaceProps> = ({
   };
 
   return (
-    <div className={`perler-workspace-shell guided-workspace canvas-workspace ${focusMode ? 'focus-mode' : ''}`}>
+    <div className={`perler-workspace-shell guided-workspace canvas-workspace view-${viewMode}`}>
       <div className="perler-workspace-toolbar">
-        <span>尺寸：{workspace.width}×{workspace.height}</span>
-        <label>
-          缩放
-          <input
-            type="range"
-            min={0.5}
-            max={4}
-            step={0.25}
-            value={zoom}
-            onChange={(event) => onZoomChange(Number(event.target.value))}
-          />
-          <strong>{Math.round(zoom * 100)}%</strong>
-        </label>
+        <div className="perler-toolbar-group">
+          <span>尺寸：{workspace.width}×{workspace.height}</span>
+          <select value={selectedRegionId} onChange={(event) => onRegionChange(event.target.value)}>
+            {regions.map((region) => (
+              <option key={region.id} value={region.id}>{region.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="perler-toolbar-group">
+          <button className={`perler-inline-btn ${viewMode === 'split' ? 'primary' : ''}`} onClick={() => onViewModeChange('split')}>双栏</button>
+          <button className={`perler-inline-btn ${viewMode === 'focus' ? 'primary' : ''}`} onClick={() => onViewModeChange('focus')}>施工</button>
+          <button className={`perler-inline-btn ${viewMode === 'reference' ? 'primary' : ''}`} onClick={() => onViewModeChange('reference')}>参考</button>
+          <label>
+            缩放
+            <input
+              type="range"
+              min={0.5}
+              max={4}
+              step={0.25}
+              value={zoom}
+              onChange={(event) => onZoomChange(Number(event.target.value))}
+            />
+            <strong>{Math.round(zoom * 100)}%</strong>
+          </label>
+        </div>
       </div>
 
-      {!focusMode && (
+      {viewMode !== 'focus' && (
         <div className="perler-board-block reference-panel">
           <div className="perler-board-title">模板样式</div>
-          <div className="perler-canvas-shell">
+          <div className="perler-canvas-shell" ref={referenceShellRef} onScroll={() => syncScroll('reference')}>
             <canvas ref={referenceCanvasRef} className="perler-canvas-board" style={{ width: scaledWidth, height: scaledHeight }} />
           </div>
         </div>
       )}
 
-      <div className="perler-board-block player-panel">
-        <div className="perler-board-title">玩家拼图区</div>
-        <div className="perler-canvas-shell">
-          <canvas
-            ref={playerCanvasRef}
-            className="perler-canvas-board"
-            style={{ width: scaledWidth, height: scaledHeight }}
-            onClick={(event) => handlePointer(event, 'paint')}
-            onMouseMove={(event) => handlePointer(event, 'hover')}
-            onContextMenu={(event) => {
-              event.preventDefault();
-              handlePointer(event, 'erase');
-            }}
-            onMouseLeave={() => onSelectCell(null)}
-          />
+      {viewMode !== 'reference' && (
+        <div className="perler-board-block player-panel">
+          <div className="perler-board-title">玩家拼图区</div>
+          <div className="perler-canvas-shell" ref={playerShellRef} onScroll={() => syncScroll('player')}>
+            <canvas
+              ref={playerCanvasRef}
+              className="perler-canvas-board"
+              style={{ width: scaledWidth, height: scaledHeight }}
+              onClick={(event) => handlePointer(event, 'paint')}
+              onMouseMove={(event) => handlePointer(event, 'hover')}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                handlePointer(event, 'erase');
+              }}
+              onMouseLeave={() => onSelectCell(null)}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

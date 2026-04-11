@@ -3,7 +3,7 @@ import { perlerTemplates, filterPerlerTemplates } from '../../features/perler/pe
 import type { PerlerFilterState, PerlerTemplate, PerlerWorkspace as PerlerWorkspaceState } from '../../features/perler/perlerTypes';
 import { applyColorToCell, createPerlerWorkspace, eraseColorFromCell, getWorkspaceMismatchCount, getWorkspacePaletteUsage } from '../../features/perler/perlerWorkspaceState';
 import { buildPixelPatternFromPixels } from '../../features/perler/pixelPatternParser.ts';
-import { getDefaultCanvasZoom, getPerlerFocusVisibility } from '../../features/perler/perlerCanvasUtils.ts';
+import { buildPerlerRegions, getDefaultCanvasZoom, getPerlerViewVisibility, type PerlerViewMode } from '../../features/perler/perlerCanvasUtils.ts';
 import type { PerlerProgressSummary } from '../../features/hub/hubData';
 import { PerlerTemplateTable } from './PerlerTemplateTable';
 import { PerlerPalettePanel } from './PerlerPalettePanel';
@@ -99,7 +99,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
   const [selectedColor, setSelectedColor] = useState<string>(persisted.currentColor || '#223A6A');
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
   const [canvasZoom, setCanvasZoom] = useState<number>(persisted.workspace ? getDefaultCanvasZoom(persisted.workspace.width) : 1);
-  const [focusMode, setFocusMode] = useState(false);
+  const [viewMode, setViewMode] = useState<PerlerViewMode>('split');
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
   const [filters, setFilters] = useState<PerlerFilterState>({
@@ -118,7 +118,16 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
     : paletteEntries[0]?.color || '#223A6A';
   const usage = useMemo(() => (workspace ? getWorkspacePaletteUsage(workspace) : {}), [workspace]);
   const mismatchCount = useMemo(() => (workspace ? getWorkspaceMismatchCount(workspace) : 0), [workspace]);
-  const focusVisibility = getPerlerFocusVisibility(focusMode);
+  const viewVisibility = getPerlerViewVisibility(viewMode);
+  const regions = useMemo(
+    () => (workspace ? buildPerlerRegions(workspace.width, workspace.height) : []),
+    [workspace],
+  );
+  const [selectedRegionId, setSelectedRegionId] = useState<string>('');
+  const effectiveSelectedRegionId =
+    regions.length > 0 && regions.some((region) => region.id === selectedRegionId)
+      ? selectedRegionId
+      : regions[0]?.id || '';
 
   useEffect(() => {
     persistPerlerState({
@@ -178,18 +187,13 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
           <span>模板样式固定，玩家按图纸施工；上传图片也会先解析成拼豆图纸。</span>
         </div>
         <div className="perler-topbar-actions">
-          {workspace && (
-            <button className="perler-inline-btn" onClick={() => setFocusMode((prev) => !prev)}>
-              {focusMode ? '退出专注' : '专注拼图'}
-            </button>
-          )}
           <button className="perler-inline-btn" onClick={() => setShowImportWizard(true)}>导入图片</button>
           <button className="perler-inline-btn" onClick={onExit}>返回首页</button>
         </div>
       </div>
 
-      <div className={`perler-layout ${focusMode ? 'focus-layout' : ''}`}>
-        {focusVisibility.showSidebar && (
+      <div className={`perler-layout ${viewMode !== 'split' ? 'focus-layout' : ''}`}>
+        {viewVisibility.showSidebar && (
         <aside className="perler-left-panel">
           <div className="perler-panel-title">模板筛选</div>
           <div className="perler-filter-stack">
@@ -257,7 +261,9 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
               selectedColor={effectiveSelectedColor}
               activeCell={activeCell}
               zoom={canvasZoom}
-              focusMode={focusMode}
+              viewMode={viewMode}
+              regions={regions}
+              selectedRegionId={effectiveSelectedRegionId}
               onPaint={(row, col) => {
                 commitWorkspace(workspace ? applyColorToCell(workspace, row, col, effectiveSelectedColor) : workspace);
                 setActiveCell({ row, col });
@@ -268,6 +274,8 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
               }}
               onSelectCell={setActiveCell}
               onZoomChange={setCanvasZoom}
+              onViewModeChange={setViewMode}
+              onRegionChange={setSelectedRegionId}
             />
           ) : (
             <PerlerTemplateTable
@@ -280,7 +288,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
           )}
         </main>
 
-        {focusVisibility.showSidebar && (
+        {viewVisibility.showSidebar && (
         <aside className="perler-right-panel">
           <div className="perler-panel-title">图纸信息</div>
           <div className="perler-meta-block">
