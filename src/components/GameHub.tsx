@@ -1,71 +1,123 @@
-// 游戏中心 - Sheet1 主组件 (Excel 表格风格)
-// 整合所有游戏启动入口
-
-import React, { useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import type { FPSTrainingMode } from './TrainingModeSelector';
+import { buildHubSnapshot, type ArcadeGameId, type PerlerProgressSummary } from '../features/hub/hubData';
+import { HubQuickResumeRow } from './hub/HubQuickResumeRow';
+import { HubGameTable } from './hub/HubGameTable';
+import { HubTasksPanel } from './hub/HubTasksPanel';
+import { HubProgressPanel } from './hub/HubProgressPanel';
+import { HubActivityLog } from './hub/HubActivityLog';
 import '../styles/gamehub.css';
 
 export type GameModeType = 'timed' | 'endless' | 'zen' | 'headshot' | 'survival' | 'headshot_only';
-
 export type DifficultyLevel = 'very_easy' | 'easy' | 'normal' | 'medium' | 'hard' | 'expert';
+type FPSConfigMap = Record<string, string | number | boolean | undefined>;
 
 interface GameHubProps {
   onStartGame: (
     mode: GameModeType | 'part_training' | 'peek_shot' | 'moving_target',
     duration?: 30 | 60 | 120,
     level?: number,
-    difficulty?: DifficultyLevel
+    difficulty?: DifficultyLevel,
   ) => void;
-  onStartFPSTraining: (mode: FPSTrainingMode, config?: any) => void;
+  onStartFPSTraining: (mode: FPSTrainingMode, config?: FPSConfigMap) => void;
+  onStartPerler: (entryMode?: 'library' | 'resume') => void;
   onSwitchSheet: (sheet: 'game' | 'stats' | 'settings') => void;
-  selectedFPSMode?: FPSTrainingMode | null;
   trainingDuration?: 30 | 60 | 120;
   difficulty?: DifficultyLevel;
+  totalGames: number;
+  totalScore: number;
+  perlerProgress: PerlerProgressSummary | null;
+  onFormulaChange?: (text: string) => void;
 }
+
+const GAME_DESCRIPTIONS: Record<ArcadeGameId, string> = {
+  aim: '=练枪：最快进入状态的短局模块，适合热手。',
+  snake: '=贪吃蛇：数据流通畅，但项目仍在筹备中。',
+  tetris: '=俄罗斯方块：整理混乱的心流模块，正在排期。',
+  perler: '=拼豆：模板优先的像素工位创作台。',
+  pvz: '=植物大战僵尸：网格防线模块，后续接入。',
+};
 
 export const GameHub: React.FC<GameHubProps> = ({
   onStartGame,
   onStartFPSTraining,
+  onStartPerler,
   onSwitchSheet,
+  trainingDuration = 60,
+  difficulty = 'normal',
+  totalGames,
+  totalScore,
+  perlerProgress,
+  onFormulaChange,
 }) => {
+  const snapshot = useMemo(
+    () => buildHubSnapshot({ perlerProgress, stats: { totalGames, totalScore } }),
+    [perlerProgress, totalGames, totalScore],
+  );
+
+  const [selectedGame, setSelectedGame] = useState<ArcadeGameId>(perlerProgress ? 'perler' : 'aim');
   const [trainingCategory, setTrainingCategory] = useState<'classic' | 'fps'>('classic');
   const [selectedClassicMode, setSelectedClassicMode] = useState<GameModeType>('timed');
-  const [selectedFPSModeLocal, setSelectedFPSModeLocal] = useState<FPSTrainingMode | null>(null);
-  const [fpsConfig, setFpsConfig] = useState<any>({});
+  const [selectedFPSModeLocal, setSelectedFPSModeLocal] = useState<FPSTrainingMode>('motion_track');
+  const [fpsConfig, setFpsConfig] = useState<FPSConfigMap>({ speed: 'normal', pattern: 'linear', duration: 60 });
 
-  const fpsModeConfigs: Record<FPSTrainingMode, any> = {
-    motion_track: { speed: 'normal', pattern: 'linear', duration: 60 },
+  useEffect(() => {
+    onFormulaChange?.(GAME_DESCRIPTIONS[selectedGame]);
+  }, [selectedGame, onFormulaChange]);
+
+  const fpsModeConfigs: Record<FPSTrainingMode, FPSConfigMap> = {
+    motion_track: { speed: 'normal', pattern: 'linear', duration: trainingDuration },
     peek_shot: { duration: 'normal', interval: 1500 },
     switch_track: { targetCount: 3, showPriority: true },
-    reaction: {},
+    reaction: { rounds: 20, interval: 2 },
     precision: { targetScale: 0.5, targetCount: 3 },
   };
 
-  const handleStartGame = () => {
-    if (trainingCategory === 'classic') {
-      onStartGame(selectedClassicMode, 60, undefined, 'normal');
-      onSwitchSheet('game');
-    } else if (selectedFPSModeLocal) {
-      const config = { ...fpsModeConfigs[selectedFPSModeLocal], ...fpsConfig };
-      onStartFPSTraining(selectedFPSModeLocal, config);
-      onSwitchSheet('game');
+  const handleLaunch = (gameId: ArcadeGameId) => {
+    if (gameId === 'aim') {
+      if (trainingCategory === 'classic') {
+        onStartGame(selectedClassicMode, trainingDuration, undefined, difficulty);
+      } else {
+        const config = { ...fpsModeConfigs[selectedFPSModeLocal], ...fpsConfig };
+        onStartFPSTraining(selectedFPSModeLocal, config);
+      }
+      return;
     }
+
+    if (gameId === 'perler') {
+      onStartPerler('library');
+      return;
+    }
+
+    setSelectedGame(gameId);
   };
 
-  const handleLevelStart = (level: number) => {
-    onStartGame('part_training', undefined, level, 'normal');
-    onSwitchSheet('game');
+  const handleQuickResume = () => {
+    if (snapshot.quickResume.kind === 'perler') {
+      onStartPerler('resume');
+      return;
+    }
+    onStartGame('timed', trainingDuration, undefined, difficulty);
   };
 
-  const handleFPSModeSelect = (mode: FPSTrainingMode) => {
-    setSelectedFPSModeLocal(mode);
-    setTrainingCategory('fps');
-    setFpsConfig(fpsModeConfigs[mode]);
+  const handleRecommendation = () => {
+    if (snapshot.quickResume.kind === 'perler') {
+      onStartGame('timed', trainingDuration, undefined, difficulty);
+      return;
+    }
+    onStartPerler('library');
   };
+
+  const handleRandom = () => {
+    const next = Math.random() > 0.5 ? 'aim' : 'perler';
+    handleLaunch(next);
+  };
+
+  const selectedRow = snapshot.games.find((game) => game.id === selectedGame);
 
   return (
-    <div className="excel-game-hub">
-      <div className="excel-sheet-wrapper">
+    <div className="excel-game-hub arcade-hub-layout">
+      <div className="excel-sheet-wrapper arcade-sheet-wrapper">
         <div className="excel-col-headers-row">
           <div className="excel-corner-cell"></div>
           <div className="excel-col-header">A</div>
@@ -78,27 +130,27 @@ export const GameHub: React.FC<GameHubProps> = ({
           <div className="excel-row-header">1</div>
           <div className="excel-cell excel-title-cell">
             <span className="excel-title-icon">🎮</span>
-            <span className="excel-title-text">Excel Aim Trainer - 游戏中心</span>
+            <span className="excel-title-text">工位娱乐中心.xlsx</span>
           </div>
         </div>
 
         <div className="excel-row">
           <div className="excel-row-header">2</div>
-          <div className="excel-cell excel-empty-cell"></div>
+          <div className="excel-cell hub-subtitle-cell">
+            <span>Office Arcade / 继续工作前，先保持一点手感与心情。</span>
+          </div>
         </div>
 
-        <div className="excel-row excel-start-row">
+        <div className="excel-row hub-quick-row-wrap">
           <div className="excel-row-header">3</div>
-          <div className="excel-cell excel-main-start-cell">
-            <button
-              className="excel-main-start-btn"
-              onClick={handleStartGame}
-              disabled={trainingCategory === 'fps' && !selectedFPSModeLocal}
-            >
-              <span className="main-btn-icon">▶️</span>
-              <span className="main-btn-text">立即开始训练</span>
-            </button>
-            <span className="excel-mock-text">就你那手速，能玩的明白？</span>
+          <div className="excel-cell hub-wide-cell">
+            <HubQuickResumeRow
+              quickResume={snapshot.quickResume}
+              recommendation={snapshot.recommendation}
+              onResume={handleQuickResume}
+              onRecommended={handleRecommendation}
+              onRandom={handleRandom}
+            />
           </div>
         </div>
 
@@ -107,19 +159,34 @@ export const GameHub: React.FC<GameHubProps> = ({
           <div className="excel-cell excel-empty-cell"></div>
         </div>
 
-        <div className="excel-row">
+        <div className="excel-row hub-main-row">
           <div className="excel-row-header">5</div>
-          <div className="excel-cell">
-            <div className="excel-inline-control">
-              <span className="excel-label">训练模式：</span>
-              <select
-                className="excel-select"
-                value={trainingCategory}
-                onChange={(e) => setTrainingCategory(e.target.value as 'classic' | 'fps')}
-              >
-                <option value="classic">🎯 经典模式</option>
-                <option value="fps">🔫 FPS 专项</option>
-              </select>
+          <div className="excel-cell hub-main-cell">
+            <div className="hub-main-grid">
+              <section className="hub-primary-panel">
+                <div className="excel-section-header">
+                  <span className="section-icon">🧾</span>
+                  <span>游戏目录总表</span>
+                </div>
+                <HubGameTable
+                  games={snapshot.games}
+                  selectedGame={selectedGame}
+                  onSelect={setSelectedGame}
+                  onLaunch={handleLaunch}
+                />
+              </section>
+
+              <aside className="hub-secondary-column">
+                <HubTasksPanel tasks={snapshot.tasks} />
+                <HubProgressPanel
+                  level={12}
+                  title="单元格清道夫"
+                  credits={2480}
+                  totalGames={totalGames}
+                  totalScore={totalScore}
+                />
+                <HubActivityLog items={snapshot.activity} />
+              </aside>
             </div>
           </div>
         </div>
@@ -132,176 +199,112 @@ export const GameHub: React.FC<GameHubProps> = ({
         <div className="excel-row">
           <div className="excel-row-header">7</div>
           <div className="excel-cell excel-section-header">
-            <span className="section-icon">🎯</span>
-            <span>经典模式</span>
+            <span className="section-icon">🛠</span>
+            <span>工作台快速操作</span>
           </div>
         </div>
 
-        <div className="excel-row excel-modes-row">
+        <div className="excel-row hub-workbench-row">
           <div className="excel-row-header">8</div>
-          <div className="excel-cell excel-modes-cell">
-            <div className="excel-mode-grid">
-              {[
-                { id: 'timed', icon: '⏱️', name: '限时', desc: '「与时间赛跑，分秒必争」' },
-                { id: 'endless', icon: '♾️', name: '无限', desc: '「没有尽头，只有突破」' },
-                { id: 'zen', icon: '🧘', name: '禅', desc: '「心无旁骛，万物皆空」' },
-                { id: 'headshot', icon: '🎯', name: '爆头线', desc: '「一击必杀，瞄准即正义」' },
-                { id: 'survival', icon: '❤️', name: '生存', desc: '「三条命，失误即出局」' },
-                { id: 'headshot_only', icon: '💀', name: '仅头部', desc: '「非头即失，极致精准」' },
-              ].map(mode => (
-                <div key={mode.id} className="excel-mode-item">
-                  <button
-                    className={`excel-mode-btn ${selectedClassicMode === mode.id ? 'selected' : ''}`}
-                    onClick={() => { setSelectedClassicMode(mode.id as GameModeType); setTrainingCategory('classic'); }}
+          <div className="excel-cell hub-workbench-cell">
+            {selectedGame === 'aim' ? (
+              <div className="hub-workbench-grid">
+                <div className="excel-inline-control">
+                  <span className="excel-label">训练类别：</span>
+                  <select
+                    className="excel-select"
+                    value={trainingCategory}
+                    onChange={(e) => setTrainingCategory(e.target.value as 'classic' | 'fps')}
                   >
-                    <span className="mode-icon">{mode.icon}</span>
-                    <span className="mode-name">{mode.name}</span>
-                  </button>
-                  <span className="excel-mode-desc">{mode.desc}</span>
+                    <option value="classic">经典训练</option>
+                    <option value="fps">FPS 专项</option>
+                  </select>
                 </div>
-              ))}
-            </div>
+
+                {trainingCategory === 'classic' ? (
+                  <div className="hub-mode-row">
+                    {[
+                      { id: 'timed', label: '限时' },
+                      { id: 'endless', label: '无尽' },
+                      { id: 'zen', label: '禅' },
+                      { id: 'headshot', label: '爆头' },
+                      { id: 'survival', label: '生存' },
+                      { id: 'headshot_only', label: '仅爆头' },
+                    ].map((mode) => (
+                      <button
+                        key={mode.id}
+                        className={`excel-mini-btn ${selectedClassicMode === mode.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedClassicMode(mode.id as GameModeType)}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="hub-mode-row">
+                      {[
+                        { id: 'motion_track', label: '移动射击' },
+                        { id: 'peek_shot', label: '掩体枪' },
+                        { id: 'switch_track', label: '目标切换' },
+                        { id: 'reaction', label: '反应' },
+                        { id: 'precision', label: '精准' },
+                      ].map((mode) => (
+                        <button
+                          key={mode.id}
+                          className={`excel-mini-btn ${selectedFPSModeLocal === mode.id ? 'selected' : ''}`}
+                          onClick={() => {
+                            setSelectedFPSModeLocal(mode.id as FPSTrainingMode);
+                            setFpsConfig(fpsModeConfigs[mode.id as FPSTrainingMode]);
+                          }}
+                        >
+                          {mode.label}
+                        </button>
+                      ))}
+                    </div>
+                    <FPSConfigInline mode={selectedFPSModeLocal} config={fpsConfig} onChange={setFpsConfig} />
+                  </>
+                )}
+
+                <div className="hub-workbench-actions">
+                  <button className="excel-main-start-btn compact" onClick={() => handleLaunch('aim')}>
+                    <span className="main-btn-icon">▶</span>
+                    <span className="main-btn-text">启动练枪</span>
+                  </button>
+                </div>
+              </div>
+            ) : selectedGame === 'perler' ? (
+              <div className="hub-perler-callout">
+                <div>
+                  <strong>模板优先工位创作台</strong>
+                  <p>内置模板库 + 图片导入转模板。当前优先支持继续未完成作品与模板创作。</p>
+                  {perlerProgress && <p>最近进度：{perlerProgress.title}（{perlerProgress.completion}%）</p>}
+                </div>
+                <button className="excel-main-start-btn compact perler" onClick={() => onStartPerler('library')}>
+                  <span className="main-btn-icon">🧩</span>
+                  <span className="main-btn-text">进入拼豆</span>
+                </button>
+              </div>
+            ) : (
+              <div className="hub-coming-soon">
+                <strong>{selectedRow?.title || '模块'} 正在筹备中</strong>
+                <p>本轮先实现首页与拼豆，当前练枪玩法保持原样，其他模块后续接入。</p>
+                <div className="excel-nav-buttons">
+                  <button className="excel-nav-btn" onClick={() => setSelectedGame('aim')}>切回练枪</button>
+                  <button className="excel-nav-btn" onClick={() => setSelectedGame('perler')}>查看拼豆</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="excel-row">
           <div className="excel-row-header">9</div>
-          <div className="excel-cell excel-empty-cell"></div>
-        </div>
-
-        <div className="excel-row">
-          <div className="excel-row-header">10</div>
-          <div className="excel-cell excel-section-header">
-            <span className="section-icon">🔫</span>
-            <span>FPS 专项训练</span>
-          </div>
-        </div>
-
-        <div className="excel-row excel-modes-row">
-          <div className="excel-row-header">11</div>
-          <div className="excel-cell excel-modes-cell excel-fps-cell">
-            <div className="excel-fps-grid">
-              {[
-                { id: 'motion_track', icon: '🏃', name: '移动射击', desc: '「追猎移动目标，预判即命中」' },
-                { id: 'peek_shot', icon: '👀', name: '拐角射击', desc: '「转角遇到爱，探头即暴击」' },
-                { id: 'switch_track', icon: '🔄', name: '目标切换', desc: '「眼观六路，快速切换」' },
-                { id: 'reaction', icon: '⚡', name: '反应测试', desc: '「神经反射，极限挑战」' },
-                { id: 'precision', icon: '🎯', name: '精准射击', desc: '「毫厘之间，胜负已分」' },
-              ].map(mode => (
-                <div key={mode.id} className="excel-fps-item">
-                  <button
-                    className={`excel-fps-btn ${selectedFPSModeLocal === mode.id ? 'selected' : ''}`}
-                    onClick={() => handleFPSModeSelect(mode.id as FPSTrainingMode)}
-                  >
-                    <span className="fps-icon">{mode.icon}</span>
-                    <span className="fps-name">{mode.name}</span>
-                  </button>
-                  <span className="excel-mode-desc fps-desc">{mode.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {selectedFPSModeLocal && trainingCategory === 'fps' && (
-          <div className="excel-row">
-            <div className="excel-row-header">12</div>
-            <div className="excel-cell excel-config-cell">
-              <FPSConfigInline
-                mode={selectedFPSModeLocal}
-                config={fpsConfig}
-                onChange={setFpsConfig}
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="excel-row">
-          <div className="excel-row-header">13</div>
-          <div className="excel-cell excel-empty-cell"></div>
-        </div>
-
-        <div className="excel-row">
-          <div className="excel-row-header">14</div>
-          <div className="excel-cell excel-section-header">
-            <span className="section-icon">🏆</span>
-            <span>挑战关卡</span>
-          </div>
-        </div>
-
-        <div className="excel-row">
-          <div className="excel-row-header">15</div>
-          <div className="excel-cell excel-challenge-group">
-            <span className="group-icon">🌱</span>
-            <span className="group-title">新手组</span>
-            <div className="excel-level-buttons">
-              {[1, 2, 3, 4].map(level => (
-                <button
-                  key={level}
-                  className="excel-level-btn beginner"
-                  onClick={() => handleLevelStart(level)}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="excel-row">
-          <div className="excel-row-header">16</div>
-          <div className="excel-cell excel-challenge-group">
-            <span className="group-icon">📈</span>
-            <span className="group-title">进阶组</span>
-            <div className="excel-level-buttons">
-              {[5, 6, 7, 8].map(level => (
-                <button
-                  key={level}
-                  className="excel-level-btn intermediate"
-                  onClick={() => handleLevelStart(level)}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="excel-row">
-          <div className="excel-row-header">17</div>
-          <div className="excel-cell excel-challenge-group">
-            <span className="group-icon">🏅</span>
-            <span className="group-title">专家组</span>
-            <div className="excel-level-buttons">
-              {[9, 10, 11, 12].map(level => (
-                <button
-                  key={level}
-                  className="excel-level-btn expert"
-                  onClick={() => handleLevelStart(level)}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="excel-row">
-          <div className="excel-row-header">18</div>
-          <div className="excel-cell excel-empty-cell"></div>
-        </div>
-
-        <div className="excel-row">
-          <div className="excel-row-header">19</div>
-          <div className="excel-cell excel-nav-cell">
-            <span className="nav-hint">更多设置和统计 →</span>
+          <div className="excel-cell hub-footer-nav-cell">
+            <span className="nav-hint">更多工作表：</span>
             <div className="excel-nav-buttons">
-              <button className="excel-nav-btn" onClick={() => onSwitchSheet('settings')}>
-                ⚙️ 设置
-              </button>
-              <button className="excel-nav-btn" onClick={() => onSwitchSheet('stats')}>
-                📊 统计
-              </button>
+              <button className="excel-nav-btn" onClick={() => onSwitchSheet('stats')}>📊 统计</button>
+              <button className="excel-nav-btn" onClick={() => onSwitchSheet('settings')}>⚙ 设置</button>
             </div>
           </div>
         </div>
@@ -312,8 +315,8 @@ export const GameHub: React.FC<GameHubProps> = ({
 
 const FPSConfigInline: React.FC<{
   mode: FPSTrainingMode;
-  config: any;
-  onChange: (config: any) => void;
+  config: FPSConfigMap;
+  onChange: (config: FPSConfigMap) => void;
 }> = ({ mode, config, onChange }) => {
   switch (mode) {
     case 'motion_track':
@@ -321,25 +324,25 @@ const FPSConfigInline: React.FC<{
         <div className="excel-inline-config">
           <span className="config-label">速度：</span>
           <div className="excel-button-group">
-            {['slow', 'normal', 'fast', 'extreme'].map(speed => (
+            {['slow', 'normal', 'fast', 'extreme'].map((speed) => (
               <button
                 key={speed}
                 className={`excel-mini-btn ${config.speed === speed ? 'selected' : ''}`}
                 onClick={() => onChange({ ...config, speed })}
               >
-                {speed === 'slow' ? '慢' : speed === 'normal' ? '中' : speed === 'fast' ? '快' : '极'}
+                {speed}
               </button>
             ))}
           </div>
-          <span className="config-label config-label-right">模式：</span>
+          <span className="config-label config-label-right">轨迹：</span>
           <div className="excel-button-group">
-            {['linear', 'sine', 'bounce'].map(pattern => (
+            {['linear', 'sine', 'bounce'].map((pattern) => (
               <button
                 key={pattern}
                 className={`excel-mini-btn ${config.pattern === pattern ? 'selected' : ''}`}
                 onClick={() => onChange({ ...config, pattern })}
               >
-                {pattern === 'linear' ? '直线' : pattern === 'sine' ? '正弦' : '弹跳'}
+                {pattern}
               </button>
             ))}
           </div>
@@ -349,20 +352,15 @@ const FPSConfigInline: React.FC<{
     case 'peek_shot':
       return (
         <div className="excel-inline-config">
-          <span className="config-label">停留时间：</span>
+          <span className="config-label">露头时长：</span>
           <div className="excel-button-group">
-            {[
-              { id: 'long', name: '长' },
-              { id: 'normal', name: '中' },
-              { id: 'short', name: '短' },
-              { id: 'blink', name: '闪' },
-            ].map(d => (
+            {['long', 'normal', 'short', 'blink'].map((duration) => (
               <button
-                key={d.id}
-                className={`excel-mini-btn ${config.duration === d.id ? 'selected' : ''}`}
-                onClick={() => onChange({ ...config, duration: d.id })}
+                key={duration}
+                className={`excel-mini-btn ${config.duration === duration ? 'selected' : ''}`}
+                onClick={() => onChange({ ...config, duration })}
               >
-                {d.name}
+                {duration}
               </button>
             ))}
           </div>
@@ -374,7 +372,7 @@ const FPSConfigInline: React.FC<{
         <div className="excel-inline-config">
           <span className="config-label">目标数：</span>
           <div className="excel-button-group">
-            {[2, 3, 4, 5].map(count => (
+            {[2, 3, 4, 5].map((count) => (
               <button
                 key={count}
                 className={`excel-mini-btn ${config.targetCount === count ? 'selected' : ''}`}
@@ -384,46 +382,21 @@ const FPSConfigInline: React.FC<{
               </button>
             ))}
           </div>
-          <label style={{ marginLeft: 16, fontSize: 12, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={config.showPriority !== false}
-              onChange={(e) => onChange({ ...config, showPriority: e.target.checked })}
-              style={{ marginRight: 4 }}
-            />
-            显示优先级
-          </label>
         </div>
       );
 
     case 'reaction':
       return (
         <div className="excel-inline-config">
-          <span className="config-label">测试轮数：</span>
+          <span className="config-label">轮数：</span>
           <div className="excel-button-group">
-            {[10, 20, 30].map(rounds => (
+            {[10, 20, 30].map((rounds) => (
               <button
                 key={rounds}
                 className={`excel-mini-btn ${config.rounds === rounds ? 'selected' : ''}`}
                 onClick={() => onChange({ ...config, rounds })}
               >
-                {rounds}轮
-              </button>
-            ))}
-          </div>
-          <span className="config-label config-label-right">间隔：</span>
-          <div className="excel-button-group">
-            {[
-              { id: 1.5, name: '短' },
-              { id: 2, name: '中' },
-              { id: 3, name: '长' },
-            ].map(d => (
-              <button
-                key={d.id}
-                className={`excel-mini-btn ${config.interval === d.id ? 'selected' : ''}`}
-                onClick={() => onChange({ ...config, interval: d.id })}
-              >
-                {d.name}
+                {rounds}
               </button>
             ))}
           </div>
@@ -433,31 +406,15 @@ const FPSConfigInline: React.FC<{
     case 'precision':
       return (
         <div className="excel-inline-config">
-          <span className="config-label">目标数：</span>
+          <span className="config-label">缩放：</span>
           <div className="excel-button-group">
-            {[1, 2, 3, 4, 5].map(count => (
+            {[0.25, 0.5, 0.75].map((scale) => (
               <button
-                key={count}
-                className={`excel-mini-btn ${config.targetCount === count ? 'selected' : ''}`}
-                onClick={() => onChange({ ...config, targetCount: count })}
+                key={scale}
+                className={`excel-mini-btn ${config.targetScale === scale ? 'selected' : ''}`}
+                onClick={() => onChange({ ...config, targetScale: scale })}
               >
-                {count}
-              </button>
-            ))}
-          </div>
-          <span className="config-label config-label-right">大小：</span>
-          <div className="excel-button-group">
-            {[
-              { id: 0.25, name: '25%' },
-              { id: 0.5, name: '50%' },
-              { id: 0.75, name: '75%' },
-            ].map(s => (
-              <button
-                key={s.id}
-                className={`excel-mini-btn ${config.targetScale === s.id ? 'selected' : ''}`}
-                onClick={() => onChange({ ...config, targetScale: s.id })}
-              >
-                {s.name}
+                {scale * 100}%
               </button>
             ))}
           </div>
@@ -470,3 +427,4 @@ const FPSConfigInline: React.FC<{
 };
 
 export default GameHub;
+

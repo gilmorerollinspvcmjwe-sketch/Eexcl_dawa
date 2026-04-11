@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { FeedbackMessage } from '../utils/feedbackMessages';
 
 interface ExcelHeaderProps {
@@ -7,7 +7,9 @@ interface ExcelHeaderProps {
   onExit?: () => void;
   selectedCell?: { row: number; col: number } | null;
   feedbackMessage?: FeedbackMessage | null;
-  // 游戏状态显示
+  titleText?: string;
+  formulaText?: string;
+  formulaTextColor?: string;
   score?: number;
   combo?: number;
   timeRemaining?: number;
@@ -20,6 +22,9 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
   onExit,
   selectedCell,
   feedbackMessage,
+  titleText,
+  formulaText,
+  formulaTextColor,
   score,
   combo,
   timeRemaining,
@@ -58,7 +63,7 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
       <div className="excel-titlebar">
         <div className="excel-titlebar-left">
           <div className="excel-titlebar-logo">X</div>
-          <span className="excel-titlebar-title">Microsoft Excel - 练枪数据.xlsx</span>
+          <span className="excel-titlebar-title">{titleText || 'Microsoft Excel - 练枪数据.xlsx'}</span>
         </div>
         <div className="excel-titlebar-controls">
           <button 
@@ -72,14 +77,13 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
           <button 
             className="excel-titlebar-btn close"
             onClick={onExit}
-            title="退出训练"
+            title="退出"
           >
             ✕
           </button>
         </div>
       </div>
 
-      {/* 菜单栏 */}
       <div className="excel-menubar">
         <div className="excel-menu-item">文件(F)</div>
         <div className="excel-menu-item active">开始</div>
@@ -92,7 +96,6 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
         <div className="excel-menu-item">帮助</div>
       </div>
 
-      {/* Ribbon 工具栏 */}
       <div className="excel-ribbon">
         <div className="excel-ribbon-tabs">
           <div className="excel-ribbon-tab active">开始</div>
@@ -104,24 +107,23 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
           <div className="excel-ribbon-tab">视图</div>
         </div>
         <div className="excel-ribbon-content">
-          {/* 剪贴板组 */}
           <div className="excel-ribbon-group">
             <div className="excel-ribbon-buttons">
               <div className="flex flex-col items-center">
                 <button className="excel-ribbon-btn" style={{ width: 40, height: 40 }}>
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-base">📋</span>
+                    <span className="text-base">📵</span>
                     <span className="text-xs">粘贴</span>
                   </div>
                 </button>
               </div>
               <div className="flex flex-col gap-1">
                 <button className="excel-ribbon-btn excel-ribbon-btn-small">
-                  <span>✂</span>
+                  <span>✁</span>
                   <span className="ml-1">剪切</span>
                 </button>
                 <button className="excel-ribbon-btn excel-ribbon-btn-small">
-                  <span>📄</span>
+                  <span>📋</span>
                   <span className="ml-1">复制</span>
                 </button>
               </div>
@@ -129,7 +131,6 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
             <div className="excel-ribbon-group-label">剪贴板</div>
           </div>
 
-          {/* 字体组 */}
           <div className="excel-ribbon-group">
             <div className="excel-ribbon-buttons">
               <select className="excel-ribbon-btn" style={{ width: 100, height: 22, fontSize: 11 }}>
@@ -150,28 +151,26 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
               <button className="excel-ribbon-btn" style={{ width: 24, height: 22, fontStyle: 'italic' }}>I</button>
               <button className="excel-ribbon-btn" style={{ width: 24, height: 22, textDecoration: 'underline' }}>U</button>
               <div style={{ width: 1, height: 16, background: '#d4d4d4', margin: '0 2px' }} />
-              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }}>—</button>
-              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }}> Borders</button>
+              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }}>色</button>
+              <button className="excel-ribbon-btn" style={{ width: 48, height: 22 }}>边框</button>
             </div>
             <div className="excel-ribbon-group-label">字体</div>
           </div>
 
-          {/* 对齐组 */}
           <div className="excel-ribbon-group">
             <div className="excel-ribbon-buttons">
-              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="顶端对齐">⤒</button>
-              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="垂直居中">≡</button>
-              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="底端对齐">⤓</button>
+              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="顶端对齐">⇡</button>
+              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="垂直居中">⇕</button>
+              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="底端对齐">⇣</button>
             </div>
             <div className="excel-ribbon-buttons" style={{ marginTop: 2 }}>
-              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="左对齐">⫷</button>
+              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="左对齐">≡</button>
               <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="居中">☰</button>
-              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="右对齐">⫸</button>
+              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }} title="右对齐">≣</button>
             </div>
             <div className="excel-ribbon-group-label">对齐方式</div>
           </div>
 
-          {/* 数字组 */}
           <div className="excel-ribbon-group">
             <div className="excel-ribbon-buttons">
               <select className="excel-ribbon-btn" style={{ width: 80, height: 22, fontSize: 11 }}>
@@ -184,24 +183,22 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
             <div className="excel-ribbon-buttons" style={{ marginTop: 2 }}>
               <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }}>$</button>
               <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }}>%</button>
-              <button className="excel-ribbon-btn" style={{ width: 24, height: 22 }}>,00</button>
+              <button className="excel-ribbon-btn" style={{ width: 30, height: 22 }}>,00</button>
             </div>
             <div className="excel-ribbon-group-label">数字</div>
           </div>
 
-          {/* 样式组 */}
           <div className="excel-ribbon-group">
             <div className="excel-ribbon-buttons">
               <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 60 }}>条件格式</button>
-              <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 40 }}>套用...</button>
+              <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 48 }}>样式...</button>
             </div>
             <div className="excel-ribbon-buttons" style={{ marginTop: 2 }}>
-              <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 50 }}>单元格...</button>
+              <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 52 }}>单元格...</button>
             </div>
             <div className="excel-ribbon-group-label">样式</div>
           </div>
 
-          {/* 单元格组 */}
           <div className="excel-ribbon-group">
             <div className="excel-ribbon-buttons">
               <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 40 }}>插入</button>
@@ -213,21 +210,19 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
             <div className="excel-ribbon-group-label">单元格</div>
           </div>
 
-          {/* 编辑组 */}
           <div className="excel-ribbon-group">
             <div className="excel-ribbon-buttons">
               <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 40 }}>求和</button>
               <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 40 }}>填充</button>
             </div>
             <div className="excel-ribbon-buttons" style={{ marginTop: 2 }}>
-              <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 60 }}>查找和选择</button>
+              <button className="excel-ribbon-btn excel-ribbon-btn-small" style={{ width: 72 }}>查找和选择</button>
             </div>
             <div className="excel-ribbon-group-label">编辑</div>
           </div>
         </div>
       </div>
 
-      {/* 公式栏 */}
       <div className="excel-formula-bar">
         <div className="excel-name-box">
           <span>{cellAddress || 'A1'}</span>
@@ -235,7 +230,17 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
         <div className="excel-formula-separator" />
         <div className="excel-function-btn" title="插入函数">fx</div>
         <div className="excel-formula-input">
-          {feedbackMessage ? (
+          {formulaText ? (
+            <span
+              className="formula-feedback"
+              style={{
+                color: formulaTextColor || '#107c41',
+                fontWeight: 500,
+              }}
+            >
+              {formulaText}
+            </span>
+          ) : feedbackMessage ? (
             <span 
               className="formula-feedback"
               style={{ 
@@ -251,7 +256,6 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
           )}
         </div>
         
-        {/* 游戏状态显示 - 公示栏最右侧 */}
         {isPlaying && (
           <div style={{ 
             display: 'flex', 

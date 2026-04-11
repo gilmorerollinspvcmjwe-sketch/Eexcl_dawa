@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { ExcelHeader } from './components/ExcelHeader';
 import { SheetTabs } from './components/SheetTabs';
 import { ExcelGrid } from './components/ExcelGrid';
@@ -7,6 +7,7 @@ import { StatsPanel } from './components/StatsPanel';
 import { StatusBar } from './components/StatusBar';
 import { Crosshair } from './components/Crosshair';
 import { GameHub } from './components/GameHub';
+import { PerlerHub } from './components/perler/PerlerHub';
 import { FancyFeedback } from './components/FancyFeedback';
 import { FirstTimeGuide } from './components/FirstTimeGuide';
 import { ModeTutorialModal } from './components/ModeTutorialModal';
@@ -16,6 +17,34 @@ import { useTutorial } from './hooks/useTutorial';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 import type { FPSTrainingMode } from './components/TrainingModeSelector';
+import type { PerlerProgressSummary } from './features/hub/hubData';
+import type { DifficultyLevel, GameModeType } from './components/GameHub';
+
+const PERLER_PROGRESS_KEY = 'excel-aim-perler-state-v1';
+
+type ActiveArcadeGame = 'aim' | 'perler' | null;
+type PerlerEntryMode = 'library' | 'resume';
+type FPSConfigMap = Record<string, string | number | boolean | undefined>;
+type HubStartMode = GameModeType | FPSTrainingMode | 'part_training' | 'peek_shot' | 'moving_target';
+
+function readPerlerProgressFromStorage(): PerlerProgressSummary | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem(PERLER_PROGRESS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { workspace?: { id: string; title: string; completion: number } | null };
+    if (!parsed.workspace || parsed.workspace.completion >= 100) return null;
+
+    return {
+      templateId: parsed.workspace.id,
+      title: parsed.workspace.title,
+      completion: parsed.workspace.completion,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function AppContent() {
   const { 
@@ -30,8 +59,14 @@ function AppContent() {
   } = useSettings();
   const { mousePosition, isCrosshairVisible, setCrosshairVisible } = useCrosshair();
 
+  const [activeArcadeGame, setActiveArcadeGame] = useState<ActiveArcadeGame>(null);
+  const [perlerEntryMode, setPerlerEntryMode] = useState<PerlerEntryMode>('library');
+  const [hubFormulaText, setHubFormulaText] = useState('=今日建议：先热手，再摸鱼，再伪装');
+  const [perlerFormulaText, setPerlerFormulaText] = useState('=拼豆模板库已就绪');
+  const [perlerSelectedCell, setPerlerSelectedCell] = useState<{ row: number; col: number } | null>(null);
+  const [perlerProgress, setPerlerProgress] = useState<PerlerProgressSummary | null>(() => readPerlerProgressFromStorage());
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
-  const [, setModeConfig] = useState<any>({});
+  const [, setModeConfig] = useState<FPSConfigMap>({});
 
   const {
     gameState,
@@ -61,21 +96,18 @@ function AppContent() {
     currentPriorityTarget,
   } = useGameLogic();
 
-  // 新手引导系统
   useTutorial();
   const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(() => {
-    // 检查是否是首次使用
     return !localStorage.getItem('excel-aim-tutorial-completed');
   });
   const [showModeTutorial, setShowModeTutorial] = useState<string | null>(null);
-  // 保存启动游戏的参数，用于教程关闭后启动
   const [pendingGameStart, setPendingGameStart] = useState<{
-    mode: any;
+    mode: HubStartMode;
     duration?: 30 | 60 | 120;
     level?: number;
-    difficulty?: any;
+    difficulty?: DifficultyLevel;
     isFPSMode?: boolean;
-    fpsConfig?: any;
+    fpsConfig?: FPSConfigMap;
   } | null>(null);
 
   const { currentFeedback } = useFeedbackSystem({
@@ -89,57 +121,8 @@ function AppContent() {
     feedbackMode: settings.feedbackMode || 'fancy',
   });
 
-  const handleResetStats = () => {
-    if (confirm('确定要重置所有统计数据吗？')) {
-      localStorage.removeItem('excel-aim-stats-v2');
-      window.location.reload();
-    }
-  };
-
-  // 从 GameHub 启动游戏
-  const handleStartGameFromHub = (
-    mode: any,
-    duration?: 30 | 60 | 120,
-    level?: number,
-    difficulty?: any
-  ) => {
-    // 检查是否需要显示模式教程
-    const tutorialKey = `tutorial-shown-${mode}`;
-    if (!localStorage.getItem(tutorialKey)) {
-      // 保存启动参数，显示教程
-      setPendingGameStart({ mode, duration, level, difficulty, isFPSMode: false });
-      setShowModeTutorial(mode);
-      return;
-    }
-    
-    const finalDuration = duration || settings.trainingDuration || 60;
-    startGame(mode, finalDuration as 30 | 60 | 120, level, difficulty || settings.difficulty);
-  };
-
-  // 从 GameHub 启动 FPS 训练
-  const handleStartFPSTrainingFromHub = (mode: FPSTrainingMode, config?: any) => {
-    // 检查是否需要显示模式教程
-    const tutorialKey = `tutorial-shown-${mode}`;
-    if (!localStorage.getItem(tutorialKey)) {
-      // 保存启动参数，显示教程
-      setCurrentMode(mode);
-      const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
-      setModeConfig(finalConfig);
-      setPendingGameStart({ mode, isFPSMode: true, fpsConfig: finalConfig });
-      setShowModeTutorial(mode);
-      return;
-    }
-    
-    setCurrentMode(mode);
-    const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
-    setModeConfig(finalConfig);
-    startGameWithMode(mode, finalConfig);
-  };
-
-  // Control cursor visibility based on current sheet
   useEffect(() => {
-    const shouldHideCursor = currentSheet === 'game' && settings.customCursor && !isHidden;
-    
+    const shouldHideCursor = currentSheet === 'game' && activeArcadeGame === 'aim' && settings.customCursor && !isHidden;
     if (shouldHideCursor) {
       document.body.style.cursor = 'none';
       setCrosshairVisible(true);
@@ -148,20 +131,97 @@ function AppContent() {
       setCrosshairVisible(false);
     }
 
-    // Cleanup on unmount
     return () => {
       document.body.style.cursor = '';
     };
-  }, [currentSheet, settings.customCursor, isHidden, setCrosshairVisible]);
+  }, [currentSheet, activeArcadeGame, settings.customCursor, isHidden, setCrosshairVisible]);
+
+  const handleResetStats = () => {
+    if (confirm('确定要重置所有统计数据吗？')) {
+      localStorage.removeItem('excel-aim-stats-v2');
+      window.location.reload();
+    }
+  };
+
+  const handleStartGameFromHub = (
+    mode: GameModeType | 'part_training' | 'peek_shot' | 'moving_target',
+    duration?: 30 | 60 | 120,
+    level?: number,
+    difficulty?: DifficultyLevel,
+  ) => {
+    setActiveArcadeGame('aim');
+    const tutorialKey = `tutorial-shown-${mode}`;
+    if (!localStorage.getItem(tutorialKey)) {
+      setPendingGameStart({ mode, duration, level, difficulty, isFPSMode: false });
+      setShowModeTutorial(mode);
+      return;
+    }
+
+    const finalDuration = duration || settings.trainingDuration || 60;
+    startGame(mode, finalDuration as 30 | 60 | 120, level, difficulty || settings.difficulty);
+  };
+
+  const handleStartFPSTrainingFromHub = (mode: FPSTrainingMode, config?: FPSConfigMap) => {
+    setActiveArcadeGame('aim');
+    const tutorialKey = `tutorial-shown-${mode}`;
+    if (!localStorage.getItem(tutorialKey)) {
+      setCurrentMode(mode);
+      const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
+      setModeConfig(finalConfig);
+      setPendingGameStart({ mode, isFPSMode: true, fpsConfig: finalConfig });
+      setShowModeTutorial(mode);
+      return;
+    }
+
+    setCurrentMode(mode);
+    const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
+    setModeConfig(finalConfig);
+    startGameWithMode(mode, finalConfig);
+  };
+
+  const handleStartPerlerFromHub = (entryMode: PerlerEntryMode = 'library') => {
+    setActiveArcadeGame('perler');
+    setPerlerEntryMode(entryMode);
+    setPerlerSelectedCell(null);
+    setPerlerProgress(readPerlerProgressFromStorage());
+    switchSheet('game');
+  };
+
+  const handleExitCurrentGame = () => {
+    setActiveArcadeGame(null);
+    setPerlerEntryMode('library');
+    setPerlerSelectedCell(null);
+    exitToHub();
+  };
+
+  const handleSheetSwitch = (sheet: 'hub' | 'game' | 'stats' | 'settings') => {
+    if (sheet === 'game' && !activeArcadeGame) {
+      setActiveArcadeGame('aim');
+    }
+    switchSheet(sheet);
+  };
+
+  const titleText = currentSheet === 'hub'
+    ? 'Microsoft Excel - 工位娱乐中心.xlsx'
+    : activeArcadeGame === 'perler'
+      ? 'Microsoft Excel - 拼豆工位创作.xlsx'
+      : 'Microsoft Excel - 练枪数据.xlsx';
+
+  const formulaText = currentSheet === 'hub'
+    ? hubFormulaText
+    : activeArcadeGame === 'perler'
+      ? perlerFormulaText
+      : undefined;
+
+  const effectiveSelectedCell = currentSheet === 'game' && activeArcadeGame === 'perler'
+    ? perlerSelectedCell
+    : selectedCell;
 
   return (
     <div 
       className="h-screen flex flex-col" 
-      style={{ 
-        fontFamily: "'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      }}
+      style={{ fontFamily: "'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}
     >
-      {/* Crosshair - rendered at top level for smooth tracking */}
       <Crosshair
         x={mousePosition.x}
         y={mousePosition.y}
@@ -171,13 +231,11 @@ function AppContent() {
         visible={isCrosshairVisible}
       />
 
-      {/* 炫酷反馈 - 仅在炫酷模式下显示 */}
-      {settings.feedbackMode !== 'excel' && currentFeedback && (
+      {activeArcadeGame === 'aim' && settings.feedbackMode !== 'excel' && currentFeedback && (
         <FancyFeedback feedback={currentFeedback} />
       )}
 
-      {/* 紧急隐藏触发区域 */}
-      {!isHidden && currentSheet === 'game' && (
+      {!isHidden && currentSheet === 'game' && activeArcadeGame === 'aim' && (
         <div
           className="fixed top-0 left-0 w-24 h-24 z-50"
           onMouseEnter={handleCornerEnter}
@@ -185,8 +243,7 @@ function AppContent() {
         />
       )}
 
-      {/* 隐藏提示 */}
-      {hoverCorner && !isHidden && (
+      {hoverCorner && !isHidden && activeArcadeGame === 'aim' && (
         <div 
           style={{
             position: 'fixed',
@@ -206,7 +263,6 @@ function AppContent() {
         </div>
       )}
 
-      {/* 隐藏状态覆盖层 */}
       {isHidden && (
         <div 
           style={{
@@ -232,11 +288,7 @@ function AppContent() {
               <img 
                 src={settings.coverImage} 
                 alt="Excel工作表" 
-                style={{ 
-                  maxWidth: '100%', 
-                  maxHeight: '100%',
-                  objectFit: 'contain',
-                }}
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
               />
             </div>
           ) : (
@@ -250,32 +302,8 @@ function AppContent() {
                   gap: 4,
                 }}
               >
-                <div 
-                  style={{
-                    padding: '4px 12px',
-                    fontSize: 11,
-                    cursor: 'pointer',
-                    borderRadius: 2,
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#e6f4ea'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  onClick={toggleHidden}
-                >
-                  文件
-                </div>
-                <div 
-                  style={{
-                    padding: '4px 12px',
-                    fontSize: 11,
-                    cursor: 'pointer',
-                    borderRadius: 2,
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#e6f4ea'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  onClick={toggleHidden}
-                >
-                  打开
-                </div>
+                <div style={{ padding: '4px 12px', fontSize: 11, cursor: 'pointer', borderRadius: 2 }} onClick={toggleHidden}>文件</div>
+                <div style={{ padding: '4px 12px', fontSize: 11, cursor: 'pointer', borderRadius: 2 }} onClick={toggleHidden}>打开</div>
               </div>
               <div 
                 style={{
@@ -288,7 +316,7 @@ function AppContent() {
                 }}
               >
                 <div style={{ textAlign: 'center' }}>
-                  <p style={{ marginBottom: 8 }}>📄 空白工作簿</p>
+                  <p style={{ marginBottom: 8 }}>📫 空白工作簿</p>
                   <p style={{ fontSize: 11, color: '#d1d5db' }}>按 Esc 恢复游戏</p>
                 </div>
               </div>
@@ -297,70 +325,78 @@ function AppContent() {
         </div>
       )}
 
-      {/* Excel 界面 */}
-      <div 
-        className="flex flex-col h-full" 
-        style={{ opacity: isHidden ? 0.5 : 1 }}
-      >
-        <ExcelHeader 
-          isHidden={isHidden} 
+      <div className="flex flex-col h-full" style={{ opacity: isHidden ? 0.5 : 1 }}>
+        <ExcelHeader
+          isHidden={isHidden}
           onToggleHidden={toggleHidden}
-          onExit={currentSheet === 'game' ? exitToHub : undefined}
-          selectedCell={selectedCell}
-          feedbackMessage={currentFeedback}
+          onExit={currentSheet === 'game' ? handleExitCurrentGame : undefined}
+          selectedCell={effectiveSelectedCell}
+          feedbackMessage={activeArcadeGame === 'aim' ? currentFeedback : null}
+          titleText={titleText}
+          formulaText={formulaText}
+          formulaTextColor={currentSheet === 'hub' ? '#107c41' : activeArcadeGame === 'perler' ? '#7c3aed' : undefined}
         />
 
-        {/* 主内容区 */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {currentSheet === 'hub' ? (
-            // Sheet1: 游戏中心
             <GameHub
               onStartGame={handleStartGameFromHub}
               onStartFPSTraining={handleStartFPSTrainingFromHub}
-              onSwitchSheet={(sheet) => switchSheet(sheet)}
-              selectedFPSMode={currentMode}
+              onStartPerler={handleStartPerlerFromHub}
+              onSwitchSheet={(sheet) => handleSheetSwitch(sheet)}
               trainingDuration={settings.trainingDuration}
-              difficulty={settings.difficulty as any}
+              difficulty={settings.difficulty as DifficultyLevel}
+              totalGames={stats.totalGames}
+              totalScore={stats.totalScore}
+              perlerProgress={perlerProgress}
+              onFormulaChange={setHubFormulaText}
             />
           ) : currentSheet === 'game' ? (
-            // Sheet2: 训练场
-            <ExcelGrid
-              key="game-sheet"
-              targets={targets}
-              selectedCell={selectedCell}
-              onCellClick={handleCellClick}
-              onCellHover={handleCellHover}
-              COLS={COLS}
-              ROWS={ROWS}
-              isHidden={isHidden}
-              gameState={gameState}
-              headshotLineEnabled={settings.headshotLineEnabled || gameState.mode === 'headshot'}
-              headshotLineRow={gameState.headshotLineRow}
-              targetSize={settings.targetSize}
-              hitEffects={hitEffects}
-              togglePause={togglePause}
-              soundEnabled={settings.soundEnabled}
-              onExit={exitToHub}
-              multiGridEnemies={multiGridEnemies}
-              currentLevel={currentLevel}
-              levelConfig={levelConfig}
-              levelStatus={levelStatus}
-              colorlessMode={settings.colorlessMode}
-              visualSettings={{
-                colorHarmonyMode: settings.colorHarmonyMode,
-                spawnAnimation: settings.spawnAnimation,
-                enemyFontSize: settings.enemyFontSize,
-                enemyFontWeight: settings.enemyFontWeight,
-              }}
-              cellSettings={settings.cellSettings}
-              currentPriorityTarget={currentPriorityTarget}
-              fpsMode={currentMode}
-            />
+            activeArcadeGame === 'perler' ? (
+              <PerlerHub
+                entryMode={perlerEntryMode}
+                onExit={handleExitCurrentGame}
+                onFormulaChange={setPerlerFormulaText}
+                onSelectedCellChange={setPerlerSelectedCell}
+                onProgressChange={(progress) => setPerlerProgress(progress)}
+              />
+            ) : (
+              <ExcelGrid
+                key="game-sheet"
+                targets={targets}
+                selectedCell={selectedCell}
+                onCellClick={handleCellClick}
+                onCellHover={handleCellHover}
+                COLS={COLS}
+                ROWS={ROWS}
+                isHidden={isHidden}
+                gameState={gameState}
+                headshotLineEnabled={settings.headshotLineEnabled || gameState.mode === 'headshot'}
+                headshotLineRow={gameState.headshotLineRow}
+                targetSize={settings.targetSize}
+                hitEffects={hitEffects}
+                togglePause={togglePause}
+                soundEnabled={settings.soundEnabled}
+                onExit={handleExitCurrentGame}
+                multiGridEnemies={multiGridEnemies}
+                currentLevel={currentLevel}
+                levelConfig={levelConfig}
+                levelStatus={levelStatus}
+                colorlessMode={settings.colorlessMode}
+                visualSettings={{
+                  colorHarmonyMode: settings.colorHarmonyMode,
+                  spawnAnimation: settings.spawnAnimation,
+                  enemyFontSize: settings.enemyFontSize,
+                  enemyFontWeight: settings.enemyFontWeight,
+                }}
+                cellSettings={settings.cellSettings}
+                currentPriorityTarget={currentPriorityTarget}
+                fpsMode={currentMode}
+              />
+            )
           ) : currentSheet === 'stats' ? (
-            // Sheet3: 统计
-            <StatsPanel stats={stats} onReset={handleResetStats} onExit={() => exitToHub()} />
+            <StatsPanel stats={stats} onReset={handleResetStats} onExit={() => handleExitCurrentGame()} />
           ) : (
-            // Sheet4: 设置
             <SettingsPanel
               key="settings-sheet"
               settings={settings}
@@ -368,7 +404,6 @@ function AppContent() {
               onApplyPreset={applyPreset}
               onStartGame={startGame}
               onResetSettings={resetSettings}
-              // 临时设置相关
               tempSettings={tempSettings}
               onUpdateTempSetting={updateTempSetting}
               onSaveSettings={saveSettings}
@@ -377,20 +412,15 @@ function AppContent() {
           )}
         </div>
 
-        <SheetTabs 
-          currentSheet={currentSheet} 
-          onSwitch={switchSheet} 
-          isHidden={isHidden} 
-        />
-        <StatusBar 
-          selectedCell={selectedCell} 
-          isHidden={isHidden} 
+        <SheetTabs currentSheet={currentSheet} onSwitch={handleSheetSwitch} isHidden={isHidden} />
+        <StatusBar
+          selectedCell={effectiveSelectedCell}
+          isHidden={isHidden}
           COLS={COLS}
-          gameState={gameState}
+          gameState={activeArcadeGame === 'aim' ? gameState : undefined}
         />
       </div>
 
-      {/* 首次使用引导 */}
       {showFirstTimeGuide && (
         <FirstTimeGuide
           onComplete={() => {
@@ -400,7 +430,6 @@ function AppContent() {
         />
       )}
 
-      {/* 模式教程弹窗 */}
       {showModeTutorial && (
         <ModeTutorialModal
           mode={showModeTutorial}
@@ -414,17 +443,17 @@ function AppContent() {
           onStart={() => {
             localStorage.setItem(`tutorial-shown-${showModeTutorial}`, 'true');
             setShowModeTutorial(null);
-            // 使用保存的参数启动游戏
             if (pendingGameStart) {
+              setActiveArcadeGame('aim');
               if (pendingGameStart.isFPSMode && pendingGameStart.fpsConfig) {
-                startGameWithMode(pendingGameStart.mode, pendingGameStart.fpsConfig);
+                startGameWithMode(pendingGameStart.mode as FPSTrainingMode, pendingGameStart.fpsConfig);
               } else {
                 const finalDuration = pendingGameStart.duration || settings.trainingDuration || 60;
                 startGame(
                   pendingGameStart.mode,
                   finalDuration as 30 | 60 | 120,
                   pendingGameStart.level,
-                  pendingGameStart.difficulty || settings.difficulty
+                  pendingGameStart.difficulty || settings.difficulty,
                 );
               }
               setPendingGameStart(null);
