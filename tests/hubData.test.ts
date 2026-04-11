@@ -22,3 +22,14 @@ test('buildHubSnapshot returns five game rows with perler included', () => {
   assert.ok(snapshot.games.some((item) => item.id === 'perler'));
 });
 
+test('buildHubSnapshot keeps hub labels compact for the first screen', () => {
+  const snapshot = buildHubSnapshot({
+    perlerProgress: { templateId: 'tpl-1', completion: 62, title: '咖波表情' },
+    stats: { totalGames: 3, totalScore: 12840 },
+  });
+
+  assert.equal(snapshot.quickResume.description, '');
+  assert.equal(snapshot.recommendation, '配置');
+  assert.equal(snapshot.games.find((item) => item.id === 'aim')?.status, '热手');
+  assert.equal(snapshot.games.find((item) => item.id === 'perler')?.status, '62%');
+});

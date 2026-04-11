@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { convertImageSourceToTemplate } from '../../features/perler/imageTemplateUtils';
 import type { PerlerTemplate, PerlerThemeStyle } from '../../features/perler/perlerTypes';
 
@@ -8,6 +8,7 @@ interface PerlerImportWizardProps {
   onImportTemplate: (template: PerlerTemplate) => void;
 }
 
+// 读取图片并先缩放成模板尺寸，再输出可照着拼的模板。
 async function loadImageToTemplate(file: File, size: number, paletteSize: number, style: PerlerThemeStyle) {
   const imageUrl = URL.createObjectURL(file);
   try {
@@ -86,6 +87,7 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
               <option value="retro">复古游戏机风</option>
             </select>
           </label>
+          <div className="perler-import-note">生成结果会先变成模板，再让玩家对照模板逐格完成。</div>
         </div>
         <div className="perler-side-actions">
           <button className="perler-inline-btn" onClick={onClose}>取消</button>
@@ -110,4 +112,3 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
     </div>
   );
 };
-

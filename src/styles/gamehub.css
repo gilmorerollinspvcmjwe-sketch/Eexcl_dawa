@@ -1173,3 +1173,133 @@
     align-items: flex-start;
   }
 }
+
+.config-center-row {
+  min-height: 180px;
+}
+
+.config-center-cell {
+  align-items: stretch !important;
+  padding: 10px;
+}
+
+.config-center-grid {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+}
+
+/* ==================== Compact hub pass ==================== */
+.compact-sheet-wrapper {
+  gap: 0;
+}
+
+.compact-title-row {
+  min-height: 30px;
+}
+
+.compact-title-cell {
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 14px;
+}
+
+.compact-quick-row-wrap {
+  min-height: 40px;
+}
+
+.compact-quick-cell {
+  padding: 6px 8px;
+}
+
+.hub-quick-row.compact {
+  grid-template-columns: minmax(220px, 1.4fr) 96px 96px;
+  gap: 10px;
+  align-items: center;
+  justify-content: start;
+}
+
+.compact-main-row {
+  min-height: 420px;
+}
+
+.compact-main-cell {
+  padding: 6px;
+}
+
+.compact-main-grid {
+  grid-template-columns: minmax(0, 2.2fr) 210px;
+  gap: 8px;
+}
+
+.compact-primary-panel,
+.compact-panel {
+  border-color: #d4d4d4;
+  background: #fff;
+}
+
+.compact-secondary-column {
+  gap: 8px;
+  align-content: start;
+}
+
+.hub-game-table.compact {
+  font-size: 12px;
+}
+
+.hub-game-table.compact th,
+.hub-game-table.compact td {
+  padding: 8px 10px;
+}
+
+.hub-mini-table.compact {
+  font-size: 11px;
+}
+
+.hub-mini-table.compact td,
+.hub-mini-table.compact th {
+  padding: 6px 8px;
+}
+
+.compact-footer-nav-cell {
+  justify-content: flex-start;
+  padding: 6px 8px;
+}
+
+.compact-footer-nav-cell .excel-nav-buttons {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.compact-footer-nav-cell .excel-nav-btn {
+  min-width: 72px;
+  justify-content: center;
+}
+
+.hub-quick-row.compact .hub-quick-primary,
+.hub-quick-row.compact .hub-quick-secondary {
+  min-width: 0;
+  height: 34px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.compact-nav-row {
+  min-height: 34px;
+}
+
+@media (max-width: 1200px) {
+  .compact-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hub-quick-row.compact {
+    grid-template-columns: minmax(180px, 1fr) 92px 92px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hub-quick-row.compact {
+    grid-template-columns: 1fr;
+  }
+}

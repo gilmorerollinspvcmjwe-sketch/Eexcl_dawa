@@ -3,6 +3,7 @@ import { ExcelHeader } from './components/ExcelHeader';
 import { SheetTabs } from './components/SheetTabs';
 import { ExcelGrid } from './components/ExcelGrid';
 import { SettingsPanel } from './components/SettingsPanel';
+import { ConfigCenter } from './components/ConfigCenter';
 import { StatsPanel } from './components/StatsPanel';
 import { StatusBar } from './components/StatusBar';
 import { Crosshair } from './components/Crosshair';
@@ -19,6 +20,7 @@ import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 import type { FPSTrainingMode } from './components/TrainingModeSelector';
 import type { PerlerProgressSummary } from './features/hub/hubData';
 import type { DifficultyLevel, GameModeType } from './components/GameHub';
+import type { AppSheetId } from './features/sheets/sheetRegistry';
 
 const PERLER_PROGRESS_KEY = 'excel-aim-perler-state-v1';
 
@@ -62,6 +64,7 @@ function AppContent() {
   const [activeArcadeGame, setActiveArcadeGame] = useState<ActiveArcadeGame>(null);
   const [perlerEntryMode, setPerlerEntryMode] = useState<PerlerEntryMode>('library');
   const [hubFormulaText, setHubFormulaText] = useState('=今日建议：先热手，再摸鱼，再伪装');
+  const [configFormulaText, setConfigFormulaText] = useState('=配置中心：独立管理练枪启动工作台，首页不再挤配置内容');
   const [perlerFormulaText, setPerlerFormulaText] = useState('=拼豆模板库已就绪');
   const [perlerSelectedCell, setPerlerSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [perlerProgress, setPerlerProgress] = useState<PerlerProgressSummary | null>(() => readPerlerProgressFromStorage());
@@ -184,7 +187,7 @@ function AppContent() {
     setPerlerEntryMode(entryMode);
     setPerlerSelectedCell(null);
     setPerlerProgress(readPerlerProgressFromStorage());
-    switchSheet('game');
+    switchSheet('perler');
   };
 
   const handleExitCurrentGame = () => {
@@ -194,26 +197,34 @@ function AppContent() {
     exitToHub();
   };
 
-  const handleSheetSwitch = (sheet: 'hub' | 'game' | 'stats' | 'settings') => {
-    if (sheet === 'game' && !activeArcadeGame) {
+  const handleSheetSwitch = (sheet: AppSheetId) => {
+    if (sheet === 'game') {
       setActiveArcadeGame('aim');
+    } else if (sheet === 'perler') {
+      setActiveArcadeGame('perler');
+    } else if (sheet !== currentSheet) {
+      setActiveArcadeGame(null);
     }
     switchSheet(sheet);
   };
 
   const titleText = currentSheet === 'hub'
     ? 'Microsoft Excel - 工位娱乐中心.xlsx'
-    : activeArcadeGame === 'perler'
+    : currentSheet === 'perler'
       ? 'Microsoft Excel - 拼豆工位创作.xlsx'
+      : currentSheet === 'config'
+        ? 'Microsoft Excel - 配置中心.xlsx'
       : 'Microsoft Excel - 练枪数据.xlsx';
 
   const formulaText = currentSheet === 'hub'
     ? hubFormulaText
-    : activeArcadeGame === 'perler'
+    : currentSheet === 'perler'
       ? perlerFormulaText
-      : undefined;
+      : currentSheet === 'config'
+        ? configFormulaText
+        : undefined;
 
-  const effectiveSelectedCell = currentSheet === 'game' && activeArcadeGame === 'perler'
+  const effectiveSelectedCell = currentSheet === 'perler'
     ? perlerSelectedCell
     : selectedCell;
 
@@ -334,14 +345,13 @@ function AppContent() {
           feedbackMessage={activeArcadeGame === 'aim' ? currentFeedback : null}
           titleText={titleText}
           formulaText={formulaText}
-          formulaTextColor={currentSheet === 'hub' ? '#107c41' : activeArcadeGame === 'perler' ? '#7c3aed' : undefined}
+          formulaTextColor={currentSheet === 'hub' ? '#107c41' : currentSheet === 'perler' ? '#7c3aed' : currentSheet === 'config' ? '#2563eb' : undefined}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           {currentSheet === 'hub' ? (
             <GameHub
               onStartGame={handleStartGameFromHub}
-              onStartFPSTraining={handleStartFPSTrainingFromHub}
               onStartPerler={handleStartPerlerFromHub}
               onSwitchSheet={(sheet) => handleSheetSwitch(sheet)}
               trainingDuration={settings.trainingDuration}
@@ -352,50 +362,55 @@ function AppContent() {
               onFormulaChange={setHubFormulaText}
             />
           ) : currentSheet === 'game' ? (
-            activeArcadeGame === 'perler' ? (
-              <PerlerHub
-                entryMode={perlerEntryMode}
-                onExit={handleExitCurrentGame}
-                onFormulaChange={setPerlerFormulaText}
-                onSelectedCellChange={setPerlerSelectedCell}
-                onProgressChange={(progress) => setPerlerProgress(progress)}
-              />
-            ) : (
-              <ExcelGrid
-                key="game-sheet"
-                targets={targets}
-                selectedCell={selectedCell}
-                onCellClick={handleCellClick}
-                onCellHover={handleCellHover}
-                COLS={COLS}
-                ROWS={ROWS}
-                isHidden={isHidden}
-                gameState={gameState}
-                headshotLineEnabled={settings.headshotLineEnabled || gameState.mode === 'headshot'}
-                headshotLineRow={gameState.headshotLineRow}
-                targetSize={settings.targetSize}
-                hitEffects={hitEffects}
-                togglePause={togglePause}
-                soundEnabled={settings.soundEnabled}
-                onExit={handleExitCurrentGame}
-                multiGridEnemies={multiGridEnemies}
-                currentLevel={currentLevel}
-                levelConfig={levelConfig}
-                levelStatus={levelStatus}
-                colorlessMode={settings.colorlessMode}
-                visualSettings={{
-                  colorHarmonyMode: settings.colorHarmonyMode,
-                  spawnAnimation: settings.spawnAnimation,
-                  enemyFontSize: settings.enemyFontSize,
-                  enemyFontWeight: settings.enemyFontWeight,
-                }}
-                cellSettings={settings.cellSettings}
-                currentPriorityTarget={currentPriorityTarget}
-                fpsMode={currentMode}
-              />
-            )
+            <ExcelGrid
+              key="game-sheet"
+              targets={targets}
+              selectedCell={selectedCell}
+              onCellClick={handleCellClick}
+              onCellHover={handleCellHover}
+              COLS={COLS}
+              ROWS={ROWS}
+              isHidden={isHidden}
+              gameState={gameState}
+              headshotLineEnabled={settings.headshotLineEnabled || gameState.mode === 'headshot'}
+              headshotLineRow={gameState.headshotLineRow}
+              targetSize={settings.targetSize}
+              hitEffects={hitEffects}
+              togglePause={togglePause}
+              soundEnabled={settings.soundEnabled}
+              onExit={handleExitCurrentGame}
+              multiGridEnemies={multiGridEnemies}
+              currentLevel={currentLevel}
+              levelConfig={levelConfig}
+              levelStatus={levelStatus}
+              colorlessMode={settings.colorlessMode}
+              visualSettings={{
+                colorHarmonyMode: settings.colorHarmonyMode,
+                spawnAnimation: settings.spawnAnimation,
+                enemyFontSize: settings.enemyFontSize,
+                enemyFontWeight: settings.enemyFontWeight,
+              }}
+              cellSettings={settings.cellSettings}
+              currentPriorityTarget={currentPriorityTarget}
+              fpsMode={currentMode}
+            />
           ) : currentSheet === 'stats' ? (
             <StatsPanel stats={stats} onReset={handleResetStats} onExit={() => handleExitCurrentGame()} />
+          ) : currentSheet === 'config' ? (
+            <ConfigCenter
+              onStartGame={handleStartGameFromHub}
+              onStartFPSTraining={handleStartFPSTrainingFromHub}
+              onSwitchSheet={handleSheetSwitch}
+              onFormulaChange={setConfigFormulaText}
+            />
+          ) : currentSheet === 'perler' ? (
+            <PerlerHub
+              entryMode={perlerEntryMode}
+              onExit={handleExitCurrentGame}
+              onFormulaChange={setPerlerFormulaText}
+              onSelectedCellChange={setPerlerSelectedCell}
+              onProgressChange={(progress) => setPerlerProgress(progress)}
+            />
           ) : (
             <SettingsPanel
               key="settings-sheet"

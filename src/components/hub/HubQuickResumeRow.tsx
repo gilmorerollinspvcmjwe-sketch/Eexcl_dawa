@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { HubQuickResume } from '../../features/hub/hubData';
 
 interface HubQuickResumeRowProps {
@@ -17,18 +17,10 @@ export const HubQuickResumeRow: React.FC<HubQuickResumeRowProps> = ({
   onRandom,
 }) => {
   return (
-    <div className="hub-quick-row">
-      <button className="hub-quick-primary" onClick={onResume}>
-        ▶ {quickResume.label}
-      </button>
-      <button className="hub-quick-secondary" onClick={onRecommended}>
-        {recommendation}
-      </button>
-      <button className="hub-quick-secondary" onClick={onRandom}>
-        随机摸鱼
-      </button>
-      <div className="hub-quick-note">{quickResume.description}</div>
+    <div className="hub-quick-row compact">
+      <button className="hub-quick-primary" onClick={onResume}>{quickResume.label}</button>
+      <button className="hub-quick-secondary" onClick={onRecommended}>{recommendation}</button>
+      <button className="hub-quick-secondary" onClick={onRandom}>随机</button>
     </div>
   );
 };
-

@@ -1,4 +1,4 @@
-// 主游戏逻辑协调层 - 整合各子系统
+﻿// 涓绘父鎴忛€昏緫鍗忚皟灞?- 鏁村悎鍚勫瓙绯荤粺
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GameMode, TimedDuration, HitEffect, LevelConfig, MultiGridEnemy, EnemyPart } from '../types';
@@ -22,7 +22,7 @@ export function useGameLogic() {
   const { settings, updateSetting } = useSettings();
   
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
-  const [currentSheet, setCurrentSheet] = useState<'hub' | 'game' | 'stats' | 'settings'>('hub');
+  const [currentSheet, setCurrentSheet] = useState<'hub' | 'game' | 'stats' | 'settings' | 'config' | 'perler'>('hub');
   const [isHidden, setIsHidden] = useState(false);
   const [hoverCorner, setHoverCorner] = useState(false);
   const [hitEffects, setHitEffects] = useState<HitEffect[]>([]);
@@ -283,7 +283,7 @@ export function useGameLogic() {
       setFPSConfig(config);
     }
     
-    // switch_track 模式：重置优先级顺序
+    // switch_track 妯″紡锛氶噸缃紭鍏堢骇椤哄簭
     if (mode === 'switch_track') {
       resetPriorityOrder();
     }
@@ -456,7 +456,7 @@ export function useGameLogic() {
     setSelectedCell({ row, col });
   }, []);
 
-  const switchSheet = useCallback((sheet: 'hub' | 'game' | 'stats' | 'settings') => {
+  const switchSheet = useCallback((sheet: 'hub' | 'game' | 'stats' | 'settings' | 'config' | 'perler') => {
     setCurrentSheet(sheet);
   }, []);
 
@@ -555,3 +555,4 @@ export function useGameLogic() {
     currentPriorityTarget,
   };
 }
+

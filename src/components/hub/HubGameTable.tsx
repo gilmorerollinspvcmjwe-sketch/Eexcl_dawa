@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { ArcadeGameId, HubGameRow } from '../../features/hub/hubData';
 
 interface HubGameTableProps {
@@ -12,13 +12,12 @@ const AVAILABLE_GAMES = new Set<ArcadeGameId>(['aim', 'perler']);
 
 export const HubGameTable: React.FC<HubGameTableProps> = ({ games, selectedGame, onSelect, onLaunch }) => {
   return (
-    <table className="hub-game-table">
+    <table className="hub-game-table compact">
       <thead>
         <tr>
           <th>游戏</th>
-          <th>当前状态</th>
-          <th>最佳记录</th>
-          <th>今日次数</th>
+          <th>状态</th>
+          <th>记录</th>
           <th>启动</th>
         </tr>
       </thead>
@@ -39,7 +38,6 @@ export const HubGameTable: React.FC<HubGameTableProps> = ({ games, selectedGame,
               </td>
               <td>{game.status}</td>
               <td>{game.bestRecord}</td>
-              <td>{game.todayCount}</td>
               <td>
                 <button
                   className="hub-inline-btn"
@@ -49,7 +47,7 @@ export const HubGameTable: React.FC<HubGameTableProps> = ({ games, selectedGame,
                   }}
                   disabled={!available}
                 >
-                  {available ? game.actionLabel : '筹备中'}
+                  {available ? game.actionLabel : '查看'}
                 </button>
               </td>
             </tr>
@@ -59,4 +57,3 @@ export const HubGameTable: React.FC<HubGameTableProps> = ({ games, selectedGame,
     </table>
   );
 };
-

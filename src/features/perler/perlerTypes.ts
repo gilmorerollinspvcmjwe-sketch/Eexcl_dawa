@@ -3,6 +3,22 @@ export type PerlerDifficulty = 'all' | 'easy' | 'medium' | 'hard';
 export type PerlerSizeFilter = 'all' | '16' | '24' | '32' | '48';
 export type PerlerThemeStyle = 'standard' | 'contrast' | 'soft' | 'retro';
 
+export interface PerlerPaletteEntry {
+  index: number;
+  color: string;
+  count: number;
+  code: string;
+}
+
+export interface PixelPattern {
+  title: string;
+  width: number;
+  height: number;
+  palette: PerlerPaletteEntry[];
+  cells: number[];
+  previewPixels: string[];
+}
+
 export interface PerlerTemplate {
   id: string;
   title: string;
@@ -12,6 +28,7 @@ export interface PerlerTemplate {
   height: number;
   difficulty: Exclude<PerlerDifficulty, 'all'>;
   pixels: string[];
+  pattern: PixelPattern;
 }
 
 export interface PerlerFilterState {
@@ -27,6 +44,7 @@ export interface PerlerWorkspace {
   width: number;
   height: number;
   pixels: string[];
+  pattern: PixelPattern;
   userPixels: (string | null)[];
   filledCount: number;
   completion: number;
@@ -38,4 +56,3 @@ export interface ImportedPerlerSource {
   height: number;
   pixels: Uint8ClampedArray;
 }
-

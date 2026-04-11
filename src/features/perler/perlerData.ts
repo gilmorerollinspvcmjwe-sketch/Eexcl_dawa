@@ -1,4 +1,5 @@
 import type { PerlerFilterState, PerlerTemplate } from './perlerTypes';
+import { buildPixelPatternFromPixels } from './pixelPatternParser.ts';
 
 function fillPixels(width: number, height: number, palette: string[]): string[] {
   return Array.from({ length: width * height }, (_, index) => palette[index % palette.length]);
@@ -14,6 +15,12 @@ export const perlerTemplates: PerlerTemplate[] = [
     height: 32,
     difficulty: 'hard',
     pixels: fillPixels(32, 32, ['#223A6A', '#D3B277', '#F2E8C9', '#4F76D3']),
+    pattern: buildPixelPatternFromPixels({
+      title: '曜',
+      width: 32,
+      height: 32,
+      pixels: fillPixels(32, 32, ['#223A6A', '#D3B277', '#F2E8C9', '#4F76D3']),
+    }),
   },
   {
     id: 'office-coffee-16',
@@ -24,6 +31,12 @@ export const perlerTemplates: PerlerTemplate[] = [
     height: 16,
     difficulty: 'easy',
     pixels: fillPixels(16, 16, ['#654321', '#F3E2C7', '#FFFFFF', '#D97706']),
+    pattern: buildPixelPatternFromPixels({
+      title: '办公咖啡杯',
+      width: 16,
+      height: 16,
+      pixels: fillPixels(16, 16, ['#654321', '#F3E2C7', '#FFFFFF', '#D97706']),
+    }),
   },
   {
     id: 'abstract-cat-16',
@@ -34,6 +47,12 @@ export const perlerTemplates: PerlerTemplate[] = [
     height: 16,
     difficulty: 'easy',
     pixels: fillPixels(16, 16, ['#7DD3FC', '#FFFFFF', '#0F172A', '#F9A8D4']),
+    pattern: buildPixelPatternFromPixels({
+      title: '咖波表情',
+      width: 16,
+      height: 16,
+      pixels: fillPixels(16, 16, ['#7DD3FC', '#FFFFFF', '#0F172A', '#F9A8D4']),
+    }),
   },
   {
     id: 'target-icon-24',
@@ -44,6 +63,12 @@ export const perlerTemplates: PerlerTemplate[] = [
     height: 24,
     difficulty: 'medium',
     pixels: fillPixels(24, 24, ['#FFFFFF', '#DC2626', '#111827']),
+    pattern: buildPixelPatternFromPixels({
+      title: '靶心图标',
+      width: 24,
+      height: 24,
+      pixels: fillPixels(24, 24, ['#FFFFFF', '#DC2626', '#111827']),
+    }),
   },
   {
     id: 'sheet-x-24',
@@ -54,6 +79,12 @@ export const perlerTemplates: PerlerTemplate[] = [
     height: 24,
     difficulty: 'medium',
     pixels: fillPixels(24, 24, ['#10B981', '#0F172A', '#FDE047']),
+    pattern: buildPixelPatternFromPixels({
+      title: 'SheetX 警报',
+      width: 24,
+      height: 24,
+      pixels: fillPixels(24, 24, ['#10B981', '#0F172A', '#FDE047']),
+    }),
   },
 ];
 
@@ -76,4 +107,3 @@ export function filterPerlerTemplates(
     return matchesQuery && matchesCategory && matchesSize && matchesDifficulty;
   });
 }
-

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 interface HubProgressPanelProps {
   level: number;
@@ -12,37 +12,26 @@ export const HubProgressPanel: React.FC<HubProgressPanelProps> = ({
   level,
   title,
   credits,
-  totalGames,
-  totalScore,
 }) => {
   return (
-    <div className="hub-side-panel">
-      <div className="hub-side-title">成长概览</div>
-      <table className="hub-mini-table hub-kpi-table">
+    <div className="hub-side-panel compact-panel">
+      <div className="hub-side-title">状态</div>
+      <table className="hub-mini-table hub-kpi-table compact">
         <tbody>
           <tr>
-            <td>员工等级</td>
-            <td>Lv.{level}</td>
+            <td>Lv</td>
+            <td>{level}</td>
           </tr>
           <tr>
-            <td>当前称号</td>
+            <td>称号</td>
             <td>{title}</td>
           </tr>
           <tr>
-            <td>摸鱼币</td>
+            <td>币</td>
             <td>{credits}</td>
-          </tr>
-          <tr>
-            <td>今日局数</td>
-            <td>{totalGames}</td>
-          </tr>
-          <tr>
-            <td>累计得分</td>
-            <td>{totalScore.toLocaleString()}</td>
           </tr>
         </tbody>
       </table>
     </div>
   );
 };
-

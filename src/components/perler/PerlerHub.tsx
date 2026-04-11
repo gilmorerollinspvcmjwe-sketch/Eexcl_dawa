@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { perlerTemplates, filterPerlerTemplates } from '../../features/perler/perlerData';
 import type { PerlerFilterState, PerlerTemplate, PerlerWorkspace as PerlerWorkspaceState } from '../../features/perler/perlerTypes';
-import { applyColorToCell, createPerlerWorkspace, eraseColorFromCell, getWorkspacePaletteUsage } from '../../features/perler/perlerWorkspaceState';
+import { applyColorToCell, createPerlerWorkspace, eraseColorFromCell, getWorkspaceMismatchCount, getWorkspacePaletteUsage } from '../../features/perler/perlerWorkspaceState';
+import { buildPixelPatternFromPixels } from '../../features/perler/pixelPatternParser.ts';
 import type { PerlerProgressSummary } from '../../features/hub/hubData';
 import { PerlerTemplateTable } from './PerlerTemplateTable';
 import { PerlerPalettePanel } from './PerlerPalettePanel';
@@ -29,6 +30,34 @@ interface PersistedPerlerState {
 
 const STORAGE_KEY = 'excel-aim-perler-state-v1';
 
+// 为旧存档模板补齐图纸结构，避免升级后本地数据不兼容。
+function normalizeTemplate(template: PerlerTemplate): PerlerTemplate {
+  if (template.pattern) return template;
+  return {
+    ...template,
+    pattern: buildPixelPatternFromPixels({
+      title: template.title,
+      width: template.width,
+      height: template.height,
+      pixels: template.pixels,
+    }),
+  };
+}
+
+function normalizeWorkspace(workspace: PerlerWorkspaceState | null): PerlerWorkspaceState | null {
+  if (!workspace) return null;
+  if (workspace.pattern) return workspace;
+  return {
+    ...workspace,
+    pattern: buildPixelPatternFromPixels({
+      title: workspace.title,
+      width: workspace.width,
+      height: workspace.height,
+      pixels: workspace.pixels,
+    }),
+  };
+}
+
 function loadPersistedPerlerState(): PersistedPerlerState {
   if (typeof window === 'undefined') {
     return { workspace: null, importedTemplates: [], completedTemplateIds: [], currentColor: '#223A6A' };
@@ -37,7 +66,13 @@ function loadPersistedPerlerState(): PersistedPerlerState {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) throw new Error('empty');
-    return JSON.parse(raw) as PersistedPerlerState;
+    const parsed = JSON.parse(raw) as PersistedPerlerState;
+    return {
+      workspace: normalizeWorkspace(parsed.workspace),
+      importedTemplates: (parsed.importedTemplates || []).map(normalizeTemplate),
+      completedTemplateIds: parsed.completedTemplateIds || [],
+      currentColor: parsed.currentColor || '#223A6A',
+    };
   } catch {
     return { workspace: null, importedTemplates: [], completedTemplateIds: [], currentColor: '#223A6A' };
   }
@@ -56,9 +91,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
   onProgressChange,
 }) => {
   const persisted = useMemo(() => loadPersistedPerlerState(), []);
-  const [workspace, setWorkspace] = useState<PerlerWorkspaceState | null>(
-    entryMode === 'resume' ? persisted.workspace : null,
-  );
+  const [workspace, setWorkspace] = useState<PerlerWorkspaceState | null>(entryMode === 'resume' ? persisted.workspace : null);
   const [importedTemplates, setImportedTemplates] = useState<PerlerTemplate[]>(persisted.importedTemplates);
   const [completedTemplateIds, setCompletedTemplateIds] = useState<string[]>(persisted.completedTemplateIds);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(persisted.workspace?.id || perlerTemplates[0]?.id || null);
@@ -73,14 +106,15 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
     difficulty: 'all',
   });
 
-  const templates = useMemo(() => [...perlerTemplates, ...importedTemplates], [importedTemplates]);
+  const templates = useMemo(() => [...perlerTemplates, ...importedTemplates.map(normalizeTemplate)], [importedTemplates]);
   const filteredTemplates = useMemo(() => filterPerlerTemplates(templates, filters), [templates, filters]);
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) || null;
-  const palette = useMemo(
-    () => Array.from(new Set((workspace?.pixels || selectedTemplate?.pixels || []).filter(Boolean))),
-    [workspace?.pixels, selectedTemplate?.pixels],
-  );
-  const effectiveSelectedColor = palette.includes(selectedColor) ? selectedColor : palette[0] || '#223A6A';
+  const paletteEntries = workspace?.pattern.palette || selectedTemplate?.pattern.palette || [];
+  const effectiveSelectedColor = paletteEntries.some((entry) => entry.color === selectedColor)
+    ? selectedColor
+    : paletteEntries[0]?.color || '#223A6A';
+  const usage = useMemo(() => (workspace ? getWorkspacePaletteUsage(workspace) : {}), [workspace]);
+  const mismatchCount = useMemo(() => (workspace ? getWorkspaceMismatchCount(workspace) : 0), [workspace]);
 
   useEffect(() => {
     persistPerlerState({
@@ -109,14 +143,12 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
 
   useEffect(() => {
     if (workspace) {
-      onFormulaChange?.(`=模板：${workspace.title} | 完成度 ${workspace.completion}% | 当前颜色 ${effectiveSelectedColor}`);
+      onFormulaChange?.(`=模板 ${workspace.title} | 完成 ${workspace.completion}% | 错误 ${mismatchCount} | 色板 ${workspace.pattern.palette.length}`);
       return;
     }
 
-    onFormulaChange?.('=拼豆模板库已就绪，可筛选、搜索或导入图片生成模板');
-  }, [workspace, effectiveSelectedColor, onFormulaChange]);
-
-  const usage = useMemo(() => (workspace ? getWorkspacePaletteUsage(workspace) : {}), [workspace]);
+    onFormulaChange?.('=先选模板，再照图纸逐格完成；导入图片也会先转成图纸');
+  }, [workspace, mismatchCount, onFormulaChange]);
 
   const commitWorkspace = (nextWorkspace: PerlerWorkspaceState | null) => {
     setWorkspace(nextWorkspace);
@@ -138,7 +170,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
       <div className="perler-topbar">
         <div className="perler-topbar-copy">
           <strong>拼豆模板库</strong>
-          <span>模板优先 / 导入图片转模板 / 右键擦除当前单元格</span>
+          <span>模板样式固定，玩家按图纸施工；上传图片也会先解析成拼豆图纸。</span>
         </div>
         <div className="perler-topbar-actions">
           <button className="perler-inline-btn" onClick={() => setShowImportWizard(true)}>导入图片</button>
@@ -181,9 +213,10 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
 
           {workspace ? (
             <PerlerPalettePanel
-              palette={palette}
+              palette={paletteEntries}
               selectedColor={effectiveSelectedColor}
               completion={workspace.completion}
+              mismatchCount={mismatchCount}
               templateTitle={workspace.title}
               onSelectColor={setSelectedColor}
               onImportClick={() => setShowImportWizard(true)}
@@ -233,23 +266,25 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
         </main>
 
         <aside className="perler-right-panel">
-          <div className="perler-panel-title">模板信息</div>
+          <div className="perler-panel-title">图纸信息</div>
           <div className="perler-meta-block">
             <div><strong>{workspace?.title || selectedTemplate?.title || '未选择模板'}</strong></div>
             <div>分类：{workspace ? templates.find((item) => item.id === workspace.id)?.category : selectedTemplate?.category || '-'}</div>
             <div>尺寸：{workspace ? `${workspace.width}×${workspace.height}` : selectedTemplate ? `${selectedTemplate.width}×${selectedTemplate.height}` : '-'}</div>
-            <div>完成度：{workspace ? `${workspace.completion}%` : '—'}</div>
+            <div>完成：{workspace ? `${workspace.completion}%` : '—'}</div>
+            <div>错误：{workspace ? mismatchCount : '—'}</div>
+            <div>色板：{workspace ? workspace.pattern.palette.length : selectedTemplate?.pattern.palette.length || '—'}</div>
           </div>
 
           {workspace && (
             <>
-              <div className="perler-panel-title">颜色使用</div>
+              <div className="perler-panel-title">色号进度</div>
               <div className="perler-usage-list">
-                {Object.entries(usage).map(([color, count]) => (
-                  <div key={color} className="perler-usage-row">
-                    <span className="perler-usage-chip" style={{ background: color }} />
-                    <span>{color}</span>
-                    <strong>{count}</strong>
+                {workspace.pattern.palette.map((entry) => (
+                  <div key={entry.code} className="perler-usage-row">
+                    <span className="perler-usage-chip" style={{ background: entry.color }} />
+                    <span>{entry.code}</span>
+                    <strong>{usage[entry.color] || 0}/{entry.count}</strong>
                   </div>
                 ))}
               </div>
@@ -272,6 +307,8 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
       <PerlerFinalizeFlow
         isOpen={showFinalize}
         title={workspace?.title || '已完成作品'}
+        pixels={workspace?.pattern.previewPixels || []}
+        width={workspace?.width || 1}
         onClose={() => setShowFinalize(false)}
         onBackToLibrary={() => {
           setShowFinalize(false);

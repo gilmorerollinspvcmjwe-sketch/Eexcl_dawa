@@ -1,9 +1,11 @@
 import React from 'react';
+import type { PerlerPaletteEntry } from '../../features/perler/perlerTypes';
 
 interface PerlerPalettePanelProps {
-  palette: string[];
+  palette: PerlerPaletteEntry[];
   selectedColor: string;
   completion: number;
+  mismatchCount: number;
   templateTitle: string;
   onSelectColor: (color: string) => void;
   onImportClick: () => void;
@@ -14,6 +16,7 @@ export const PerlerPalettePanel: React.FC<PerlerPalettePanelProps> = ({
   palette,
   selectedColor,
   completion,
+  mismatchCount,
   templateTitle,
   onSelectColor,
   onImportClick,
@@ -25,18 +28,22 @@ export const PerlerPalettePanel: React.FC<PerlerPalettePanelProps> = ({
       <div className="perler-meta-block">
         <div><strong>{templateTitle}</strong></div>
         <div>完成度：{completion}%</div>
+        <div>错误格：{mismatchCount}</div>
       </div>
 
-      <div className="perler-panel-title">颜色表</div>
-      <div className="perler-palette-grid">
-        {palette.map((color) => (
+      <div className="perler-panel-title">图纸色板</div>
+      <div className="perler-palette-list">
+        {palette.map((entry) => (
           <button
-            key={color}
-            className={`perler-color-chip ${selectedColor === color ? 'selected' : ''}`}
-            style={{ background: color }}
-            onClick={() => onSelectColor(color)}
-            title={color}
-          />
+            key={entry.code}
+            className={`perler-palette-row ${selectedColor === entry.color ? 'selected' : ''}`}
+            onClick={() => onSelectColor(entry.color)}
+            title={`${entry.code} ${entry.color}`}
+          >
+            <span className="perler-color-chip" style={{ background: entry.color }} />
+            <span className="perler-palette-code">{entry.code}</span>
+            <span className="perler-palette-count">×{entry.count}</span>
+          </button>
         ))}
       </div>
 
@@ -47,4 +54,3 @@ export const PerlerPalettePanel: React.FC<PerlerPalettePanelProps> = ({
     </aside>
   );
 };
-

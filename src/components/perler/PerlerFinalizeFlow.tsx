@@ -1,8 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 
 interface PerlerFinalizeFlowProps {
   isOpen: boolean;
   title: string;
+  pixels: string[];
+  width: number;
   onBackToLibrary: () => void;
   onClose: () => void;
 }
@@ -10,6 +12,8 @@ interface PerlerFinalizeFlowProps {
 export const PerlerFinalizeFlow: React.FC<PerlerFinalizeFlowProps> = ({
   isOpen,
   title,
+  pixels,
+  width,
   onBackToLibrary,
   onClose,
 }) => {
@@ -21,7 +25,16 @@ export const PerlerFinalizeFlow: React.FC<PerlerFinalizeFlowProps> = ({
         <div className="perler-panel-title">热熔定型完成</div>
         <div className="perler-finalize-copy">
           <strong>{title}</strong>
-          <p>作品已完成并收录到图鉴。本轮先提供图鉴收录与返回模板库，后续可扩展为首页贴纸和徽章用途。</p>
+          <p>作品已完成并收录到图鉴，下方就是最终成品样式。</p>
+        </div>
+        <div className="perler-final-preview">
+          <div className="perler-grid reference mini" style={{ gridTemplateColumns: `repeat(${width}, minmax(12px, 1fr))` }}>
+            {pixels.map((color, index) => (
+              <div key={`final-${index}`} className="perler-cell reference-cell" style={{ background: color }}>
+                <span className="perler-cell-bead" />
+              </div>
+            ))}
+          </div>
         </div>
         <div className="perler-side-actions">
           <button className="perler-inline-btn" onClick={onClose}>继续查看</button>
@@ -31,4 +44,3 @@ export const PerlerFinalizeFlow: React.FC<PerlerFinalizeFlowProps> = ({
     </div>
   );
 };
-

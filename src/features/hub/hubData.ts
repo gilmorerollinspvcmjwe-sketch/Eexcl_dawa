@@ -1,4 +1,4 @@
-export type ArcadeGameId = 'aim' | 'snake' | 'tetris' | 'perler' | 'pvz';
+﻿export type ArcadeGameId = 'aim' | 'snake' | 'tetris' | 'perler' | 'pvz';
 
 export interface HubStatsSummary {
   totalGames: number;
@@ -58,8 +58,8 @@ function buildPerlerRow(progress: PerlerProgressSummary | null): HubGameRow {
   return {
     id: 'perler',
     title: '拼豆',
-    status: progress ? '创作中' : '模板已就绪',
-    bestRecord: progress ? `模板 ${progress.title} ${progress.completion}%` : '模板库已解锁',
+    status: progress ? `${progress.completion}%` : '就绪',
+    bestRecord: progress ? progress.title : '模板库',
     todayCount: progress ? 1 : 0,
     actionLabel: progress ? '继续' : '启动',
     accent: '#c084fc',
@@ -72,23 +72,23 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
   const quickResume: HubQuickResume = perlerProgress
     ? {
         kind: 'perler',
-        label: `继续：${perlerProgress.title}（${perlerProgress.completion}%）`,
-        description: '回到上次未完成的拼豆作品',
+        label: `继续 ${perlerProgress.title} ${perlerProgress.completion}%`,
+        description: '',
       }
     : {
         kind: 'aim',
-        label: '推荐：60 秒练枪',
-        description: '快速热手并保持手感',
+        label: '继续 60秒练枪',
+        description: '',
       };
 
   return {
     quickResume,
-    recommendation: perlerProgress ? '推荐：来一局 60 秒练枪' : '推荐：从模板库开始今天的拼豆',
+    recommendation: '配置',
     games: [
       {
         id: 'aim',
         title: '练枪',
-        status: '建议热手',
+        status: '热手',
         bestRecord: `${stats.totalScore || 0}`,
         todayCount: stats.totalGames || 0,
         actionLabel: '启动',
@@ -97,41 +97,41 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
       {
         id: 'snake',
         title: '贪吃蛇',
-        status: '数据流通畅',
-        bestRecord: '最长长度 42',
+        status: '筹备',
+        bestRecord: '—',
         todayCount: 0,
-        actionLabel: '启动',
+        actionLabel: '查看',
         accent: '#0ea5e9',
       },
       {
         id: 'tetris',
         title: '俄罗斯方块',
-        status: '堆积待整理',
-        bestRecord: '最高消行 18',
+        status: '筹备',
+        bestRecord: '—',
         todayCount: 0,
-        actionLabel: '启动',
+        actionLabel: '查看',
         accent: '#475569',
       },
       buildPerlerRow(perlerProgress),
       {
         id: 'pvz',
         title: '植物大战僵尸',
-        status: '防线待检查',
-        bestRecord: '最高关卡 4',
+        status: '筹备',
+        bestRecord: '—',
         todayCount: 0,
-        actionLabel: '启动',
+        actionLabel: '查看',
         accent: '#f59e0b',
       },
     ],
     tasks: [
-      { id: 'play-two', label: '完成任意 2 局', progress: '1/2', reward: 'EXP + 币', state: 'active' },
-      { id: 'combo-ten', label: '练枪 10 连击', progress: '6/10', reward: '币 + 特效', state: 'active' },
-      { id: 'perler-one', label: '完成 1 个拼豆模板', progress: perlerProgress ? '0/1' : '0/1', reward: 'EXP + 图鉴', state: 'pending' },
+      { id: 'play-two', label: '任意 2 局', progress: '1/2', reward: 'EXP', state: 'active' },
+      { id: 'combo-ten', label: '10 连击', progress: '6/10', reward: '币', state: 'active' },
+      { id: 'perler-one', label: '拼豆 1 次', progress: '0/1', reward: '图鉴', state: 'pending' },
     ],
     activity: [
-      { id: 'theme', text: '已解锁：夜班蓝主题', tone: 'success' },
-      { id: 'alert', text: '检测到娱乐效率略高于工作效率', tone: 'warning' },
-      { id: 'sheetx', text: 'SheetX 出现轻微闪烁', tone: 'neutral' },
+      { id: 'theme', text: '夜班蓝', tone: 'success' },
+      { id: 'alert', text: '效率偏高', tone: 'warning' },
+      { id: 'sheetx', text: 'SheetX 闪烁', tone: 'neutral' },
     ],
   };
 }
