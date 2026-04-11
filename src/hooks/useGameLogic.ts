@@ -22,7 +22,7 @@ export function useGameLogic() {
   const { settings, updateSetting } = useSettings();
   
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
-  const [currentSheet, setCurrentSheet] = useState<'hub' | 'game' | 'stats' | 'settings' | 'config' | 'perler'>('hub');
+  const [currentSheet, setCurrentSheet] = useState<'hub' | 'game' | 'stats' | 'settings' | 'config' | 'perler' | 'pvz' | 'pvz_collection' | 'pvz_lab'>('hub');
   const [isHidden, setIsHidden] = useState(false);
   const [hoverCorner, setHoverCorner] = useState(false);
   const [hitEffects, setHitEffects] = useState<HitEffect[]>([]);
@@ -456,7 +456,7 @@ export function useGameLogic() {
     setSelectedCell({ row, col });
   }, []);
 
-  const switchSheet = useCallback((sheet: 'hub' | 'game' | 'stats' | 'settings' | 'config' | 'perler') => {
+  const switchSheet = useCallback((sheet: 'hub' | 'game' | 'stats' | 'settings' | 'config' | 'perler' | 'pvz' | 'pvz_collection' | 'pvz_lab') => {
     setCurrentSheet(sheet);
   }, []);
 

@@ -9,6 +9,9 @@ import { StatusBar } from './components/StatusBar';
 import { Crosshair } from './components/Crosshair';
 import { GameHub } from './components/GameHub';
 import { PerlerHub } from './components/perler/PerlerHub';
+import { PvZGameSheet } from './components/pvz/PvZGameSheet';
+import { PvZCollectionSheet } from './components/pvz/PvZCollectionSheet';
+import { PvZLabSheet } from './components/pvz/PvZLabSheet';
 import { FancyFeedback } from './components/FancyFeedback';
 import { FirstTimeGuide } from './components/FirstTimeGuide';
 import { ModeTutorialModal } from './components/ModeTutorialModal';
@@ -24,7 +27,7 @@ import type { AppSheetId } from './features/sheets/sheetRegistry';
 
 const PERLER_PROGRESS_KEY = 'excel-aim-perler-state-v1';
 
-type ActiveArcadeGame = 'aim' | 'perler' | null;
+type ActiveArcadeGame = 'aim' | 'perler' | 'pvz' | null;
 type PerlerEntryMode = 'library' | 'resume';
 type FPSConfigMap = Record<string, string | number | boolean | undefined>;
 type HubStartMode = GameModeType | FPSTrainingMode | 'part_training' | 'peek_shot' | 'moving_target';
@@ -190,6 +193,11 @@ function AppContent() {
     switchSheet('perler');
   };
 
+  const handleStartPvZFromHub = () => {
+    setActiveArcadeGame('pvz');
+    switchSheet('pvz');
+  };
+
   const handleExitCurrentGame = () => {
     setActiveArcadeGame(null);
     setPerlerEntryMode('library');
@@ -202,6 +210,8 @@ function AppContent() {
       setActiveArcadeGame('aim');
     } else if (sheet === 'perler') {
       setActiveArcadeGame('perler');
+    } else if (sheet === 'pvz' || sheet === 'pvz_collection' || sheet === 'pvz_lab') {
+      setActiveArcadeGame('pvz');
     } else if (sheet !== currentSheet) {
       setActiveArcadeGame(null);
     }
@@ -212,6 +222,12 @@ function AppContent() {
     ? 'Microsoft Excel - 工位娱乐中心.xlsx'
     : currentSheet === 'perler'
       ? 'Microsoft Excel - 拼豆工位创作.xlsx'
+      : currentSheet === 'pvz'
+        ? 'Microsoft Excel - 植物大战僵尸.xlsx'
+        : currentSheet === 'pvz_collection'
+          ? 'Microsoft Excel - PvZ 图鉴.xlsx'
+          : currentSheet === 'pvz_lab'
+            ? 'Microsoft Excel - PvZ 实验室.xlsx'
       : currentSheet === 'config'
         ? 'Microsoft Excel - 配置中心.xlsx'
       : 'Microsoft Excel - 练枪数据.xlsx';
@@ -220,6 +236,12 @@ function AppContent() {
     ? hubFormulaText
     : currentSheet === 'perler'
       ? perlerFormulaText
+      : currentSheet === 'pvz'
+        ? '=PvZ 防线就绪'
+        : currentSheet === 'pvz_collection'
+          ? '=植物与僵尸图鉴'
+          : currentSheet === 'pvz_lab'
+            ? '=章节、规则与实验室'
       : currentSheet === 'config'
         ? configFormulaText
         : undefined;
@@ -353,6 +375,7 @@ function AppContent() {
             <GameHub
               onStartGame={handleStartGameFromHub}
               onStartPerler={handleStartPerlerFromHub}
+              onStartPvZ={handleStartPvZFromHub}
               onSwitchSheet={(sheet) => handleSheetSwitch(sheet)}
               trainingDuration={settings.trainingDuration}
               difficulty={settings.difficulty as DifficultyLevel}
@@ -411,6 +434,12 @@ function AppContent() {
               onSelectedCellChange={setPerlerSelectedCell}
               onProgressChange={(progress) => setPerlerProgress(progress)}
             />
+          ) : currentSheet === 'pvz' ? (
+            <PvZGameSheet onFormulaChange={setConfigFormulaText} />
+          ) : currentSheet === 'pvz_collection' ? (
+            <PvZCollectionSheet />
+          ) : currentSheet === 'pvz_lab' ? (
+            <PvZLabSheet />
           ) : (
             <SettingsPanel
               key="settings-sheet"

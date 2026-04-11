@@ -1,0 +1,146 @@
+.pvz-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 10px;
+  background: #f3f3f3;
+}
+
+.pvz-hud,
+.pvz-card-tray {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pvz-hud-item,
+.pvz-card {
+  border: 1px solid #d4d4d4;
+  background: white;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.pvz-card {
+  min-width: 88px;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.pvz-card.selected {
+  border-color: #107c41;
+  background: #edf7f0;
+}
+
+.pvz-card-name {
+  font-weight: 600;
+}
+
+.pvz-card-meta,
+.pvz-card-cooldown {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.pvz-board-shell {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #d4d4d4;
+  background: white;
+}
+
+.pvz-board {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
+.pvz-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(9, 78px);
+  gap: 4px;
+  min-height: 62px;
+}
+
+.pvz-cell {
+  position: relative;
+  border: 1px dotted #d4d4d4;
+  background: linear-gradient(180deg, #d9f99d 0%, #bbf7d0 100%);
+  min-height: 62px;
+}
+
+.pvz-zombie-lane {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pvz-plant,
+.pvz-zombie {
+  position: absolute;
+  top: 6px;
+  display: grid;
+  gap: 2px;
+  align-items: center;
+  justify-items: center;
+  min-width: 54px;
+  padding: 4px 6px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.pvz-plant {
+  inset: 6px;
+}
+
+.pvz-zombie {
+  transform: translateX(-50%);
+}
+
+.pvz-unit-short {
+  font-weight: 700;
+}
+
+.pvz-unit-name {
+  font-size: 10px;
+  color: #475569;
+}
+
+.pvz-info-sheet {
+  overflow: auto;
+}
+
+.pvz-info-panel {
+  border: 1px solid #d4d4d4;
+  background: white;
+  padding: 12px;
+}
+
+.pvz-info-panel h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.pvz-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.pvz-info-table th,
+.pvz-info-table td {
+  border: 1px dotted #d4d4d4;
+  padding: 8px;
+  text-align: left;
+}
+
+.pvz-rule-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #334155;
+}
+

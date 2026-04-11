@@ -8,7 +8,7 @@ interface HubGameTableProps {
   onLaunch: (gameId: ArcadeGameId) => void;
 }
 
-const AVAILABLE_GAMES = new Set<ArcadeGameId>(['aim', 'perler']);
+const AVAILABLE_GAMES = new Set<ArcadeGameId>(['aim', 'perler', 'pvz']);
 
 export const HubGameTable: React.FC<HubGameTableProps> = ({ games, selectedGame, onSelect, onLaunch }) => {
   return (

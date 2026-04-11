@@ -116,10 +116,10 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
       {
         id: 'pvz',
         title: '植物大战僵尸',
-        status: '筹备',
-        bestRecord: '—',
+        status: '防线',
+        bestRecord: '首章',
         todayCount: 0,
-        actionLabel: '查看',
+        actionLabel: '启动',
         accent: '#f59e0b',
       },
     ],

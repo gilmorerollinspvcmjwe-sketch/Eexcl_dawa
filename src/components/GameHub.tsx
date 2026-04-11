@@ -13,6 +13,7 @@ export type DifficultyLevel = 'very_easy' | 'easy' | 'normal' | 'medium' | 'hard
 interface GameHubProps {
   onStartGame: (mode: GameModeType | 'part_training' | 'peek_shot' | 'moving_target', duration?: 30 | 60 | 120, level?: number, difficulty?: DifficultyLevel) => void;
   onStartPerler: (entryMode?: 'library' | 'resume') => void;
+  onStartPvZ: () => void;
   onSwitchSheet: (sheet: AppSheetId) => void;
   trainingDuration?: 30 | 60 | 120;
   difficulty?: DifficultyLevel;
@@ -27,12 +28,13 @@ const GAME_DESCRIPTIONS: Record<ArcadeGameId, string> = {
   snake: '=贪吃蛇 / 筹备中。',
   tetris: '=俄罗斯方块 / 筹备中。',
   perler: '=拼豆 / Sheet6。',
-  pvz: '=植物大战僵尸 / 筹备中。',
+  pvz: '=植物大战僵尸 / Sheet7。',
 };
 
 export const GameHub: React.FC<GameHubProps> = ({
   onStartGame,
   onStartPerler,
+  onStartPvZ,
   onSwitchSheet,
   trainingDuration = 60,
   difficulty = 'normal',
@@ -60,6 +62,11 @@ export const GameHub: React.FC<GameHubProps> = ({
 
     if (gameId === 'perler') {
       onStartPerler('library');
+      return;
+    }
+
+    if (gameId === 'pvz') {
+      onStartPvZ();
       return;
     }
 
@@ -155,6 +162,7 @@ export const GameHub: React.FC<GameHubProps> = ({
               <button className="excel-nav-btn" onClick={() => onSwitchSheet('settings')}>设置</button>
               <button className="excel-nav-btn" onClick={() => onSwitchSheet('config')}>配置</button>
               <button className="excel-nav-btn" onClick={() => onSwitchSheet('perler')}>拼豆</button>
+              <button className="excel-nav-btn" onClick={() => onSwitchSheet('pvz')}>PvZ</button>
             </div>
           </div>
         </div>
