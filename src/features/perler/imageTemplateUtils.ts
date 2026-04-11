@@ -1,4 +1,4 @@
-import type { ImportedPerlerSource, PerlerTemplate, PerlerThemeStyle } from './perlerTypes';
+import type { ImportedPerlerSource, PerlerTemplate, PerlerThemeStyle, PerlerVividness } from './perlerTypes';
 import { convertImageSourceToPattern } from './pixelPatternParser.ts';
 export { reduceImagePalette } from './pixelPatternParser.ts';
 
@@ -7,8 +7,9 @@ export function convertImageSourceToTemplate(
   source: ImportedPerlerSource,
   paletteSize: number,
   style: PerlerThemeStyle,
+  vividness: PerlerVividness = 'vivid',
 ): PerlerTemplate {
-  const pattern = convertImageSourceToPattern(source, paletteSize, style);
+  const pattern = convertImageSourceToPattern(source, paletteSize, style, vividness);
 
   return {
     id: `imported-${source.title.toLowerCase().replace(/\s+/g, '-')}`,

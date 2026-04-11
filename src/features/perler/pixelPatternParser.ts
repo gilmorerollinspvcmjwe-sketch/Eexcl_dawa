@@ -1,11 +1,17 @@
 ﻿import Pixelizer from 'image-pixelizer';
-import type { ImportedPerlerSource, PerlerThemeStyle, PixelPattern } from './perlerTypes';
+import type { ImportedPerlerSource, PerlerThemeStyle, PerlerVividness, PixelPattern } from './perlerTypes';
 
 const STYLE_FACTORS: Record<PerlerThemeStyle, number> = {
   standard: 1,
   contrast: 1.25,
   soft: 0.85,
   retro: 1.1,
+};
+
+const VIVIDNESS_FACTORS: Record<PerlerVividness, { saturation: number; saturationBoost: number; lightness: number; lightnessBoost: number }> = {
+  standard: { saturation: 1.08, saturationBoost: 0.02, lightness: 1.01, lightnessBoost: 0.005 },
+  vivid: { saturation: 1.28, saturationBoost: 0.06, lightness: 1.04, lightnessBoost: 0.015 },
+  ultra: { saturation: 1.45, saturationBoost: 0.1, lightness: 1.07, lightnessBoost: 0.02 },
 };
 
 const STYLE_OPTIONS: Record<PerlerThemeStyle, { colorDistRatio: number; clusterThreshold: number; maxIteration: number }> = {
@@ -15,17 +21,14 @@ const STYLE_OPTIONS: Record<PerlerThemeStyle, { colorDistRatio: number; clusterT
   retro: { colorDistRatio: 0.68, clusterThreshold: 0.01, maxIteration: 10 },
 };
 
-// 限制颜色范围，避免样式增强后越界。
 function clamp(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
 
-// RGB 转十六进制颜色。
 function toHex(r: number, g: number, b: number): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
 }
 
-// 十六进制颜色转 RGB，用于最近色匹配。
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const normalized = hex.replace('#', '');
   return {
@@ -35,7 +38,6 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   };
 }
 
-// 计算两个颜色的欧式距离。
 function colorDistance(a: { r: number; g: number; b: number }, b: { r: number; g: number; b: number }): number {
   return (a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2;
 }
@@ -97,13 +99,59 @@ function hslToRgb(color: { h: number; s: number; l: number }) {
   };
 }
 
-// 给图纸中的颜色生成简短色号，便于十字绣/拼豆式阅读。
 function buildColorCode(index: number): string {
   return `C${String(index + 1).padStart(2, '0')}`;
 }
 
-// 角色图鲜艳优先：中性色基本不动，有色区域提饱和并略提亮。
-export function boostCharacterPalette(colors: string[]): string[] {
+function isDarkColor(hex: string): boolean {
+  const { r, g, b } = hexToRgb(hex);
+  return Math.max(r, g, b) < 70;
+}
+
+function isVividColor(hex: string): boolean {
+  const hsl = rgbToHsl(hexToRgb(hex));
+  return hsl.s >= 0.3 && hsl.l >= 0.18 && hsl.l <= 0.82;
+}
+
+export function capDarkPaletteEntries(colors: string[], paletteSize: number): string[] {
+  const uniqueColors = Array.from(new Set(colors.map((color) => color.toUpperCase())));
+  if (uniqueColors.length <= paletteSize) {
+    return uniqueColors;
+  }
+
+  const darkColors = uniqueColors.filter(isDarkColor);
+  const vividColors = uniqueColors.filter((color) => !isDarkColor(color) && isVividColor(color));
+  const otherColors = uniqueColors.filter((color) => !darkColors.includes(color) && !vividColors.includes(color));
+
+  const maxDark = Math.max(2, Math.floor(paletteSize * 0.35));
+  const minVivid = Math.min(vividColors.length, Math.max(2, Math.ceil(paletteSize * 0.35)));
+
+  const result: string[] = [];
+  result.push(...vividColors.slice(0, minVivid));
+  result.push(...otherColors.slice(0, Math.max(0, paletteSize - result.length - maxDark)));
+  if (result.length < paletteSize - maxDark) {
+    result.push(
+      ...vividColors
+        .slice(minVivid)
+        .slice(0, Math.max(0, paletteSize - maxDark - result.length)),
+    );
+  }
+  result.push(...darkColors.slice(0, Math.max(0, Math.min(maxDark, paletteSize - result.length))));
+  if (result.length < paletteSize) {
+    const currentDarkCount = result.filter(isDarkColor).length;
+    const leftovers = uniqueColors.filter((color) => {
+      if (result.includes(color)) return false;
+      if (isDarkColor(color) && currentDarkCount >= maxDark) return false;
+      return true;
+    });
+    result.push(...leftovers.slice(0, paletteSize - result.length));
+  }
+
+  return result.slice(0, paletteSize);
+}
+
+export function boostCharacterPalette(colors: string[], vividness: PerlerVividness = 'vivid'): string[] {
+  const config = VIVIDNESS_FACTORS[vividness];
   return colors.map((hex) => {
     const rgb = hexToRgb(hex);
     const hsl = rgbToHsl(rgb);
@@ -111,15 +159,14 @@ export function boostCharacterPalette(colors: string[]): string[] {
 
     const boosted = {
       h: hsl.h,
-      s: Math.min(1, hsl.s * 1.28 + 0.06),
-      l: Math.min(0.78, hsl.l * 1.04 + 0.015),
+      s: Math.min(1, hsl.s * config.saturation + config.saturationBoost),
+      l: Math.min(0.82, hsl.l * config.lightness + config.lightnessBoost),
     };
     const vivid = hslToRgb(boosted);
     return toHex(vivid.r, vivid.g, vivid.b);
   });
 }
 
-// 从像素颜色列表构建完整图纸。
 export function buildPixelPatternFromPixels(input: {
   title: string;
   width: number;
@@ -157,12 +204,10 @@ export function buildPixelPatternFromPixels(input: {
   };
 }
 
-// 从图纸索引还原最终成品预览。
 export function materializePatternPixels(pattern: PixelPattern): string[] {
   return pattern.cells.map((paletteIndex) => pattern.palette[paletteIndex]?.color || '#000000');
 }
 
-// 从图片里抽样出有限颜色。
 export function reduceImagePalette(
   pixels: Uint8ClampedArray,
   paletteSize: number,
@@ -186,7 +231,6 @@ export function reduceImagePalette(
   return palette.length > 0 ? palette : ['#000000'];
 }
 
-// 在受限调色板中找到最接近的颜色。
 function pickNearestPaletteColor(color: { r: number; g: number; b: number }, palette: string[]): string {
   let best = palette[0] || '#000000';
   let bestDistance = Number.POSITIVE_INFINITY;
@@ -202,7 +246,6 @@ function pickNearestPaletteColor(color: { r: number; g: number; b: number }, pal
   return best;
 }
 
-// 使用开源 pixelizer 先做像素化，再把结果整理成拼豆图纸。
 function pixelizeImportedBitmap(
   source: ImportedPerlerSource,
   paletteSize: number,
@@ -230,11 +273,11 @@ function pixelizeImportedBitmap(
   return pixels;
 }
 
-// 把导入图片先转成固定图纸，再供玩家照图拼。
 export function convertImageSourceToPattern(
   source: ImportedPerlerSource,
   paletteSize: number,
   style: PerlerThemeStyle,
+  vividness: PerlerVividness = 'vivid',
 ): PixelPattern {
   const directPixels = Array.from({ length: source.width * source.height }, (_, index) => {
     const offset = index * 4;
@@ -246,19 +289,25 @@ export function convertImageSourceToPattern(
   });
   const directUniqueCount = new Set(directPixels).size;
 
-  // 对于本身颜色数不多的小图，直接保留原始像素布局，避免过度聚类把图案压坏。
   if (directUniqueCount <= paletteSize && source.width * source.height <= 4096) {
+    const directPalette = source.width >= 80 || source.height >= 80
+      ? boostCharacterPalette(capDarkPaletteEntries(directPixels, paletteSize), vividness)
+      : capDarkPaletteEntries(directPixels, paletteSize);
+    const normalizedPixels = directPixels.map((color) => pickNearestPaletteColor(hexToRgb(color), directPalette));
     return buildPixelPatternFromPixels({
       title: source.title,
       width: source.width,
       height: source.height,
-      pixels: directPixels,
+      pixels: normalizedPixels,
     });
   }
 
   const pixelized = pixelizeImportedBitmap(source, paletteSize, style);
   const palette = reduceImagePalette(Uint8ClampedArray.from(source.pixels), paletteSize, style);
-  const preferredPalette = source.width >= 80 || source.height >= 80 ? boostCharacterPalette(palette) : palette;
+  const cappedPalette = capDarkPaletteEntries(palette, paletteSize);
+  const preferredPalette = source.width >= 80 || source.height >= 80
+    ? boostCharacterPalette(cappedPalette, vividness)
+    : cappedPalette;
   const normalizedPixels = pixelized.map((color) => pickNearestPaletteColor(hexToRgb(color), preferredPalette));
 
   return buildPixelPatternFromPixels({
@@ -268,4 +317,3 @@ export function convertImageSourceToPattern(
     pixels: normalizedPixels,
   });
 }
-

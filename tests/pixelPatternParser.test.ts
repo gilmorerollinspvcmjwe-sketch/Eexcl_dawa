@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { boostCharacterPalette, buildPixelPatternFromPixels, convertImageSourceToPattern, materializePatternPixels } from '../src/features/perler/pixelPatternParser.ts';
+import {
+  boostCharacterPalette,
+  buildPixelPatternFromPixels,
+  capDarkPaletteEntries,
+  convertImageSourceToPattern,
+  materializePatternPixels,
+} from '../src/features/perler/pixelPatternParser.ts';
 
 test('buildPixelPatternFromPixels creates palette entries and indexed cells', () => {
   const pattern = buildPixelPatternFromPixels({
@@ -88,10 +94,36 @@ test('convertImageSourceToPattern preserves major color groups instead of collap
 });
 
 test('boostCharacterPalette makes colorful character tones more vivid without altering neutrals wildly', () => {
-  const boosted = boostCharacterPalette(['#6E5A5A', '#5F6E9A', '#C8B8A0', '#3A3A3A']);
+  const boosted = boostCharacterPalette(['#6E5A5A', '#5F6E9A', '#C8B8A0', '#3A3A3A'], 'vivid');
 
   assert.equal(boosted.length, 4);
   assert.equal(boosted[3], '#3A3A3A');
   assert.notEqual(boosted[0], '#6E5A5A');
   assert.notEqual(boosted[1], '#5F6E9A');
+});
+
+test('boostCharacterPalette ultra mode is stronger than vivid mode for character colors', () => {
+  const vivid = boostCharacterPalette(['#8A4B4B', '#4A5A8A'], 'vivid');
+  const ultra = boostCharacterPalette(['#8A4B4B', '#4A5A8A'], 'ultra');
+
+  assert.notDeepEqual(vivid, ultra);
+});
+
+test('capDarkPaletteEntries prevents dark colors from occupying most palette slots', () => {
+  const balanced = capDarkPaletteEntries(
+    ['#101010', '#1A1A1A', '#222222', '#2A2A2A', '#D94A4A', '#4AD96A', '#4A6AD9'],
+    6,
+  );
+
+  const darkCount = balanced.filter((color) => {
+    const r = Number.parseInt(color.slice(1, 3), 16);
+    const g = Number.parseInt(color.slice(3, 5), 16);
+    const b = Number.parseInt(color.slice(5, 7), 16);
+    return Math.max(r, g, b) < 70;
+  }).length;
+
+  assert.ok(darkCount <= 2);
+  assert.ok(balanced.includes('#D94A4A'));
+  assert.ok(balanced.includes('#4AD96A'));
+  assert.ok(balanced.includes('#4A6AD9'));
 });

@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { convertImageSourceToTemplate } from '../../features/perler/imageTemplateUtils';
-import type { PerlerTemplate, PerlerThemeStyle } from '../../features/perler/perlerTypes';
+import type { PerlerTemplate, PerlerThemeStyle, PerlerVividness } from '../../features/perler/perlerTypes';
 import { IMPORT_SIZE_OPTIONS } from '../../features/perler/perlerCanvasUtils.ts';
 
 interface PerlerImportWizardProps {
@@ -10,7 +10,13 @@ interface PerlerImportWizardProps {
 }
 
 // 读取图片并先缩放成模板尺寸，再输出可照着拼的模板。
-async function loadImageToTemplate(file: File, size: number, paletteSize: number, style: PerlerThemeStyle) {
+async function loadImageToTemplate(
+  file: File,
+  size: number,
+  paletteSize: number,
+  style: PerlerThemeStyle,
+  vividness: PerlerVividness,
+) {
   const imageUrl = URL.createObjectURL(file);
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -39,6 +45,7 @@ async function loadImageToTemplate(file: File, size: number, paletteSize: number
       },
       paletteSize,
       style,
+      vividness,
     );
   } finally {
     URL.revokeObjectURL(imageUrl);
@@ -50,6 +57,7 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
   const [size, setSize] = useState(80);
   const [paletteSize, setPaletteSize] = useState(24);
   const [style, setStyle] = useState<PerlerThemeStyle>('standard');
+  const [vividness, setVividness] = useState<PerlerVividness>('vivid');
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -88,7 +96,15 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
               <option value="retro">复古游戏机风</option>
             </select>
           </label>
-          <div className="perler-import-note">人物建议从 80×80 起步。300×300 会生成完整图纸，但更适合用缩放查看。</div>
+          <label>
+            鲜艳度
+            <select value={vividness} onChange={(event) => setVividness(event.target.value as PerlerVividness)}>
+              <option value="standard">标准</option>
+              <option value="vivid">鲜艳</option>
+              <option value="ultra">很鲜艳</option>
+            </select>
+          </label>
+          <div className="perler-import-note">人物建议从 80×80 起步。300×300 会生成完整图纸，但更适合用缩放查看；角色图建议用“鲜艳”或“很鲜艳”。</div>
         </div>
         <div className="perler-side-actions">
           <button className="perler-inline-btn" onClick={onClose}>取消</button>
@@ -99,7 +115,7 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
               if (!file) return;
               setIsLoading(true);
               try {
-                const template = await loadImageToTemplate(file, size, paletteSize, style);
+                const template = await loadImageToTemplate(file, size, paletteSize, style, vividness);
                 onImportTemplate(template);
               } finally {
                 setIsLoading(false);

@@ -2,6 +2,7 @@ export type PerlerCategory = 'all' | 'basics' | 'office' | 'games' | 'abstract' 
 export type PerlerDifficulty = 'all' | 'easy' | 'medium' | 'hard';
 export type PerlerSizeFilter = 'all' | '16' | '24' | '32' | '48';
 export type PerlerThemeStyle = 'standard' | 'contrast' | 'soft' | 'retro';
+export type PerlerVividness = 'standard' | 'vivid' | 'ultra';
 
 export interface PerlerPaletteEntry {
   index: number;
