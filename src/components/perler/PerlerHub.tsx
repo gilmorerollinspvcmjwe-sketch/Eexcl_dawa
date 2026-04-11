@@ -3,6 +3,7 @@ import { perlerTemplates, filterPerlerTemplates } from '../../features/perler/pe
 import type { PerlerFilterState, PerlerTemplate, PerlerWorkspace as PerlerWorkspaceState } from '../../features/perler/perlerTypes';
 import { applyColorToCell, createPerlerWorkspace, eraseColorFromCell, getWorkspaceMismatchCount, getWorkspacePaletteUsage } from '../../features/perler/perlerWorkspaceState';
 import { buildPixelPatternFromPixels } from '../../features/perler/pixelPatternParser.ts';
+import { getDefaultCanvasZoom } from '../../features/perler/perlerCanvasUtils.ts';
 import type { PerlerProgressSummary } from '../../features/hub/hubData';
 import { PerlerTemplateTable } from './PerlerTemplateTable';
 import { PerlerPalettePanel } from './PerlerPalettePanel';
@@ -97,6 +98,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(persisted.workspace?.id || perlerTemplates[0]?.id || null);
   const [selectedColor, setSelectedColor] = useState<string>(persisted.currentColor || '#223A6A');
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
+  const [canvasZoom, setCanvasZoom] = useState<number>(persisted.workspace ? getDefaultCanvasZoom(persisted.workspace.width) : 1);
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
   const [filters, setFilters] = useState<PerlerFilterState>({
@@ -163,6 +165,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
     setSelectedTemplateId(template.id);
     setActiveCell(null);
     setShowFinalize(false);
+    setCanvasZoom(getDefaultCanvasZoom(template.width));
   };
 
   return (
@@ -244,6 +247,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
               workspace={workspace}
               selectedColor={effectiveSelectedColor}
               activeCell={activeCell}
+              zoom={canvasZoom}
               onPaint={(row, col) => {
                 commitWorkspace(workspace ? applyColorToCell(workspace, row, col, effectiveSelectedColor) : workspace);
                 setActiveCell({ row, col });
@@ -253,6 +257,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
                 setActiveCell({ row, col });
               }}
               onSelectCell={setActiveCell}
+              onZoomChange={setCanvasZoom}
             />
           ) : (
             <PerlerTemplateTable

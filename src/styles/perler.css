@@ -293,9 +293,14 @@
   gap: 14px;
 }
 
+.canvas-workspace {
+  align-items: start;
+}
+
 .perler-board-block {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .perler-board-title {
@@ -307,6 +312,21 @@
 .perler-grid.reference,
 .perler-grid.play-grid {
   background: #e5e7eb;
+}
+
+.perler-canvas-shell {
+  overflow: auto;
+  max-width: 100%;
+  max-height: 70vh;
+  background: #e5e7eb;
+  padding: 10px;
+}
+
+.perler-canvas-board,
+.perler-final-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .perler-cell.reference-cell {
@@ -333,19 +353,37 @@
 
 .perler-final-preview {
   padding: 0 12px 12px;
-}
-
-.perler-grid.reference.mini {
-  gap: 1px;
-  padding: 8px;
-}
-
-.perler-grid.reference.mini .perler-cell {
-  min-width: 12px;
+  display: flex;
+  justify-content: center;
+  overflow: auto;
 }
 
 @media (max-width: 1180px) {
   .guided-workspace {
     grid-template-columns: 1fr;
   }
+}
+
+.perler-import-modal {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.perler-workspace-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.perler-workspace-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.perler-canvas-shell {
+  border: 1px solid #d4d4d4;
 }

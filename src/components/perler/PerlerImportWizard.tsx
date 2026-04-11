@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { convertImageSourceToTemplate } from '../../features/perler/imageTemplateUtils';
 import type { PerlerTemplate, PerlerThemeStyle } from '../../features/perler/perlerTypes';
+import { IMPORT_SIZE_OPTIONS } from '../../features/perler/perlerCanvasUtils.ts';
 
 interface PerlerImportWizardProps {
   isOpen: boolean;
@@ -46,8 +47,8 @@ async function loadImageToTemplate(file: File, size: number, paletteSize: number
 
 export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, onClose, onImportTemplate }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [size, setSize] = useState(32);
-  const [paletteSize, setPaletteSize] = useState(16);
+  const [size, setSize] = useState(80);
+  const [paletteSize, setPaletteSize] = useState(24);
   const [style, setStyle] = useState<PerlerThemeStyle>('standard');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -55,7 +56,7 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
 
   return (
     <div className="perler-modal-backdrop">
-      <div className="perler-modal">
+      <div className="perler-modal perler-import-modal">
         <div className="perler-panel-title">导入图片转模板</div>
         <div className="perler-import-form">
           <label>
@@ -65,7 +66,7 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
           <label>
             模板尺寸
             <select value={size} onChange={(event) => setSize(Number(event.target.value))}>
-              {[16, 24, 32, 48].map((value) => (
+              {IMPORT_SIZE_OPTIONS.map((value) => (
                 <option key={value} value={value}>{value}×{value}</option>
               ))}
             </select>
@@ -73,7 +74,7 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
           <label>
             色数
             <select value={paletteSize} onChange={(event) => setPaletteSize(Number(event.target.value))}>
-              {[8, 16, 24, 32].map((value) => (
+              {[8, 16, 24, 32, 48, 64].map((value) => (
                 <option key={value} value={value}>{value} 色</option>
               ))}
             </select>
@@ -87,7 +88,7 @@ export const PerlerImportWizard: React.FC<PerlerImportWizardProps> = ({ isOpen, 
               <option value="retro">复古游戏机风</option>
             </select>
           </label>
-          <div className="perler-import-note">生成结果会先变成模板，再让玩家对照模板逐格完成。</div>
+          <div className="perler-import-note">人物建议从 80×80 起步。300×300 会生成完整图纸，但更适合用缩放查看。</div>
         </div>
         <div className="perler-side-actions">
           <button className="perler-inline-btn" onClick={onClose}>取消</button>

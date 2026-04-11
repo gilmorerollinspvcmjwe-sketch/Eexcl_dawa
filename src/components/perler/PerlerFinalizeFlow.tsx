@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 
 interface PerlerFinalizeFlowProps {
   isOpen: boolean;
@@ -9,6 +9,14 @@ interface PerlerFinalizeFlowProps {
   onClose: () => void;
 }
 
+function getPreviewCellSize(width: number): number {
+  if (width <= 32) return 10;
+  if (width <= 64) return 6;
+  if (width <= 120) return 4;
+  if (width <= 180) return 3;
+  return 2;
+}
+
 export const PerlerFinalizeFlow: React.FC<PerlerFinalizeFlowProps> = ({
   isOpen,
   title,
@@ -17,6 +25,28 @@ export const PerlerFinalizeFlow: React.FC<PerlerFinalizeFlowProps> = ({
   onBackToLibrary,
   onClose,
 }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !canvasRef.current || pixels.length === 0) return;
+    const cellSize = getPreviewCellSize(width);
+    const height = Math.max(1, Math.ceil(pixels.length / width));
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = width * cellSize;
+    canvas.height = height * cellSize;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    pixels.forEach((color, index) => {
+      const row = Math.floor(index / width);
+      const col = index % width;
+      ctx.fillStyle = color;
+      ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+    });
+  }, [isOpen, pixels, width]);
+
   if (!isOpen) return null;
 
   return (
@@ -28,13 +58,7 @@ export const PerlerFinalizeFlow: React.FC<PerlerFinalizeFlowProps> = ({
           <p>作品已完成并收录到图鉴，下方就是最终成品样式。</p>
         </div>
         <div className="perler-final-preview">
-          <div className="perler-grid reference mini" style={{ gridTemplateColumns: `repeat(${width}, minmax(12px, 1fr))` }}>
-            {pixels.map((color, index) => (
-              <div key={`final-${index}`} className="perler-cell reference-cell" style={{ background: color }}>
-                <span className="perler-cell-bead" />
-              </div>
-            ))}
-          </div>
+          <canvas ref={canvasRef} className="perler-final-canvas" />
         </div>
         <div className="perler-side-actions">
           <button className="perler-inline-btn" onClick={onClose}>继续查看</button>

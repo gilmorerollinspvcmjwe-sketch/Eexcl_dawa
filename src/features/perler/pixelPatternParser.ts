@@ -1,3 +1,4 @@
+﻿import Pixelizer from 'image-pixelizer';
 import type { ImportedPerlerSource, PerlerThemeStyle, PixelPattern } from './perlerTypes';
 
 const STYLE_FACTORS: Record<PerlerThemeStyle, number> = {
@@ -5,6 +6,13 @@ const STYLE_FACTORS: Record<PerlerThemeStyle, number> = {
   contrast: 1.25,
   soft: 0.85,
   retro: 1.1,
+};
+
+const STYLE_OPTIONS: Record<PerlerThemeStyle, { colorDistRatio: number; clusterThreshold: number; maxIteration: number }> = {
+  standard: { colorDistRatio: 0.62, clusterThreshold: 0.01, maxIteration: 10 },
+  contrast: { colorDistRatio: 0.78, clusterThreshold: 0.008, maxIteration: 12 },
+  soft: { colorDistRatio: 0.52, clusterThreshold: 0.012, maxIteration: 8 },
+  retro: { colorDistRatio: 0.68, clusterThreshold: 0.01, maxIteration: 10 },
 };
 
 // 限制颜色范围，避免样式增强后越界。
@@ -80,7 +88,7 @@ export function materializePatternPixels(pattern: PixelPattern): string[] {
   return pattern.cells.map((paletteIndex) => pattern.palette[paletteIndex]?.color || '#000000');
 }
 
-// 从导入图片中抽样出有限颜色。
+// 从图片里抽样出有限颜色。
 export function reduceImagePalette(
   pixels: Uint8ClampedArray,
   paletteSize: number,
@@ -120,28 +128,69 @@ function pickNearestPaletteColor(color: { r: number; g: number; b: number }, pal
   return best;
 }
 
+// 使用开源 pixelizer 先做像素化，再把结果整理成拼豆图纸。
+function pixelizeImportedBitmap(
+  source: ImportedPerlerSource,
+  paletteSize: number,
+  style: PerlerThemeStyle,
+): string[] {
+  const options = STYLE_OPTIONS[style];
+  const inputBitmap = new Pixelizer.Bitmap(source.width, source.height, source.pixels);
+  const outputBitmap = new Pixelizer(
+    inputBitmap,
+    new Pixelizer.Options()
+      .setPixelSize(1)
+      .setColorDistRatio(options.colorDistRatio)
+      .setClusterThreshold(options.clusterThreshold)
+      .setMaxIteration(options.maxIteration)
+      .setNumberOfColors(paletteSize),
+  ).pixelize();
+
+  const pixels: string[] = [];
+  for (let index = 0; index < outputBitmap.data.length; index += 4) {
+    const r = clamp(Number(outputBitmap.data[index]) * STYLE_FACTORS[style]);
+    const g = clamp(Number(outputBitmap.data[index + 1]) * STYLE_FACTORS[style]);
+    const b = clamp(Number(outputBitmap.data[index + 2]) * STYLE_FACTORS[style]);
+    pixels.push(toHex(r, g, b));
+  }
+  return pixels;
+}
+
 // 把导入图片先转成固定图纸，再供玩家照图拼。
 export function convertImageSourceToPattern(
   source: ImportedPerlerSource,
   paletteSize: number,
   style: PerlerThemeStyle,
 ): PixelPattern {
-  const palette = reduceImagePalette(source.pixels, paletteSize, style);
-  const pixels = Array.from({ length: source.width * source.height }, (_, index) => {
+  const directPixels = Array.from({ length: source.width * source.height }, (_, index) => {
     const offset = index * 4;
-    const color = {
-      r: clamp(source.pixels[offset] * STYLE_FACTORS[style]),
-      g: clamp(source.pixels[offset + 1] * STYLE_FACTORS[style]),
-      b: clamp(source.pixels[offset + 2] * STYLE_FACTORS[style]),
-    };
-    return pickNearestPaletteColor(color, palette);
+    return toHex(
+      clamp(source.pixels[offset] * STYLE_FACTORS[style]),
+      clamp(source.pixels[offset + 1] * STYLE_FACTORS[style]),
+      clamp(source.pixels[offset + 2] * STYLE_FACTORS[style]),
+    );
   });
+  const directUniqueCount = new Set(directPixels).size;
+
+  // 对于本身颜色数不多的小图，直接保留原始像素布局，避免过度聚类把图案压坏。
+  if (directUniqueCount <= paletteSize && source.width * source.height <= 4096) {
+    return buildPixelPatternFromPixels({
+      title: source.title,
+      width: source.width,
+      height: source.height,
+      pixels: directPixels,
+    });
+  }
+
+  const pixelized = pixelizeImportedBitmap(source, paletteSize, style);
+  const palette = reduceImagePalette(Uint8ClampedArray.from(source.pixels), paletteSize, style);
+  const normalizedPixels = pixelized.map((color) => pickNearestPaletteColor(hexToRgb(color), palette));
 
   return buildPixelPatternFromPixels({
     title: source.title,
     width: source.width,
     height: source.height,
-    pixels,
+    pixels: normalizedPixels,
   });
 }
 
