@@ -49,7 +49,7 @@ body {
   height: 100vh;
 }
 
-/* ==================== Excel 标题�?==================== */
+/* ==================== Excel 标题栏 ==================== */
 .excel-titlebar {
   background: linear-gradient(180deg, #107c41 0%, #0d6a38 100%);
   height: 30px;
@@ -114,7 +114,7 @@ body {
   background: #e81123;
 }
 
-/* ==================== Excel Ribbon 菜单�?==================== */
+/* ==================== Excel Ribbon 菜单栏 ==================== */
 .excel-menubar {
   background: var(--excel-header-bg);
   height: 27px;
@@ -143,7 +143,7 @@ body {
   color: var(--excel-green);
 }
 
-/* ==================== Excel Ribbon 工具�?==================== */
+/* ==================== Excel Ribbon 工具栏 ==================== */
 .excel-ribbon {
   background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
   border-bottom: 1px solid var(--excel-border);
@@ -246,7 +246,7 @@ body {
   font-size: var(--excel-font-size-sm);
 }
 
-/* ==================== Excel 公式�?==================== */
+/* ==================== Excel 公式栏 ==================== */
 .excel-formula-bar {
   display: flex;
   align-items: center;
@@ -417,7 +417,7 @@ body {
   color: var(--excel-green);
 }
 
-/* 单元�?*/
+/* 单元格 */
 .excel-cell {
   min-width: var(--excel-cell-width);
   width: var(--excel-cell-width);
@@ -570,7 +570,7 @@ body {
   text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 
-/* 爆头线目�?*/
+/* 爆头线目标 */
 .target-headshot-line {
   border: 2px solid #ff0000;
   box-shadow: 0 0 8px rgba(255,0,0,0.5), inset 0 0 4px rgba(255,0,0,0.3);
@@ -818,7 +818,7 @@ body {
   animation: missFlash 0.2s ease-in-out;
 }
 
-/* ==================== Excel 工作表标�?==================== */
+/* ==================== Excel 工作表标签 ==================== */
 .excel-sheet-bar {
   display: flex;
   background: #f3f3f3;
@@ -1020,7 +1020,7 @@ body {
   50% { opacity: 0.7; }
 }
 
-/* ==================== 设置面板（Excel Sheet 风格�?==================== */
+/* ==================== 设置面板（Excel Sheet 风格） ==================== */
 .settings-sheet {
   flex: 1;
   overflow: auto;
@@ -1109,7 +1109,7 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-/* ==================== 统计面板（Excel Sheet 风格�?==================== */
+/* ==================== 统计面板（Excel Sheet 风格） ==================== */
 .stats-sheet {
   flex: 1;
   overflow: auto;
@@ -1117,7 +1117,7 @@ body {
   padding: 20px;
 }
 
-/* 修复 StatsPanel �?SettingsPanel 显示问题 */
+/* 修复 StatsPanel 与 SettingsPanel 显示问题 */
 .excel-grid-container .excel-grid-wrapper {
   min-height: 100%;
   overflow-y: auto;
@@ -1239,7 +1239,7 @@ body {
   color: #333;
 }
 
-/* ==================== 隐藏状�?==================== */
+/* ==================== 隐藏状态 ==================== */
 .hidden-overlay {
   position: fixed;
   inset: 0;

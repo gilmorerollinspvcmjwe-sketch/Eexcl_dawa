@@ -20,6 +20,8 @@ test('buildHubSnapshot returns five game rows with perler included', () => {
 
   assert.equal(snapshot.games.length, 5);
   assert.ok(snapshot.games.some((item) => item.id === 'perler'));
+  assert.ok(snapshot.games.some((item) => item.id === 'snake'));
+  assert.ok(snapshot.games.some((item) => item.id === 'tetris'));
 });
 
 test('buildHubSnapshot keeps hub labels compact for the first screen', () => {

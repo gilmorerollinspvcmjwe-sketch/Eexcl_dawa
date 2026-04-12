@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { GameSettings, GamePreset } from '../types';
+import type { GamePreset, GameSettings } from '../types';
 import { GAME_PRESETS } from '../types';
+
+const SETTINGS_STORAGE_KEY = 'excel-aim-settings-v3';
+const LEGACY_SETTINGS_STORAGE_KEY = 'excel-aim-settings-v2';
 
 const DEFAULT_SETTINGS: GameSettings = {
   sensitivity: 1.0,
@@ -20,22 +23,16 @@ const DEFAULT_SETTINGS: GameSettings = {
   headshotLineRow: 10,
   gamePreset: 'custom',
   trainingDuration: 60,
-  // P2: 移动速度配置
   enemyMoveSpeed: 1.0,
   enemyMovePattern: 'linear',
-  // P2: 敌人渲染模式
   enemyRenderMode: 'text',
-  // 无色模式
   colorlessMode: false,
-  // P1: 关卡进度
-  unlockedLevels: [1], // 初始解锁第1关
+  unlockedLevels: [1],
   credits: 0,
-  // 视觉系统设置
   colorHarmonyMode: 'none',
   spawnAnimation: 'popIn',
   enemyFontSize: 14,
   enemyFontWeight: 'bold',
-  // 单元格设置 (Sheet2 外观)
   cellSettings: {
     cellWidth: 64,
     cellHeight: 20,
@@ -45,6 +42,35 @@ const DEFAULT_SETTINGS: GameSettings = {
     animationSpeed: 'normal',
     colorShift: false,
   },
+  global: {
+    reducedMotion: false,
+    showFirstTimeHints: true,
+    highContrast: false,
+  },
+  snake: {
+    defaultMode: 'classic',
+    defaultDifficulty: 'normal',
+    showHints: true,
+    showDirectionIndicator: true,
+    enableScreenShake: true,
+    highContrastBoard: false,
+  },
+  tetris: {
+    defaultMode: 'marathon',
+    showGhostPiece: true,
+    showNextQueue: true,
+    showHoldPanel: true,
+    enableScreenShake: true,
+    highContrastBoard: false,
+  },
+  perler: {
+    showReferenceImage: true,
+    focusModeDefault: false,
+  },
+  pvz: {
+    showLaneHints: true,
+    autoCollectSun: false,
+  },
 };
 
 interface SettingsContextType {
@@ -53,11 +79,9 @@ interface SettingsContextType {
   updateSettings: (newSettings: Partial<GameSettings>) => void;
   applyPreset: (preset: GamePreset) => void;
   resetSettings: () => void;
-  // P1: 关卡进度管理
   unlockLevel: (level: number) => void;
   addCredits: (amount: number) => void;
   isLevelUnlocked: (level: number) => boolean;
-  // 临时设置状态（用于设置面板）
   tempSettings: GameSettings;
   updateTempSetting: <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => void;
   updateTempSettings: (newSettings: Partial<GameSettings>) => void;
@@ -72,43 +96,51 @@ interface SettingsProviderProps {
   children: ReactNode;
 }
 
-export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
-  const [settings, setSettings] = useState<GameSettings>(() => {
-    const saved = localStorage.getItem('excel-aim-settings-v2');
-    if (saved) {
-      try {
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
-      } catch {
-        return DEFAULT_SETTINGS;
-      }
+function loadSettings(): GameSettings {
+  const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+  if (saved) {
+    try {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+    } catch {
+      return DEFAULT_SETTINGS;
     }
-    return DEFAULT_SETTINGS;
-  });
+  }
 
-  // 临时设置状态（用于设置面板编辑）
+  const legacySaved = localStorage.getItem(LEGACY_SETTINGS_STORAGE_KEY);
+  if (legacySaved) {
+    try {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(legacySaved) };
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
+  }
+
+  return DEFAULT_SETTINGS;
+}
+
+export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
+  const [settings, setSettings] = useState<GameSettings>(() => loadSettings());
   const [tempSettings, setTempSettings] = useState<GameSettings>(settings);
 
-  // 当 settings 变化时，同步更新 tempSettings
   useEffect(() => {
     setTempSettings(settings);
   }, [settings]);
 
-  // 持久化设置到 localStorage
   useEffect(() => {
-    localStorage.setItem('excel-aim-settings-v2', JSON.stringify(settings));
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
   const updateSetting = useCallback(<K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const updateSettings = useCallback((newSettings: Partial<GameSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    setSettings((prev) => ({ ...prev, ...newSettings }));
   }, []);
 
   const applyPreset = useCallback((preset: GamePreset) => {
     const config = GAME_PRESETS[preset];
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       gamePreset: preset,
       sensitivityX: config.sensitivityX,
@@ -117,13 +149,13 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   }, []);
 
   const resetSettings = useCallback(() => {
-    localStorage.removeItem('excel-aim-settings-v2');
+    localStorage.removeItem(SETTINGS_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_SETTINGS_STORAGE_KEY);
     setSettings(DEFAULT_SETTINGS);
   }, []);
 
-  // P1: 解锁关卡
   const unlockLevel = useCallback((level: number) => {
-    setSettings(prev => {
+    setSettings((prev) => {
       const currentLevels = prev.unlockedLevels ?? [1];
       if (currentLevels.includes(level)) return prev;
       return {
@@ -133,26 +165,23 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     });
   }, []);
 
-  // P1: 添加积分
   const addCredits = useCallback((amount: number) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       credits: (prev.credits ?? 0) + amount,
     }));
   }, []);
 
-  // P1: 检查关卡是否解锁
   const isLevelUnlocked = useCallback((level: number) => {
     return (settings.unlockedLevels ?? [1]).includes(level);
   }, [settings.unlockedLevels]);
 
-  // 临时设置操作
   const updateTempSetting = useCallback(<K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
-    setTempSettings(prev => ({ ...prev, [key]: value }));
+    setTempSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const updateTempSettings = useCallback((newSettings: Partial<GameSettings>) => {
-    setTempSettings(prev => ({ ...prev, ...newSettings }));
+    setTempSettings((prev) => ({ ...prev, ...newSettings }));
   }, []);
 
   const saveSettings = useCallback(() => {
@@ -168,22 +197,24 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   }, []);
 
   return (
-    <SettingsContext.Provider value={{ 
-      settings, 
-      updateSetting, 
-      updateSettings, 
-      applyPreset, 
-      resetSettings,
-      unlockLevel,
-      addCredits,
-      isLevelUnlocked,
-      tempSettings,
-      updateTempSetting,
-      updateTempSettings,
-      saveSettings,
-      cancelSettings,
-      resetTempSettings,
-    }}>
+    <SettingsContext.Provider
+      value={{
+        settings,
+        updateSetting,
+        updateSettings,
+        applyPreset,
+        resetSettings,
+        unlockLevel,
+        addCredits,
+        isLevelUnlocked,
+        tempSettings,
+        updateTempSetting,
+        updateTempSettings,
+        saveSettings,
+        cancelSettings,
+        resetTempSettings,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );

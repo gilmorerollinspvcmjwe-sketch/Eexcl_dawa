@@ -1,25 +1,34 @@
 ﻿import { PVZ_PLANT_MAP } from './pvzPlantRegistry.ts';
 import { PVZ_ZOMBIE_MAP } from './pvzZombieRegistry.ts';
-import type { PvZBoardState, PvZPlantId, PvZPlantInstance, PvZProjectile, PvZProjectileKind, PvZSpawnEvent, PvZZombieId } from './pvzTypes.ts';
+import { DEFAULT_PVZ_CHAPTER_ID, getPvZChapterById } from './pvzChapters.ts';
+import { getDefaultPvZScenarioIdForChapter, getPvZScenarioById } from './pvzScenarioCatalog.ts';
+import type {
+  PvZBoardState,
+  PvZChapterId,
+  PvZLevelDefinition,
+  PvZMode,
+  PvZPlantId,
+  PvZPlantInstance,
+  PvZProjectile,
+  PvZProjectileKind,
+  PvZScenarioId,
+  PvZSpawnEvent,
+  PvZZombieId,
+} from './pvzTypes.ts';
 
 const ROWS = 5;
 const COLS = 9;
 const CARD_LIMIT = 6;
-const DEFAULT_CARDS: PvZPlantId[] = ['sunflower', 'peashooter', 'wallnut', 'potatoMine', 'snowPea', 'repeater'];
 
-function createSpawnQueue(): PvZSpawnEvent[] {
-  return [
-    { id: 'wave-1', zombieId: 'normal', row: 0, spawnAtMs: 2000 },
-    { id: 'wave-2', zombieId: 'normal', row: 2, spawnAtMs: 5000 },
-    { id: 'wave-3', zombieId: 'conehead', row: 4, spawnAtMs: 9000 },
-    { id: 'wave-4', zombieId: 'flag', row: 1, spawnAtMs: 14000 },
-    { id: 'wave-5', zombieId: 'newspaper', row: 3, spawnAtMs: 17000 },
-    { id: 'wave-6', zombieId: 'buckethead', row: 2, spawnAtMs: 22000 },
-    { id: 'wave-7', zombieId: 'pole', row: 0, spawnAtMs: 26000 },
-    { id: 'wave-8', zombieId: 'flag', row: 4, spawnAtMs: 30000 },
-    { id: 'wave-9', zombieId: 'screenDoor', row: 1, spawnAtMs: 34000 },
-    { id: 'wave-10', zombieId: 'football', row: 2, spawnAtMs: 38000 },
-  ];
+type CreatePvZBoardOptions = {
+  chapterId?: PvZChapterId;
+  scenarioId?: PvZScenarioId;
+  levelId?: string;
+  mode?: PvZMode;
+};
+
+function cloneSpawnQueue(queue: PvZSpawnEvent[]): PvZSpawnEvent[] {
+  return queue.map((event) => ({ ...event }));
 }
 
 function createPlantInstance(plantId: PvZPlantId, row: number, col: number): PvZPlantInstance {
@@ -42,6 +51,9 @@ function createProjectile(kind: PvZProjectileKind, row: number, x: number, damag
     'double-pea': 0.0018,
     'snow-pea': 0.0013,
     lobbed: 0.001,
+    'fire-pea': 0.0017,
+    shock: 0.0016,
+    spike: 0.001,
   };
 
   return {
@@ -54,39 +66,163 @@ function createProjectile(kind: PvZProjectileKind, row: number, x: number, damag
   };
 }
 
-export function createPvZBoardState(): PvZBoardState {
+function resolveScenarioId(options?: CreatePvZBoardOptions): PvZScenarioId {
+  if (options?.scenarioId) return options.scenarioId;
+  if (options?.levelId) return options.levelId;
+  if (options?.chapterId) return getDefaultPvZScenarioIdForChapter(options.chapterId);
+  return getDefaultPvZScenarioIdForChapter(DEFAULT_PVZ_CHAPTER_ID);
+}
+
+function readScenarioLevelMeta(
+  scenario: ReturnType<typeof getPvZScenarioById>,
+): Partial<
+  Pick<
+    PvZLevelDefinition,
+    | 'id'
+    | 'levelNumber'
+    | 'title'
+    | 'intensity'
+    | 'availablePlants'
+    | 'recommendedCards'
+    | 'unlockPlants'
+    | 'unlockZombies'
+  >
+> {
+  return scenario as Partial<
+    Pick<
+      PvZLevelDefinition,
+      | 'id'
+      | 'levelNumber'
+      | 'title'
+      | 'intensity'
+      | 'availablePlants'
+      | 'recommendedCards'
+      | 'unlockPlants'
+      | 'unlockZombies'
+    >
+  >;
+}
+
+function startNextSurvivalSegment(state: PvZBoardState): PvZBoardState {
+  if (state.scenarioSegmentIndex >= state.scenarioSegmentsTotal) return state;
+  return {
+    ...state,
+    spawnQueue: cloneSpawnQueue(state.scenarioSpawnQueueBase),
+    elapsedMs: 0,
+    waveProgress: 0,
+    scenarioSegmentIndex: state.scenarioSegmentIndex + 1,
+    status: 'playing',
+    phase: 'playing',
+  };
+}
+
+export function createPvZBoardState(input: PvZChapterId | CreatePvZBoardOptions = DEFAULT_PVZ_CHAPTER_ID): PvZBoardState {
+  const options: CreatePvZBoardOptions = typeof input === 'string' ? { chapterId: input } : input;
+  const scenario = getPvZScenarioById(resolveScenarioId(options));
+  const chapter = getPvZChapterById(scenario.chapterId);
+  const levelMeta = readScenarioLevelMeta(scenario);
+  const mode = options.mode ?? scenario.mode;
+  const baseQueue = cloneSpawnQueue(scenario.spawnQueue ?? chapter.spawnQueue);
+  const segmentsTotal = scenario.segments ?? 1;
+  const segmentDurationMs = scenario.segmentDurationMs ?? scenario.waveDurationMs ?? chapter.waveDurationMs;
+  const totalDurationMs = scenario.mode === 'survival' ? segmentDurationMs * segmentsTotal : segmentDurationMs;
+  const defaultCards = [...(scenario.defaultCards ?? chapter.defaultCards)];
+  const availablePlants = levelMeta.availablePlants && levelMeta.availablePlants.length > 0
+    ? [...levelMeta.availablePlants]
+    : [...defaultCards];
+  const recommendedCards = levelMeta.recommendedCards && levelMeta.recommendedCards.length > 0
+    ? [...levelMeta.recommendedCards]
+    : [...defaultCards];
   return {
     rows: ROWS,
     cols: COLS,
-    sun: 150,
+    mode,
+    scenarioId: scenario.id,
+    scenarioFamily: scenario.mode === 'adventure' ? 'mainline' : scenario.mode === 'lab' ? 'challenge' : 'survival',
+    levelId: levelMeta.id ?? null,
+    levelNumber: levelMeta.levelNumber ?? null,
+    levelTitle: levelMeta.title ?? scenario.title,
+    chapterId: chapter.id,
+    chapterTitle: scenario.title,
+    chapterSummary: scenario.summary,
+    scenarioRules: [...scenario.rules],
+    scenarioObjective: scenario.objective,
+    scenarioIntensity: levelMeta.intensity ?? 'special',
+    defaultCards,
+    availablePlants,
+    recommendedCards,
+    unlockedPlants: [...(levelMeta.unlockPlants ?? [])],
+    unlockedZombies: [...(levelMeta.unlockZombies ?? [])],
+    latestUnlockPlants: [...(levelMeta.unlockPlants ?? [])],
+    latestUnlockZombies: [...(levelMeta.unlockZombies ?? [])],
+    waveDurationMs: totalDurationMs,
+    sun: scenario.baseSun ?? chapter.baseSun,
     phase: 'setup',
     status: 'playing',
     elapsedMs: 0,
     waveProgress: 0,
     selectedPlantId: null,
-    selectedCards: [...DEFAULT_CARDS],
+    selectedCards: [...defaultCards],
     plants: [],
     zombies: [],
     projectiles: [],
-    spawnQueue: createSpawnQueue(),
+    spawnQueue: cloneSpawnQueue(baseQueue),
+    scenarioSpawnQueueBase: baseQueue,
+    scenarioSegmentsTotal: segmentsTotal,
+    scenarioSegmentIndex: 1,
+    scenarioSunDrainPerSecond: scenario.sunDrainPerSecond ?? 0,
+    scenarioSegmentDurationMs: segmentDurationMs,
     lawnMowers: Array.from({ length: ROWS }, () => true),
     cardCooldownsMs: {},
   };
 }
 
+export function setPvZChapter(state: PvZBoardState, chapterId: PvZChapterId): PvZBoardState {
+  if (state.phase !== 'setup') return state;
+  if (state.chapterId === chapterId) return state;
+  return createPvZBoardState({ chapterId, mode: 'adventure' });
+}
+
+export function setPvZScenario(state: PvZBoardState, scenarioId: PvZScenarioId): PvZBoardState {
+  if (state.phase !== 'setup') return state;
+  if (state.scenarioId === scenarioId) return state;
+  return createPvZBoardState({ scenarioId });
+}
+
 export function selectPvZCard(state: PvZBoardState, plantId: PvZPlantId): PvZBoardState {
   if (state.phase !== 'setup') return state;
-  if (state.selectedCards.includes(plantId)) return state;
+  if (!state.availablePlants.includes(plantId)) return state;
+  if (state.selectedCards.includes(plantId)) {
+    return {
+      ...state,
+      selectedCards: state.selectedCards.filter((currentPlantId) => currentPlantId !== plantId),
+    };
+  }
   if (state.selectedCards.length >= CARD_LIMIT) return state;
   return { ...state, selectedCards: [...state.selectedCards, plantId] };
 }
 
 export function startPvZBattle(state: PvZBoardState): PvZBoardState {
+  const fallbackCards = state.defaultCards.filter((plantId) => state.availablePlants.includes(plantId));
+  const selectedCards = state.selectedCards.filter((plantId) => state.availablePlants.includes(plantId));
   return {
     ...state,
     phase: 'playing',
-    selectedCards: state.selectedCards.length > 0 ? state.selectedCards : [...DEFAULT_CARDS],
+    selectedCards: selectedCards.length > 0 ? selectedCards : [...fallbackCards],
   };
+}
+
+export function resetPvZToSetup(state: PvZBoardState): PvZBoardState {
+  const fresh = createPvZBoardState({ scenarioId: state.scenarioId });
+  const cards = state.selectedCards.filter((plantId) => fresh.availablePlants.includes(plantId));
+  return {
+    ...fresh,
+    selectedCards: cards.length > 0 ? cards : [...fresh.defaultCards],
+  };
+}
+
+export function restartPvZBattle(state: PvZBoardState): PvZBoardState {
+  return startPvZBattle(resetPvZToSetup(state));
 }
 
 export function placePlant(state: PvZBoardState, plantId: PvZPlantId, row: number, col: number): PvZBoardState {
@@ -126,6 +262,11 @@ export function spawnZombieNow(state: PvZBoardState, zombieId: PvZZombieId, row:
       },
     ],
   };
+}
+
+function getSpawnQueueOffsetX(state: PvZBoardState, row: number, queuedInLane: number): number {
+  const existingNearEntry = state.zombies.filter((zombie) => zombie.row === row && zombie.x >= COLS - 1.6).length;
+  return COLS - 0.2 + (existingNearEntry + queuedInLane) * 0.72;
 }
 
 function tickCooldowns(state: PvZBoardState, elapsedMs: number) {
@@ -215,8 +356,12 @@ function spawnQueuedZombies(state: PvZBoardState) {
   const later = state.spawnQueue.filter((item) => item.spawnAtMs > state.elapsedMs);
 
   let nextState = { ...state, spawnQueue: later };
+  const laneQueuedCounts = new Map<number, number>();
   for (const event of ready) {
-    nextState = spawnZombieNow(nextState, event.zombieId, event.row);
+    const queuedInLane = laneQueuedCounts.get(event.row) ?? 0;
+    const spawnX = getSpawnQueueOffsetX(nextState, event.row, queuedInLane);
+    laneQueuedCounts.set(event.row, queuedInLane + 1);
+    nextState = spawnZombieNow(nextState, event.zombieId, event.row, spawnX);
   }
   return nextState;
 }
@@ -242,12 +387,17 @@ function moveZombies(state: PvZBoardState, elapsedMs: number): PvZBoardState {
 
 export function tickPvZBoard(state: PvZBoardState, elapsedMs: number): PvZBoardState {
   if (state.phase !== 'playing' || state.status !== 'playing') return state;
+  const nextElapsedMs = state.elapsedMs + elapsedMs;
+  const segmentDurationMs = Math.max(1_000, state.scenarioSegmentDurationMs);
+  const sunDrainMs = (state.scenarioSunDrainPerSecond / 1000) * elapsedMs;
+  const drainedSun = Math.max(0, state.sun - sunDrainMs);
 
   const elapsedState = {
     ...state,
-    elapsedMs: state.elapsedMs + elapsedMs,
-    waveProgress: Math.min(1, (state.elapsedMs + elapsedMs) / 38000),
+    elapsedMs: nextElapsedMs,
+    waveProgress: Math.min(1, nextElapsedMs / segmentDurationMs),
     cardCooldownsMs: tickCooldowns(state, elapsedMs),
+    sun: drainedSun,
   };
 
   const spawnedState = spawnQueuedZombies(elapsedState);
@@ -268,7 +418,11 @@ export function tickPvZBoard(state: PvZBoardState, elapsedMs: number): PvZBoardS
   }, elapsedMs);
 
   if (movedState.status === 'lost') return movedState;
-  if (movedState.spawnQueue.length === 0 && movedState.zombies.length === 0 && movedState.elapsedMs > 38000) {
+  const waveComplete = movedState.spawnQueue.length === 0 && movedState.zombies.length === 0 && movedState.elapsedMs >= segmentDurationMs;
+  if (waveComplete && movedState.mode === 'survival' && movedState.scenarioSegmentIndex < movedState.scenarioSegmentsTotal) {
+    return startNextSurvivalSegment(movedState);
+  }
+  if (waveComplete) {
     return { ...movedState, status: 'won', phase: 'won' };
   }
 

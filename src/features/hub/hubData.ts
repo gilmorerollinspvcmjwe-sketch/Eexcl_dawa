@@ -1,4 +1,6 @@
-﻿export type ArcadeGameId = 'aim' | 'snake' | 'tetris' | 'perler' | 'pvz';
+import { ARCADE_MODULE_MAP, type ArcadeGameId } from '../workbook/workbookRegistry.ts';
+
+export type { ArcadeGameId } from '../workbook/workbookRegistry.ts';
 
 export interface HubStatsSummary {
   totalGames: number;
@@ -17,7 +19,7 @@ export interface HubBuildInput {
 }
 
 export interface HubQuickResume {
-  kind: 'perler' | 'aim';
+  kind: ArcadeGameId;
   label: string;
   description: string;
 }
@@ -57,12 +59,12 @@ export interface HubSnapshot {
 function buildPerlerRow(progress: PerlerProgressSummary | null): HubGameRow {
   return {
     id: 'perler',
-    title: '拼豆',
+    title: ARCADE_MODULE_MAP.perler.title,
     status: progress ? `${progress.completion}%` : '就绪',
     bestRecord: progress ? progress.title : '模板库',
     todayCount: progress ? 1 : 0,
     actionLabel: progress ? '继续' : '启动',
-    accent: '#c084fc',
+    accent: ARCADE_MODULE_MAP.perler.accent,
   };
 }
 
@@ -87,40 +89,40 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
     games: [
       {
         id: 'aim',
-        title: '练枪',
+        title: ARCADE_MODULE_MAP.aim.title,
         status: '热手',
         bestRecord: `${stats.totalScore || 0}`,
         todayCount: stats.totalGames || 0,
         actionLabel: '启动',
-        accent: '#16a34a',
+        accent: ARCADE_MODULE_MAP.aim.accent,
       },
       {
         id: 'snake',
-        title: '贪吃蛇',
-        status: '筹备',
+        title: ARCADE_MODULE_MAP.snake.title,
+        status: '就绪',
         bestRecord: '—',
         todayCount: 0,
-        actionLabel: '查看',
-        accent: '#0ea5e9',
+        actionLabel: '启动',
+        accent: ARCADE_MODULE_MAP.snake.accent,
       },
       {
         id: 'tetris',
-        title: '俄罗斯方块',
-        status: '筹备',
+        title: ARCADE_MODULE_MAP.tetris.title,
+        status: '就绪',
         bestRecord: '—',
         todayCount: 0,
-        actionLabel: '查看',
-        accent: '#475569',
+        actionLabel: '启动',
+        accent: ARCADE_MODULE_MAP.tetris.accent,
       },
       buildPerlerRow(perlerProgress),
       {
         id: 'pvz',
-        title: '植物大战僵尸',
+        title: ARCADE_MODULE_MAP.pvz.title,
         status: '防线',
         bestRecord: '首章',
         todayCount: 0,
         actionLabel: '启动',
-        accent: '#f59e0b',
+        accent: ARCADE_MODULE_MAP.pvz.accent,
       },
     ],
     tasks: [
@@ -135,4 +137,3 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
     ],
   };
 }
-

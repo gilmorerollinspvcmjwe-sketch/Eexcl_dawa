@@ -10,7 +10,7 @@ interface TutorialOverlayProps {
 
 const TUTORIAL_STEPS = [
   {
-    title: '👋 欢迎来到 Excel Aim Trainer',
+    title: '👋 欢迎来到 Excel 练枪中心',
     content: '这是一个伪装成Excel表格的练枪游戏。让我们花1分钟了解基本操作。',
     highlight: null,
   },

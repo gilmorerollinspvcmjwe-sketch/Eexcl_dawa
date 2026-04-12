@@ -1,9 +1,11 @@
 import React from 'react';
+import type { WorkbookStatusSummary } from '../types';
 
 interface StatusBarProps {
   selectedCell: { row: number; col: number } | null;
   isHidden: boolean;
   COLS: number;
+  summary?: WorkbookStatusSummary;
   gameState?: {
     isPlaying: boolean;
     score: number;
@@ -12,8 +14,31 @@ interface StatusBarProps {
   };
 }
 
-export const StatusBar: React.FC<StatusBarProps> = ({ selectedCell, isHidden, COLS, gameState }) => {
+function mapLegacyGameStateToSummary(gameState?: StatusBarProps['gameState']): WorkbookStatusSummary | undefined {
+  if (!gameState) return undefined;
+
+  return {
+    isPlaying: gameState.isPlaying,
+    primaryText: gameState.isPlaying ? '游戏中' : '就绪',
+    score: gameState.score,
+    secondaryMetric: gameState.combo > 1 ? `${gameState.combo}x` : undefined,
+    mode: gameState.mode,
+    alertTone: gameState.combo > 1 ? 'success' : 'neutral',
+  };
+}
+
+export const StatusBar: React.FC<StatusBarProps> = ({ selectedCell, isHidden, COLS, summary, gameState }) => {
   if (isHidden) return null;
+
+  const effectiveSummary = summary ?? mapLegacyGameStateToSummary(gameState);
+  const summaryColor =
+    effectiveSummary?.alertTone === 'success'
+      ? '#16a34a'
+      : effectiveSummary?.alertTone === 'warning'
+        ? '#d97706'
+        : effectiveSummary?.alertTone === 'danger'
+          ? '#dc2626'
+          : undefined;
 
   const colLetters = Array.from({ length: COLS }, (_, i) => {
     let result = '';
@@ -33,8 +58,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({ selectedCell, isHidden, CO
   return (
     <div className="excel-statusbar">
       <div className="excel-statusbar-left">
-        <span className="excel-statusbar-item">
-          {gameState?.isPlaying ? '🎯 游戏中' : '就绪'}
+        <span className="excel-statusbar-item" style={summaryColor ? { color: summaryColor, fontWeight: 600 } : undefined}>
+          {effectiveSummary?.primaryText || '就绪'}
         </span>
         {selectedCell && (
           <>
@@ -44,28 +69,43 @@ export const StatusBar: React.FC<StatusBarProps> = ({ selectedCell, isHidden, CO
             </span>
           </>
         )}
-        {gameState?.isPlaying && (
+        {effectiveSummary?.score !== undefined && (
           <>
             <div className="excel-statusbar-divider" />
             <span className="excel-statusbar-item" style={{ fontWeight: 'bold' }}>
-              得分: {gameState.score.toLocaleString()}
+              得分: {effectiveSummary.score.toLocaleString()}
             </span>
-            {gameState.combo > 1 && (
-              <span className="excel-statusbar-item" style={{ color: '#fcd34d' }}>
-                {gameState.combo}x
-              </span>
-            )}
+          </>
+        )}
+        {effectiveSummary?.secondaryMetric && (
+          <>
+            <div className="excel-statusbar-divider" />
+            <span className="excel-statusbar-item">{effectiveSummary.secondaryMetric}</span>
+          </>
+        )}
+        {effectiveSummary?.tertiaryMetric && (
+          <>
+            <div className="excel-statusbar-divider" />
+            <span className="excel-statusbar-item">{effectiveSummary.tertiaryMetric}</span>
+          </>
+        )}
+        {effectiveSummary?.mode && (
+          <>
+            <div className="excel-statusbar-divider" />
+            <span className="excel-statusbar-item" style={{ textTransform: 'capitalize' }}>
+              {effectiveSummary.mode}
+            </span>
           </>
         )}
       </div>
       <div className="excel-statusbar-right">
         <button className="excel-statusbar-btn">100%</button>
         <div className="excel-statusbar-divider" />
-        <button className="excel-statusbar-btn" title="普通视图">─</button>
-        <button className="excel-statusbar-btn" title="分页预览">▫</button>
+        <button className="excel-statusbar-btn" title="普通视图">◀</button>
+        <button className="excel-statusbar-btn" title="分页预览">▯</button>
         <button className="excel-statusbar-btn" title="页面布局">▣</button>
         <div className="excel-statusbar-divider" />
-        <span style={{ fontSize: 10 }}>Aim Trainer v2.0</span>
+        <span style={{ fontSize: 10 }}>Excel 工位娱乐版 v3.0</span>
       </div>
     </div>
   );

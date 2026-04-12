@@ -8,7 +8,7 @@ interface FirstTimeGuideProps {
 
 const GUIDE_STEPS = [
   {
-    title: '欢迎来到 Excel Aim Trainer!',
+    title: '欢迎来到 Excel 练枪中心！',
     content: '一个伪装成 Excel 表格的瞄准训练工具，让你在办公室也能偷偷练枪！',
     icon: '🎮',
   },

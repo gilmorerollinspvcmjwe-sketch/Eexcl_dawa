@@ -1,10 +1,11 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { buildHubSnapshot, type ArcadeGameId, type PerlerProgressSummary } from '../features/hub/hubData';
 import type { AppSheetId } from '../features/sheets/sheetRegistry';
+import { ARCADE_MODULE_MAP } from '../features/workbook/workbookRegistry';
 import { HubQuickResumeRow } from './hub/HubQuickResumeRow';
 import { HubGameTable } from './hub/HubGameTable';
-import { HubTasksPanel } from './hub/HubTasksPanel';
 import { HubProgressPanel } from './hub/HubProgressPanel';
+import { HubTasksPanel } from './hub/HubTasksPanel';
 import '../styles/gamehub.css';
 
 export type GameModeType = 'timed' | 'endless' | 'zen' | 'headshot' | 'survival' | 'headshot_only';
@@ -13,6 +14,8 @@ export type DifficultyLevel = 'very_easy' | 'easy' | 'normal' | 'medium' | 'hard
 interface GameHubProps {
   onStartGame: (mode: GameModeType | 'part_training' | 'peek_shot' | 'moving_target', duration?: 30 | 60 | 120, level?: number, difficulty?: DifficultyLevel) => void;
   onStartPerler: (entryMode?: 'library' | 'resume') => void;
+  onStartSnake?: () => void;
+  onStartTetris?: () => void;
   onStartPvZ: () => void;
   onSwitchSheet: (sheet: AppSheetId) => void;
   trainingDuration?: 30 | 60 | 120;
@@ -23,17 +26,15 @@ interface GameHubProps {
   onFormulaChange?: (text: string) => void;
 }
 
-const GAME_DESCRIPTIONS: Record<ArcadeGameId, string> = {
-  aim: '=练枪 / 热手 / 立即开。',
-  snake: '=贪吃蛇 / 筹备中。',
-  tetris: '=俄罗斯方块 / 筹备中。',
-  perler: '=拼豆 / Sheet6。',
-  pvz: '=植物大战僵尸 / Sheet7。',
-};
+const GAME_DESCRIPTIONS: Record<ArcadeGameId, string> = Object.fromEntries(
+  Object.values(ARCADE_MODULE_MAP).map((module) => [module.id, module.summary]),
+) as Record<ArcadeGameId, string>;
 
 export const GameHub: React.FC<GameHubProps> = ({
   onStartGame,
   onStartPerler,
+  onStartSnake,
+  onStartTetris,
   onStartPvZ,
   onSwitchSheet,
   trainingDuration = 60,
@@ -47,8 +48,14 @@ export const GameHub: React.FC<GameHubProps> = ({
     () => buildHubSnapshot({ perlerProgress, stats: { totalGames, totalScore } }),
     [perlerProgress, totalGames, totalScore],
   );
-
   const [selectedGame, setSelectedGame] = useState<ArcadeGameId>(perlerProgress ? 'perler' : 'aim');
+
+  const availableGames = useMemo(() => {
+    const enabled = new Set<ArcadeGameId>(['aim', 'perler', 'pvz']);
+    if (onStartSnake) enabled.add('snake');
+    if (onStartTetris) enabled.add('tetris');
+    return enabled;
+  }, [onStartSnake, onStartTetris]);
 
   useEffect(() => {
     onFormulaChange?.(GAME_DESCRIPTIONS[selectedGame]);
@@ -62,6 +69,16 @@ export const GameHub: React.FC<GameHubProps> = ({
 
     if (gameId === 'perler') {
       onStartPerler('library');
+      return;
+    }
+
+    if (gameId === 'snake' && onStartSnake) {
+      onStartSnake();
+      return;
+    }
+
+    if (gameId === 'tetris' && onStartTetris) {
+      onStartTetris();
       return;
     }
 
@@ -86,7 +103,8 @@ export const GameHub: React.FC<GameHubProps> = ({
   };
 
   const handleRandom = () => {
-    const next = Math.random() > 0.5 ? 'aim' : 'perler';
+    const enabledGames = Array.from(availableGames);
+    const next = enabledGames[Math.floor(Math.random() * enabledGames.length)];
     handleLaunch(next);
   };
 
@@ -132,6 +150,7 @@ export const GameHub: React.FC<GameHubProps> = ({
                   selectedGame={selectedGame}
                   onSelect={setSelectedGame}
                   onLaunch={handleLaunch}
+                  availableGames={availableGames}
                 />
               </section>
 

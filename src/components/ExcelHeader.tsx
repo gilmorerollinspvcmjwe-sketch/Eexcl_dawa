@@ -303,7 +303,7 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
                 fontSize: 13,
               }}>
                 <span>时间</span>
-                <span style={{ fontSize: 16 }}>{Math.floor(timeRemaining)}s</span>
+                <span style={{ fontSize: 16 }}>{Math.floor(timeRemaining)}秒</span>
               </div>
             )}
           </div>

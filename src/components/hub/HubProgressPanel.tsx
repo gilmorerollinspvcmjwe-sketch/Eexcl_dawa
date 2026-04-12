@@ -19,7 +19,7 @@ export const HubProgressPanel: React.FC<HubProgressPanelProps> = ({
       <table className="hub-mini-table hub-kpi-table compact">
         <tbody>
           <tr>
-            <td>Lv</td>
+            <td>等级</td>
             <td>{level}</td>
           </tr>
           <tr>

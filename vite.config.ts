@@ -8,4 +8,12 @@ export default defineConfig({
   server: {
     port: 3460,
   },
+  optimizeDeps: {
+    include: ['image-pixelizer'],
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+  },
 })

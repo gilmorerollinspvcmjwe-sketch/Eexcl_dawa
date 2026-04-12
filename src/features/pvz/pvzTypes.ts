@@ -1,44 +1,194 @@
-export type PvZPlantId =
-  | 'sunflower'
-  | 'peashooter'
-  | 'wallnut'
-  | 'cherryBomb'
-  | 'potatoMine'
-  | 'repeater'
-  | 'snowPea'
-  | 'cabbagePult'
-  | 'chomper'
-  | 'threepeater'
-  | 'torchwood'
-  | 'kernelPult';
+/* PvZ 的核心类型定义。供内容 registry、关卡数据、战斗状态与 Sheet7/8/9 共用。 */
 
-export type PvZZombieId = 'normal' | 'flag' | 'conehead' | 'buckethead' | 'newspaper' | 'pole' | 'football' | 'screenDoor';
+export const PVZ_PLANT_IDS = [
+  'sunflower',
+  'twinSunflower',
+  'sunShroom',
+  'coffeeBean',
+  'imitater',
+  'flowerPot',
+  'lilyPad',
+  'pumpkin',
+  'goldLeaf',
+  'garlic',
+  'peashooter',
+  'repeater',
+  'threepeater',
+  'gatlingPea',
+  'snowPea',
+  'torchwood',
+  'splitPea',
+  'cactus',
+  'seaShroom',
+  'twoHeadedPea',
+  'starfruit',
+  'cattail',
+  'cabbagePult',
+  'kernelPult',
+  'melonPult',
+  'winterMelon',
+  'reedPult',
+  'cobCannon',
+  'gloomShroom',
+  'magnetShroom',
+  'plantern',
+  'umbrellaLeaf',
+  'wallnut',
+  'tallnut',
+  'spikeweed',
+  'spikerock',
+  'seaWallnut',
+  'graveBuster',
+  'steelSpikeweed',
+  'potatoMine',
+  'cherryBomb',
+  'jalapeno',
+  'squash',
+  'doomShroom',
+  'powderShroom',
+  'icebergLettuce',
+  'iceShroom',
+  'hypnoShroom',
+  'fireMine',
+  'starMine',
+  'butterCannon',
+  'chomper',
+  'puffShroom',
+  'scaredyShroom',
+  'jumpingBean',
+  'citron',
+  'bloomerang',
+  'laserBean',
+  'bonkChoy',
+  'electricPea',
+  'frostMelonVine',
+  'miniSunflower',
+  'doubleCabbage',
+  'magnetBurstShroom',
+  'shieldBlossom',
+  'auditBean',
+] as const;
+
+export const PVZ_ZOMBIE_IDS = [
+  'normal',
+  'flag',
+  'conehead',
+  'pole',
+  'newspaper',
+  'screenDoor',
+  'buckethead',
+  'football',
+  'snorkel',
+  'dolphinRider',
+  'balloon',
+  'miner',
+  'dancing',
+  'backupDancer',
+  'zomboni',
+  'bobsled',
+  'basketball',
+  'ladder',
+  'gargantuar',
+  'imp',
+  'bungee',
+  'pogo',
+  'engineer',
+  'pipe',
+  'auditZombie',
+  'formulaZombie',
+  'shorthandZombie',
+  'auditChief',
+  'hostZombie',
+  'finalGargantuar',
+] as const;
+
+export type PvZPlantId = (typeof PVZ_PLANT_IDS)[number];
+export type PvZZombieId = (typeof PVZ_ZOMBIE_IDS)[number];
+export type PvZChapterId = 'day' | 'night' | 'pool' | 'fog' | 'roof';
+export type PvZMode = 'adventure' | 'lab' | 'survival';
+export type PvZScenarioId = string;
+export type PvZLevelId = string;
+export type PvZImplementationStage = 'full' | 'variant' | 'planned';
+export type PvZChapterAffinity = PvZChapterId | 'all' | 'lab';
+export type PvZScenarioFamily = 'mainline' | 'challenge' | 'survival';
+export type PvZPlantArchetype =
+  | 'economy'
+  | 'shooter'
+  | 'lobber'
+  | 'blocker'
+  | 'trap'
+  | 'bomb'
+  | 'melee'
+  | 'support'
+  | 'platform'
+  | 'container'
+  | 'spike'
+  | 'special';
+export type PvZZombieArchetype =
+  | 'walker'
+  | 'armored'
+  | 'jumper'
+  | 'fast'
+  | 'summoner'
+  | 'ranged'
+  | 'boss'
+  | 'air'
+  | 'water'
+  | 'rear'
+  | 'support';
+
+export type PvZProjectileKind = 'pea' | 'double-pea' | 'snow-pea' | 'lobbed' | 'fire-pea' | 'shock' | 'spike';
+export type PvZSupportEffect = 'torch' | 'reveal' | 'armor-strip' | 'shield' | 'redirect' | 'platform' | 'container';
+export type PvZTileRequirement = 'ground' | 'water' | 'roof';
 
 export interface PvZPlantDefinition {
   id: PvZPlantId;
   name: string;
   shortName: string;
+  summary: string;
+  archetype: PvZPlantArchetype;
+  implementation: PvZImplementationStage;
+  unlockLevel: PvZLevelId;
+  chapterAffinity: PvZChapterAffinity[];
+  tags: string[];
   cost: number;
   cooldownMs: number;
   maxHp: number;
   damage?: number;
+  armorHp?: number;
   attackIntervalMs?: number;
   producesSun?: boolean;
   sunIntervalMs?: number;
   sunAmount?: number;
   laneBlocker?: boolean;
-  explodeRadius?: 1 | 3;
+  explodeRadius?: 1 | 3 | 5;
+  splashRadius?: 1 | 3;
   projectileKind?: PvZProjectileKind;
   projectileCount?: number;
+  multiLane?: 'adjacent' | 'all';
+  supportEffect?: PvZSupportEffect;
+  requiresTile?: PvZTileRequirement;
+  runtimeAliasOf?: PvZPlantId;
 }
 
 export interface PvZZombieDefinition {
   id: PvZZombieId;
   name: string;
   shortName: string;
+  summary: string;
+  archetype: PvZZombieArchetype;
+  implementation: PvZImplementationStage;
+  unlockLevel: PvZLevelId;
+  chapterAffinity: PvZChapterAffinity[];
+  tags: string[];
+  threatLabel: string;
   maxHp: number;
+  armorHp?: number;
   speed: number;
   rewardSun?: number;
+  summonIds?: PvZZombieId[];
+  speedMultiplierOnTrigger?: number;
+  runtimeAliasOf?: PvZZombieId;
 }
 
 export interface PvZPlantInstance {
@@ -60,8 +210,6 @@ export interface PvZZombieInstance {
   hp: number;
 }
 
-export type PvZProjectileKind = 'pea' | 'double-pea' | 'snow-pea' | 'lobbed';
-
 export interface PvZProjectile {
   projectileId: string;
   kind: PvZProjectileKind;
@@ -79,9 +227,53 @@ export interface PvZSpawnEvent {
   spawnAtMs: number;
 }
 
+export interface PvZLevelDefinition {
+  id: PvZLevelId;
+  levelNumber: number;
+  chapterId: PvZChapterId;
+  chapterIndex: number;
+  mode: PvZMode;
+  family: PvZScenarioFamily;
+  title: string;
+  summary: string;
+  objective: string;
+  rules: string[];
+  intensity: 'S1' | 'S2' | 'S3' | 'S4' | 'S5' | 'S5+' | 'S6';
+  baseSun: number;
+  waveDurationMs: number;
+  defaultCards: PvZPlantId[];
+  availablePlants: PvZPlantId[];
+  recommendedCards: PvZPlantId[];
+  unlockPlants: PvZPlantId[];
+  unlockZombies: PvZZombieId[];
+  enemyRoster: PvZZombieId[];
+  spawnQueue: PvZSpawnEvent[];
+  isExam?: boolean;
+}
+
 export interface PvZBoardState {
   rows: number;
   cols: number;
+  mode: PvZMode;
+  scenarioId: PvZScenarioId;
+  scenarioFamily: PvZScenarioFamily;
+  levelId: PvZLevelId | null;
+  levelNumber: number | null;
+  levelTitle: string;
+  chapterId: PvZChapterId;
+  chapterTitle: string;
+  chapterSummary: string;
+  scenarioRules: string[];
+  scenarioObjective: string;
+  scenarioIntensity: PvZLevelDefinition['intensity'] | 'special';
+  defaultCards: PvZPlantId[];
+  availablePlants: PvZPlantId[];
+  recommendedCards: PvZPlantId[];
+  unlockedPlants: PvZPlantId[];
+  unlockedZombies: PvZZombieId[];
+  latestUnlockPlants: PvZPlantId[];
+  latestUnlockZombies: PvZZombieId[];
+  waveDurationMs: number;
   sun: number;
   phase: 'setup' | 'playing' | 'won' | 'lost';
   status: 'playing' | 'won' | 'lost';
@@ -93,6 +285,11 @@ export interface PvZBoardState {
   zombies: PvZZombieInstance[];
   projectiles: PvZProjectile[];
   spawnQueue: PvZSpawnEvent[];
+  scenarioSpawnQueueBase: PvZSpawnEvent[];
   lawnMowers: boolean[];
   cardCooldownsMs: Partial<Record<PvZPlantId, number>>;
+  scenarioSegmentsTotal: number;
+  scenarioSegmentIndex: number;
+  scenarioSunDrainPerSecond: number;
+  scenarioSegmentDurationMs: number;
 }

@@ -12,6 +12,8 @@ import { PerlerHub } from './components/perler/PerlerHub';
 import { PvZGameSheet } from './components/pvz/PvZGameSheet';
 import { PvZCollectionSheet } from './components/pvz/PvZCollectionSheet';
 import { PvZLabSheet } from './components/pvz/PvZLabSheet';
+import { SnakeSheet } from './components/snake/SnakeSheet';
+import { TetrisSheet } from './components/tetris/TetrisSheet';
 import { FancyFeedback } from './components/FancyFeedback';
 import { FirstTimeGuide } from './components/FirstTimeGuide';
 import { ModeTutorialModal } from './components/ModeTutorialModal';
@@ -24,10 +26,11 @@ import type { FPSTrainingMode } from './components/TrainingModeSelector';
 import type { PerlerProgressSummary } from './features/hub/hubData';
 import type { DifficultyLevel, GameModeType } from './components/GameHub';
 import type { AppSheetId } from './features/sheets/sheetRegistry';
+import type { WorkbookStatusSummary } from './types';
 
 const PERLER_PROGRESS_KEY = 'excel-aim-perler-state-v1';
 
-type ActiveArcadeGame = 'aim' | 'perler' | 'pvz' | null;
+type ActiveArcadeGame = 'aim' | 'perler' | 'pvz' | 'snake' | 'tetris' | null;
 type PerlerEntryMode = 'library' | 'resume';
 type FPSConfigMap = Record<string, string | number | boolean | undefined>;
 type HubStartMode = GameModeType | FPSTrainingMode | 'part_training' | 'peek_shot' | 'moving_target';
@@ -69,8 +72,15 @@ function AppContent() {
   const [hubFormulaText, setHubFormulaText] = useState('=今日建议：先热手，再摸鱼，再伪装');
   const [configFormulaText, setConfigFormulaText] = useState('=配置中心：独立管理练枪启动工作台，首页不再挤配置内容');
   const [perlerFormulaText, setPerlerFormulaText] = useState('=拼豆模板库已就绪');
+  const [snakeFormulaText, setSnakeFormulaText] = useState('=数据流待命，按方向键开始。');
+  const [tetrisFormulaText, setTetrisFormulaText] = useState('=待整理数据块已装载');
+  const [pvzFormulaText, setPvZFormulaText] = useState('=PvZ 防线就绪');
+  const [pvzCollectionFormulaText, setPvZCollectionFormulaText] = useState('=植物与僵尸图鉴');
+  const [pvzLabFormulaText, setPvZLabFormulaText] = useState('=章节、规则与实验室');
   const [perlerSelectedCell, setPerlerSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [perlerProgress, setPerlerProgress] = useState<PerlerProgressSummary | null>(() => readPerlerProgressFromStorage());
+  const [snakeStatusSummary, setSnakeStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
+  const [tetrisStatusSummary, setTetrisStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
   const [, setModeConfig] = useState<FPSConfigMap>({});
 
@@ -198,16 +208,32 @@ function AppContent() {
     switchSheet('pvz');
   };
 
+  const handleStartSnakeFromHub = () => {
+    setActiveArcadeGame('snake');
+    switchSheet('snake');
+  };
+
+  const handleStartTetrisFromHub = () => {
+    setActiveArcadeGame('tetris');
+    switchSheet('tetris');
+  };
+
   const handleExitCurrentGame = () => {
     setActiveArcadeGame(null);
     setPerlerEntryMode('library');
     setPerlerSelectedCell(null);
+    setSnakeStatusSummary(undefined);
+    setTetrisStatusSummary(undefined);
     exitToHub();
   };
 
   const handleSheetSwitch = (sheet: AppSheetId) => {
     if (sheet === 'game') {
       setActiveArcadeGame('aim');
+    } else if (sheet === 'snake') {
+      setActiveArcadeGame('snake');
+    } else if (sheet === 'tetris') {
+      setActiveArcadeGame('tetris');
     } else if (sheet === 'perler') {
       setActiveArcadeGame('perler');
     } else if (sheet === 'pvz' || sheet === 'pvz_collection' || sheet === 'pvz_lab') {
@@ -223,11 +249,15 @@ function AppContent() {
     : currentSheet === 'perler'
       ? 'Microsoft Excel - 拼豆工位创作.xlsx'
       : currentSheet === 'pvz'
-        ? 'Microsoft Excel - 植物大战僵尸.xlsx'
-        : currentSheet === 'pvz_collection'
+      ? 'Microsoft Excel - 植物大战僵尸.xlsx'
+      : currentSheet === 'pvz_collection'
           ? 'Microsoft Excel - PvZ 图鉴.xlsx'
           : currentSheet === 'pvz_lab'
             ? 'Microsoft Excel - PvZ 实验室.xlsx'
+      : currentSheet === 'snake'
+        ? 'Microsoft Excel - 贪吃蛇.xlsx'
+      : currentSheet === 'tetris'
+        ? 'Microsoft Excel - 俄罗斯方块.xlsx'
       : currentSheet === 'config'
         ? 'Microsoft Excel - 配置中心.xlsx'
       : 'Microsoft Excel - 练枪数据.xlsx';
@@ -237,18 +267,28 @@ function AppContent() {
     : currentSheet === 'perler'
       ? perlerFormulaText
       : currentSheet === 'pvz'
-        ? '=PvZ 防线就绪'
+        ? pvzFormulaText
         : currentSheet === 'pvz_collection'
-          ? '=植物与僵尸图鉴'
+          ? pvzCollectionFormulaText
           : currentSheet === 'pvz_lab'
-            ? '=章节、规则与实验室'
-      : currentSheet === 'config'
-        ? configFormulaText
-        : undefined;
+            ? pvzLabFormulaText
+            : currentSheet === 'snake'
+              ? snakeFormulaText
+              : currentSheet === 'tetris'
+                ? tetrisFormulaText
+                : currentSheet === 'config'
+                  ? configFormulaText
+                  : undefined;
 
   const effectiveSelectedCell = currentSheet === 'perler'
     ? perlerSelectedCell
     : selectedCell;
+
+  const workbookStatusSummary = currentSheet === 'snake'
+    ? snakeStatusSummary
+    : currentSheet === 'tetris'
+      ? tetrisStatusSummary
+      : undefined;
 
   return (
     <div 
@@ -362,12 +402,24 @@ function AppContent() {
         <ExcelHeader
           isHidden={isHidden}
           onToggleHidden={toggleHidden}
-          onExit={currentSheet === 'game' ? handleExitCurrentGame : undefined}
+          onExit={activeArcadeGame ? handleExitCurrentGame : undefined}
           selectedCell={effectiveSelectedCell}
           feedbackMessage={activeArcadeGame === 'aim' ? currentFeedback : null}
           titleText={titleText}
           formulaText={formulaText}
-          formulaTextColor={currentSheet === 'hub' ? '#107c41' : currentSheet === 'perler' ? '#7c3aed' : currentSheet === 'config' ? '#2563eb' : undefined}
+          formulaTextColor={
+            currentSheet === 'hub'
+              ? '#107c41'
+              : currentSheet === 'perler'
+                ? '#7c3aed'
+                : currentSheet === 'config'
+                  ? '#2563eb'
+                  : currentSheet === 'snake'
+                    ? '#0f766e'
+                    : currentSheet === 'tetris'
+                      ? '#334155'
+                      : undefined
+          }
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -375,6 +427,8 @@ function AppContent() {
             <GameHub
               onStartGame={handleStartGameFromHub}
               onStartPerler={handleStartPerlerFromHub}
+              onStartSnake={handleStartSnakeFromHub}
+              onStartTetris={handleStartTetrisFromHub}
               onStartPvZ={handleStartPvZFromHub}
               onSwitchSheet={(sheet) => handleSheetSwitch(sheet)}
               trainingDuration={settings.trainingDuration}
@@ -435,11 +489,23 @@ function AppContent() {
               onProgressChange={(progress) => setPerlerProgress(progress)}
             />
           ) : currentSheet === 'pvz' ? (
-            <PvZGameSheet onFormulaChange={setConfigFormulaText} />
+            <PvZGameSheet onFormulaChange={setPvZFormulaText} />
           ) : currentSheet === 'pvz_collection' ? (
-            <PvZCollectionSheet />
+            <PvZCollectionSheet onFormulaChange={setPvZCollectionFormulaText} />
           ) : currentSheet === 'pvz_lab' ? (
-            <PvZLabSheet />
+            <PvZLabSheet onFormulaChange={setPvZLabFormulaText} />
+          ) : currentSheet === 'snake' ? (
+            <SnakeSheet
+              onFormulaChange={setSnakeFormulaText}
+              onStatusChange={setSnakeStatusSummary}
+              onExit={handleExitCurrentGame}
+            />
+          ) : currentSheet === 'tetris' ? (
+            <TetrisSheet
+              onFormulaChange={setTetrisFormulaText}
+              onStatusChange={setTetrisStatusSummary}
+              onExit={handleExitCurrentGame}
+            />
           ) : (
             <SettingsPanel
               key="settings-sheet"
@@ -461,6 +527,7 @@ function AppContent() {
           selectedCell={effectiveSelectedCell}
           isHidden={isHidden}
           COLS={COLS}
+          summary={workbookStatusSummary}
           gameState={activeArcadeGame === 'aim' ? gameState : undefined}
         />
       </div>

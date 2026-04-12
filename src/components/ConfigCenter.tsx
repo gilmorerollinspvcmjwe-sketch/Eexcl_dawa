@@ -64,7 +64,7 @@ export const ConfigCenter: React.FC<ConfigCenterProps> = ({
           <div className="excel-row-header">1</div>
           <div className="excel-cell excel-title-cell">
             <span className="excel-title-icon">🎮</span>
-            <span className="excel-title-text">Excel Aim Trainer - 游戏中心</span>
+            <span className="excel-title-text">Excel 练枪中心</span>
           </div>
         </div>
 

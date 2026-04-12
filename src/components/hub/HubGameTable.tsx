@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import type { ArcadeGameId, HubGameRow } from '../../features/hub/hubData';
 
 interface HubGameTableProps {
@@ -6,11 +6,18 @@ interface HubGameTableProps {
   selectedGame: ArcadeGameId;
   onSelect: (gameId: ArcadeGameId) => void;
   onLaunch: (gameId: ArcadeGameId) => void;
+  availableGames?: Set<ArcadeGameId>;
 }
 
-const AVAILABLE_GAMES = new Set<ArcadeGameId>(['aim', 'perler', 'pvz']);
+const DEFAULT_AVAILABLE_GAMES = new Set<ArcadeGameId>(['aim', 'perler', 'pvz']);
 
-export const HubGameTable: React.FC<HubGameTableProps> = ({ games, selectedGame, onSelect, onLaunch }) => {
+export const HubGameTable: React.FC<HubGameTableProps> = ({
+  games,
+  selectedGame,
+  onSelect,
+  onLaunch,
+  availableGames = DEFAULT_AVAILABLE_GAMES,
+}) => {
   return (
     <table className="hub-game-table compact">
       <thead>
@@ -23,7 +30,7 @@ export const HubGameTable: React.FC<HubGameTableProps> = ({ games, selectedGame,
       </thead>
       <tbody>
         {games.map((game) => {
-          const available = AVAILABLE_GAMES.has(game.id);
+          const available = availableGames.has(game.id);
           return (
             <tr
               key={game.id}

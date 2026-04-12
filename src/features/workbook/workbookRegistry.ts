@@ -1,0 +1,91 @@
+export type AppSheetId =
+  | 'hub'
+  | 'game'
+  | 'stats'
+  | 'settings'
+  | 'config'
+  | 'perler'
+  | 'pvz'
+  | 'pvz_collection'
+  | 'pvz_lab'
+  | 'snake'
+  | 'tetris';
+
+export interface SheetDefinition {
+  id: AppSheetId;
+  label: string;
+  icon: string;
+  title: string;
+}
+
+export type ArcadeGameId = 'aim' | 'snake' | 'tetris' | 'perler' | 'pvz';
+
+export interface ArcadeModuleDefinition {
+  id: ArcadeGameId;
+  sheetId: AppSheetId;
+  title: string;
+  summary: string;
+  accent: string;
+  supportsResume: boolean;
+}
+
+export const SHEET_REGISTRY: SheetDefinition[] = [
+  { id: 'hub', label: 'Sheet1', icon: '🎮', title: '游戏中心' },
+  { id: 'game', label: 'Sheet2', icon: '🎯', title: '练枪区' },
+  { id: 'stats', label: 'Sheet3', icon: '📊', title: '统计' },
+  { id: 'settings', label: 'Sheet4', icon: '⚙', title: '设置' },
+  { id: 'config', label: 'Sheet5', icon: '🧭', title: '配置中心' },
+  { id: 'perler', label: 'Sheet6', icon: '🧩', title: '拼豆' },
+  { id: 'pvz', label: 'Sheet7', icon: '🪴', title: '植物大战僵尸' },
+  { id: 'pvz_collection', label: 'Sheet8', icon: '📚', title: '图鉴' },
+  { id: 'pvz_lab', label: 'Sheet9', icon: '🧪', title: '实验室' },
+  { id: 'snake', label: 'Sheet10', icon: '🐍', title: '贪吃蛇' },
+  { id: 'tetris', label: 'Sheet11', icon: '🧱', title: '俄罗斯方块' },
+];
+
+export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
+  {
+    id: 'aim',
+    sheetId: 'game',
+    title: '练枪',
+    summary: '=练枪 / 热手 / 立即开。',
+    accent: '#16a34a',
+    supportsResume: false,
+  },
+  {
+    id: 'snake',
+    sheetId: 'snake',
+    title: '贪吃蛇',
+    summary: '=贪吃蛇 / 数据流 / Sheet10。',
+    accent: '#0ea5e9',
+    supportsResume: true,
+  },
+  {
+    id: 'tetris',
+    sheetId: 'tetris',
+    title: '俄罗斯方块',
+    summary: '=俄罗斯方块 / 整理流 / Sheet11。',
+    accent: '#475569',
+    supportsResume: true,
+  },
+  {
+    id: 'perler',
+    sheetId: 'perler',
+    title: '拼豆',
+    summary: '=拼豆 / Sheet6。',
+    accent: '#c084fc',
+    supportsResume: true,
+  },
+  {
+    id: 'pvz',
+    sheetId: 'pvz',
+    title: '植物大战僵尸',
+    summary: '=植物大战僵尸 / Sheet7。',
+    accent: '#f59e0b',
+    supportsResume: false,
+  },
+];
+
+export const ARCADE_MODULE_MAP = Object.fromEntries(
+  ARCADE_MODULE_REGISTRY.map((module) => [module.id, module]),
+) as Record<ArcadeGameId, ArcadeModuleDefinition>;
