@@ -1,13 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  collectSunDrop,
   createPvZBoardState,
   placePlant,
+  removePlantWithShovel,
   resetPvZToSetup,
   restartPvZBattle,
   selectPvZCard,
+  setGameSpeed,
   setPvZScenario,
   startPvZBattle,
   tickPvZBoard,
+  togglePause,
+  toggleShovelMode,
 } from '../../features/pvz/pvzBoardState';
 import { getPvZChapterGuidance, getPvZOutcomeRecommendation } from '../../features/pvz/pvzChapterGuidance';
 import {
@@ -15,13 +20,19 @@ import {
   getPvZAdventureScenariosByChapterIndex,
   getPvZScenariosByMode,
 } from '../../features/pvz/pvzScenarioCatalog';
-import { loadProgress, isLevelUnlocked } from '../../features/pvz/pvzProgressStorage';
-import type { PvZBoardState, PvZMode, PvZPlantId, PvZScenarioId } from '../../features/pvz/pvzTypes';
-import { PvZHud } from './PvZHud';
-import { PvZCardTray } from './PvZCardTray';
+import { isLevelUnlocked, loadProgress } from '../../features/pvz/pvzProgressStorage';
+import type { PvZBoardState, PvZMode, PvZScenarioId } from '../../features/pvz/pvzTypes';
 import { PvZBoard } from './PvZBoard';
+import { PvZCardTray } from './PvZCardTray';
+import { PvZHud } from './PvZHud';
 import { PvZResultPanel } from './PvZResultPanel';
-import { emitPvZScenarioSelection, subscribePvZScenarioSelection } from './pvzScenarioBridge';
+import {
+  cachePvZContext,
+  emitPvZScenarioSelection,
+  getCachedPvZContext,
+  getLatestPvZScenarioSelection,
+  subscribePvZScenarioSelection,
+} from './pvzScenarioBridge';
 import '../../styles/pvz.css';
 
 const MODE_LABELS: Record<PvZMode, string> = {
@@ -35,7 +46,14 @@ interface PvZGameSheetProps {
 }
 
 export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) => {
-  const [state, setState] = useState<PvZBoardState>(() => createPvZBoardState());
+  const [state, setState] = useState<PvZBoardState>(() => {
+    const latestSelection = getLatestPvZScenarioSelection();
+    const cached = getCachedPvZContext();
+    if (latestSelection && cached?.scenarioId === latestSelection) return cached;
+    if (latestSelection) return createPvZBoardState({ scenarioId: latestSelection });
+    if (cached) return cached;
+    return createPvZBoardState();
+  });
   const [adventurePackIndex, setAdventurePackIndex] = useState(1);
   const [setupCollapsed, setSetupCollapsed] = useState(false);
   const progress = useMemo(() => loadProgress(), []);
@@ -65,6 +83,10 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
   }, [state.levelNumber, state.mode]);
 
   useEffect(() => {
+    cachePvZContext(state);
+  }, [state]);
+
+  useEffect(() => {
     onFormulaChange?.(
       state.phase === 'setup'
         ? `=${state.levelId ?? state.chapterTitle} | ${modeLabel} | 目标：${state.scenarioObjective} | 卡组 ${state.selectedCards.length}/6`
@@ -78,9 +100,21 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
 
   useEffect(() => {
     const unsubscribe = subscribePvZScenarioSelection((scenarioId) => {
-      setState((current) => setPvZScenario(current, scenarioId));
+      setState((current) => {
+        if (current.scenarioId === scenarioId && current.phase === 'setup') return current;
+        return createPvZBoardState({ scenarioId });
+      });
     });
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const latestSelection = getLatestPvZScenarioSelection();
+    if (!latestSelection) return;
+    setState((current) => {
+      if (current.scenarioId === latestSelection && current.phase === 'setup') return current;
+      return createPvZBoardState({ scenarioId: latestSelection });
+    });
   }, []);
 
   const handleModeSwitch = (mode: PvZMode) => {
@@ -98,7 +132,12 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
 
   return (
     <div className="pvz-sheet">
-      <PvZHud state={state} />
+      <PvZHud
+        state={state}
+        onTogglePause={() => setState((current) => togglePause(current))}
+        onToggleSpeed={() => setState((current) => setGameSpeed(current, current.gameSpeed === 1 ? 2 : 1))}
+        onToggleShovel={() => setState((current) => toggleShovelMode(current))}
+      />
 
       {state.phase === 'setup' && (
         <div className={`pvz-setup-panel${setupCollapsed ? ' is-collapsed' : ''}`}>
@@ -109,10 +148,22 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
               <span>卡组 {state.selectedCards.length}/6</span>
             </div>
             <div className="pvz-setup-toolbar-actions">
-              <button type="button" className="pvz-mode-tab" onClick={() => setSetupCollapsed((current) => !current)}>
+              <button
+                type="button"
+                className="pvz-mode-tab"
+                aria-expanded={!setupCollapsed}
+                aria-controls="pvz-setup-content"
+                aria-label={setupCollapsed ? '展开植物大战僵尸设置面板' : '收起植物大战僵尸设置面板'}
+                onClick={() => setSetupCollapsed((current) => !current)}
+              >
                 {setupCollapsed ? '展开设置' : '收起设置'}
               </button>
-              <button type="button" className="pvz-start-btn" onClick={() => setState((current) => startPvZBattle(current))}>
+              <button
+                type="button"
+                className="pvz-start-btn"
+                aria-label="开始植物大战僵尸战斗"
+                onClick={() => setState((current) => startPvZBattle(current))}
+              >
                 开始防线
               </button>
             </div>
@@ -120,7 +171,7 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
 
           {!setupCollapsed && (
             <>
-              <div className="pvz-setup-copy">
+              <div className="pvz-setup-copy" id="pvz-setup-content">
                 <strong>{state.levelId ? `${state.levelId} · ${state.levelTitle}` : state.chapterTitle}</strong>
                 <span>当前模式：{modeLabel}</span>
                 <span>{state.chapterSummary}</span>
@@ -151,11 +202,14 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
               </div>
 
               <div className="pvz-mode-panel">
-                <div className="pvz-mode-tabs">
+                <div className="pvz-mode-tabs" role="tablist" aria-label="PvZ 模式切换">
                   {(['adventure', 'lab', 'survival'] as const).map((mode) => (
                     <button
                       key={mode}
                       type="button"
+                      role="tab"
+                      aria-selected={state.mode === mode}
+                      aria-label={`切换到${MODE_LABELS[mode]}模式`}
                       className={`pvz-mode-tab${state.mode === mode ? ' active' : ''}`}
                       onClick={() => handleModeSwitch(mode)}
                     >
@@ -165,7 +219,7 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
                 </div>
 
                 {state.mode === 'adventure' ? (
-                  <div className="pvz-adventure-pack-grid">
+                  <div className="pvz-adventure-pack-grid" role="tablist" aria-label="冒险章节">
                     {Array.from({ length: 10 }, (_, index) => {
                       const packIndex = index + 1;
                       const isActive = adventurePackIndex === packIndex;
@@ -173,6 +227,9 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
                         <button
                           key={packIndex}
                           type="button"
+                          role="tab"
+                          aria-selected={isActive}
+                          aria-label={`选择${getPvZAdventureChapterTitle(packIndex)}`}
                           className={`pvz-mode-tab${isActive ? ' active' : ''}`}
                           onClick={() => setAdventurePackIndex(packIndex)}
                         >
@@ -190,6 +247,9 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
                       <button
                         key={scenario.id}
                         type="button"
+                        aria-pressed={state.scenarioId === scenario.id}
+                        aria-label={`${scenario.levelNumber ? `${scenario.id} ${scenario.title}` : scenario.title}${unlocked ? '' : '（未解锁）'}`}
+                        aria-disabled={!unlocked}
                         className={`pvz-scenario-card${state.scenarioId === scenario.id ? ' active' : ''}${!unlocked ? ' pvz-scenario-card--locked' : ''}`}
                         onClick={() => unlocked && handleScenarioSelect(scenario.id)}
                         disabled={!unlocked}
@@ -202,9 +262,7 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
                         <small>
                           {scenario.intensity ? `强度 ${scenario.intensity}` : '特别规则'} · 阳光 {scenario.baseSun ?? state.sun}
                         </small>
-                        {!unlocked && (
-                          <small className="pvz-lock-hint">需通过前置关卡解锁</small>
-                        )}
+                        {!unlocked && <small className="pvz-lock-hint">需通过前置关卡解锁</small>}
                       </button>
                     );
                   })}
@@ -236,10 +294,14 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
       {state.phase !== 'setup' ? (
         <PvZBoard
           state={state}
+          onSunDropClick={(dropId) => setState((current) => collectSunDrop(current, dropId))}
           onCellClick={(row, col) => {
-            if (state.phase !== 'playing') return;
-            if (!state.selectedPlantId) return;
-            setState((current) => placePlant(current, current.selectedPlantId as PvZPlantId, row, col));
+            setState((current) => {
+              if (current.phase !== 'playing') return current;
+              if (current.shovelMode) return removePlantWithShovel(current, row, col);
+              if (!current.selectedPlantId) return current;
+              return placePlant(current, current.selectedPlantId, row, col);
+            });
           }}
         />
       ) : (

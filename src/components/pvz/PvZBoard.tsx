@@ -25,6 +25,16 @@ interface PvZBoardProps {
 
 export const PvZBoard: React.FC<PvZBoardProps> = ({ state, onCellClick, onSunDropClick }) => {
   const hasFog = state.environment === 'fog';
+
+  const getCellAriaLabel = (row: number, col: number, hasPlant: boolean, plantName?: string, isFogged?: boolean) => {
+    const location = `第 ${row + 1} 行第 ${col + 1} 列`;
+    if (isFogged) return `${location}，被迷雾遮挡`;
+    if (hasPlant && plantName) {
+      return state.shovelMode ? `${location}，${plantName}，点击可铲除` : `${location}，已种植 ${plantName}`;
+    }
+    return state.shovelMode ? `${location}，空地` : `${location}，空地，可种植当前选中植物`;
+  };
+
   return (
     <div className="pvz-board-shell">
       <div className="pvz-board">
@@ -33,9 +43,11 @@ export const PvZBoard: React.FC<PvZBoardProps> = ({ state, onCellClick, onSunDro
             {state.skyDrops.map((drop) => (
               <button
                 key={drop.dropId}
+                type="button"
                 className="pvz-sun-drop"
                 style={{ left: `${(drop.x / state.cols) * 100}%`, top: `${drop.y}px` }}
                 onClick={() => onSunDropClick?.(drop.dropId)}
+                aria-label={`收集 ${drop.amount} 阳光`}
                 title={`点击收集 ${drop.amount} 阳光`}
               >
                 ☀️ {drop.amount}
@@ -81,9 +93,18 @@ export const PvZBoard: React.FC<PvZBoardProps> = ({ state, onCellClick, onSunDro
                 const plantHitClass = plant?.isBeingAttacked ? 'pvz-plant--hit' : '';
 
                 const isFogged = hasFog && state.fogMask[row]?.[col];
+                const cellAriaLabel = getCellAriaLabel(row, col, Boolean(plant), plantDefinition?.name, isFogged);
 
                 return (
-                  <button key={`cell-${row}-${col}`} className={`pvz-cell ${isFogged ? 'pvz-cell--fogged' : ''}`} onClick={() => onCellClick(row, col)}>
+                  <button
+                    key={`cell-${row}-${col}`}
+                    type="button"
+                    className={`pvz-cell ${isFogged ? 'pvz-cell--fogged' : ''}`}
+                    onClick={() => onCellClick(row, col)}
+                    aria-label={cellAriaLabel}
+                    aria-pressed={state.shovelMode && Boolean(plant)}
+                    title={cellAriaLabel}
+                  >
                     {plant && plantDefinition ? (
                       <div
                         className={`pvz-plant ${getPvZPlantToneClass(plant.plantId)} ${getPvZPlantFrameClass(plantDefinition)} ${plantAttackClass} ${plantSplashClass} ${plantRangeClass} ${plantHitClass}`.trim()}

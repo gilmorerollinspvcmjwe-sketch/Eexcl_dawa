@@ -5,6 +5,7 @@
   --pvz-text-muted: #4b5e53;
   --pvz-border-soft: rgba(38, 64, 33, 0.16);
   --pvz-chip-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -15,7 +16,16 @@
   color: var(--pvz-text-strong);
 }
 
-.pvz-hud,
+.pvz-hud {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) auto;
+  grid-template-areas:
+    "overview controls"
+    "metrics metrics";
+  gap: 6px 8px;
+  align-items: stretch;
+}
+
 .pvz-card-tray {
   display: flex;
   gap: 8px;
@@ -42,15 +52,128 @@
   background: rgba(255, 255, 255, 0.8);
 }
 
-.pvz-hud-mode {
-  flex-direction: column;
-  min-width: 120px;
-}
-
 .pvz-hud-label {
   font-size: 0.65rem;
   letter-spacing: 0.08em;
   color: #6f7f77;
+}
+
+.pvz-hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 7px 10px;
+}
+
+.pvz-hud-bar--overview {
+  grid-area: overview;
+}
+
+.pvz-hud-bar--controls {
+  grid-area: controls;
+  justify-content: space-between;
+}
+
+.pvz-hud-bar--metrics {
+  grid-area: metrics;
+}
+
+.pvz-hud-identity,
+.pvz-hud-controls-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pvz-hud-title {
+  font-size: 0.88rem;
+  line-height: 1.1;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.pvz-hud-chips,
+.pvz-hud-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.pvz-hud-summary,
+.pvz-hud-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pvz-hud-summary {
+  flex: 1;
+}
+
+.pvz-hud-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid #d9e2dc;
+  background: rgba(255, 255, 255, 0.88);
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.pvz-hud-chip--status.status-playing {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.pvz-hud-chip--status.status-won {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.pvz-hud-chip--status.status-lost {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.pvz-hud-summary-item,
+.pvz-hud-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  min-width: 0;
+  padding: 0 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  color: #475569;
+}
+
+.pvz-hud-summary-item strong,
+.pvz-hud-metric strong {
+  font-size: 11px;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
+.pvz-hud-metric {
+  font-variant-numeric: tabular-nums;
 }
 
 .pvz-setup-panel {
@@ -125,8 +248,11 @@
   border: 1px solid #0c5a2f;
   background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
   color: white;
-  padding: 8px 14px;
-  font-size: 12px;
+  min-height: 40px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
 }
 
 .pvz-mode-panel {
@@ -219,6 +345,42 @@
   font-size: 0.74rem;
 }
 
+.pvz-hud-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pvz-wave-alert {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #fbbf24;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+  font-size: 12px;
+  font-weight: 700;
+  color: #9a3412;
+  white-space: nowrap;
+}
+
+.pvz-wave-alert--final {
+  border-color: #fca5a5;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+  color: #b91c1c;
+}
+
 .pvz-card {
   min-width: 76px;
   display: grid;
@@ -245,6 +407,7 @@
 .pvz-mode-tab:focus-visible,
 .pvz-scenario-card:focus-visible,
 .pvz-start-btn:focus-visible,
+.pvz-cell:focus-visible,
 .pvz-setup-copy select:focus-visible {
   outline: 2px solid #107c41;
   outline-offset: 2px;
@@ -345,6 +508,7 @@
   overflow: auto;
   border: 1px solid #d4d4d4;
   background: white;
+  position: relative;
 }
 
 .pvz-setup-board-placeholder {
@@ -370,6 +534,26 @@
   grid-template-columns: repeat(9, 84px);
   gap: 5px;
   min-height: 70px;
+}
+
+.pvz-lawn-mower {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pvz-lawn-mower--triggered {
+  width: 34px;
+  font-size: 18px;
 }
 
 .pvz-cell {
@@ -775,11 +959,18 @@
 }
 
 @media (max-width: 1100px) {
+  .pvz-hud,
   .pvz-setup-panel,
   .pvz-scenario-grid,
   .pvz-mode-tabs,
   .pvz-adventure-pack-grid {
     grid-template-columns: 1fr;
+  }
+  .pvz-hud {
+    grid-template-areas:
+      "overview"
+      "controls"
+      "metrics";
   }
 
   .pvz-setup-toolbar {
@@ -794,6 +985,82 @@
   .pvz-row {
     grid-template-columns: repeat(9, minmax(62px, 1fr));
   }
+}
+
+@media (max-width: 760px) {
+  .pvz-hud-bar,
+  .pvz-hud-identity,
+  .pvz-hud-controls-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pvz-hud-chips,
+  .pvz-hud-controls,
+  .pvz-hud-summary,
+  .pvz-hud-metrics {
+    width: 100%;
+  }
+
+  .pvz-hud-btn {
+    flex: 1 1 140px;
+  }
+
+  .pvz-result-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pvz-result-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.24);
+  backdrop-filter: blur(2px);
+}
+
+.pvz-result-panel {
+  width: min(720px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 14px;
+  border: 1px solid #d4d4d4;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+  padding: 16px;
+}
+
+.pvz-result-panel--won {
+  border-color: #107c41;
+}
+
+.pvz-result-panel--lost {
+  border-color: #b91c1c;
+}
+
+.pvz-result-copy,
+.pvz-result-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.pvz-result-title {
+  font-size: 16px;
+  color: #10210f;
+}
+
+.pvz-result-copy span {
+  font-size: 12px;
+  color: #475569;
+}
+
+.pvz-result-actions {
+  align-content: start;
 }
 
 /* ==================== 解锁树 UI ==================== */

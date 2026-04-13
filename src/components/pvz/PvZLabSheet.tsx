@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getPvZAdventureChapterTitle, getPvZAdventureScenariosByChapterIndex, getPvZScenariosByMode } from '../../features/pvz/pvzScenarioCatalog';
 import {
+  resetProgress,
   loadProgress,
   getLevelStatus,
   getChapterProgress,
@@ -11,15 +12,24 @@ import {
 } from '../../features/pvz/pvzProgressStorage';
 import type { PvZScenarioId } from '../../features/pvz/pvzTypes';
 import { PVZ_PLANT_MAP } from '../../features/pvz/pvzPlantRegistry';
-import { emitPvZScenarioSelection, subscribePvZScenarioSelection } from './pvzScenarioBridge';
+import {
+  emitPvZScenarioSelection,
+  getCachedPvZContext,
+  getLatestPvZScenarioSelection,
+  subscribePvZScenarioSelection,
+} from './pvzScenarioBridge';
 
 interface PvZLabSheetProps {
   onFormulaChange?: (text: string) => void;
 }
 
 export const PvZLabSheet: React.FC<PvZLabSheetProps> = ({ onFormulaChange }) => {
-  const [chapterIndex, setChapterIndex] = useState(1);
-  const [selectedScenarioId, setSelectedScenarioId] = useState<PvZScenarioId>('1-01');
+  const initialScenarioId = (getLatestPvZScenarioSelection() ?? getCachedPvZContext()?.scenarioId ?? '1-01') as PvZScenarioId;
+  const [chapterIndex, setChapterIndex] = useState(() => {
+    const numericPrefix = Number.parseInt(initialScenarioId.split('-')[0] ?? '1', 10);
+    return numericPrefix >= 1 && numericPrefix <= 10 ? numericPrefix : 1;
+  });
+  const [selectedScenarioId, setSelectedScenarioId] = useState<PvZScenarioId>(initialScenarioId);
   const [progress, setProgress] = useState(() => loadProgress());
 
   const currentChapterLevels = useMemo(() => getPvZAdventureScenariosByChapterIndex(chapterIndex), [chapterIndex]);
@@ -52,6 +62,7 @@ export const PvZLabSheet: React.FC<PvZLabSheetProps> = ({ onFormulaChange }) => 
 
   const handleResetProgress = () => {
     if (window.confirm('确定要重置所有 PvZ 进度吗？此操作不可撤销。')) {
+      resetProgress();
       const fresh = loadProgress();
       setProgress(fresh);
     }
@@ -62,7 +73,13 @@ export const PvZLabSheet: React.FC<PvZLabSheetProps> = ({ onFormulaChange }) => 
       <section className="pvz-info-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <h3 style={{ margin: 0 }}>进度总览</h3>
-          <button type="button" className="pvz-small-btn" onClick={handleResetProgress} style={{ fontSize: 11, padding: '2px 8px' }}>
+          <button
+            type="button"
+            className="pvz-small-btn"
+            aria-label="重置 PvZ 进度视图"
+            onClick={handleResetProgress}
+            style={{ fontSize: 11, padding: '2px 8px' }}
+          >
             重置进度
           </button>
         </div>
@@ -84,7 +101,7 @@ export const PvZLabSheet: React.FC<PvZLabSheetProps> = ({ onFormulaChange }) => 
 
       <section className="pvz-info-panel">
         <h3>主线章节包</h3>
-        <div className="pvz-adventure-pack-grid">
+        <div className="pvz-adventure-pack-grid" role="tablist" aria-label="PvZ 章节切换">
           {Array.from({ length: 10 }, (_, index) => {
             const packIndex = index + 1;
             const cp = getChapterProgress(progress, packIndex);
@@ -92,6 +109,9 @@ export const PvZLabSheet: React.FC<PvZLabSheetProps> = ({ onFormulaChange }) => 
               <button
                 key={packIndex}
                 type="button"
+                role="tab"
+                aria-selected={chapterIndex === packIndex}
+                aria-label={`选择${getPvZAdventureChapterTitle(packIndex)}`}
                 className={`pvz-mode-tab${chapterIndex === packIndex ? ' active' : ''}`}
                 onClick={() => setChapterIndex(packIndex)}
               >
@@ -114,6 +134,9 @@ export const PvZLabSheet: React.FC<PvZLabSheetProps> = ({ onFormulaChange }) => 
               <button
                 key={scenario.id}
                 type="button"
+                aria-pressed={selectedScenarioId === scenario.id}
+                aria-label={`${scenario.id} ${scenario.title}${status === 'locked' ? '（未解锁）' : ''}`}
+                aria-disabled={status === 'locked'}
                 className={`pvz-scenario-card pvz-scenario-card--${status}${selectedScenarioId === scenario.id ? ' active' : ''}`}
                 onClick={() => status !== 'locked' && handleSelect(scenario.id)}
                 disabled={status === 'locked'}
@@ -155,6 +178,8 @@ export const PvZLabSheet: React.FC<PvZLabSheetProps> = ({ onFormulaChange }) => 
             <button
               key={scenario.id}
               type="button"
+              aria-pressed={selectedScenarioId === scenario.id}
+              aria-label={`选择场景 ${scenario.title}`}
               className={`pvz-scenario-card${selectedScenarioId === scenario.id ? ' active' : ''}`}
               onClick={() => handleSelect(scenario.id)}
             >

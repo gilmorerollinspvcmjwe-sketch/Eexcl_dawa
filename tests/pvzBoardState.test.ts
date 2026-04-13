@@ -33,10 +33,18 @@ test('cannot place a plant with insufficient sun', () => {
   assert.equal(next.plants.length, 0);
 });
 
-test('lane breach marks defeat', () => {
-  const spawned = spawnZombieNow(startPvZBattle(createPvZBoardState()), 'normal', 0, -0.2);
-  const next = tickPvZBoard(spawned, 16);
+test('lane breach marks defeat when mower is unavailable', () => {
+  let state = startPvZBattle(createPvZBoardState());
+  state = {
+    ...state,
+    lawnMowers: state.lawnMowers.map((active, row) => (row === 0 ? false : active)),
+    lawnMowerStates: state.lawnMowerStates.map((mower, row) =>
+      row === 0 ? { ...mower, active: false, triggered: false } : mower,
+    ),
+  };
+  state = spawnZombieNow(state, 'normal', 0, -0.2);
 
+  const next = tickPvZBoard(state, 16);
   assert.equal(next.status, 'lost');
 });
 
@@ -52,18 +60,20 @@ test('peashooter creates a straight projectile when a zombie is ahead', () => {
   state = spawnZombieNow(state, 'normal', 0, 7);
 
   const next = tickPvZBoard(state, 1600);
-
   assert.ok(next.projectiles.some((projectile) => projectile.kind === 'pea'));
 });
 
 test('repeater creates a double projectile burst', () => {
-  let state = startPvZBattle(createPvZBoardState());
-  state.sun = 300;
+  let state = startPvZBattle(createPvZBoardState({ scenarioId: '2-01' }));
+  state = {
+    ...state,
+    sun: 300,
+    selectedCards: Array.from(new Set([...state.selectedCards, 'repeater'])),
+  };
   state = placePlant(state, 'repeater', 1, 1);
   state = spawnZombieNow(state, 'normal', 1, 7);
 
   const next = tickPvZBoard(state, 1600);
-
   assert.ok(next.projectiles.filter((projectile) => projectile.kind === 'double-pea').length >= 2);
 });
 
@@ -89,11 +99,11 @@ test('pvz roster is expanded beyond the initial basic set', () => {
 });
 
 test('starting battle keeps selected cards and unlocks gameplay', () => {
-  let state = createPvZBoardState();
+  let state = createPvZBoardState('night');
   state = selectPvZCard(state, 'sunflower');
-  state = selectPvZCard(state, 'peashooter');
-  state = selectPvZCard(state, 'cherryBomb');
   const expectedLoadout = [...state.selectedCards];
+  assert.ok(expectedLoadout.length > 0);
+
   state = startPvZBattle(state);
 
   assert.equal(state.phase, 'playing');
@@ -104,19 +114,28 @@ test('chapter selection changes setup defaults and wave queue', () => {
   const night = createPvZBoardState('night');
 
   assert.equal(night.chapterId, 'night');
-  assert.equal(night.chapterTitle, 'Chapter 2 夜晚草地');
-  assert.equal(night.sun, 100);
-  assert.equal(night.waveDurationMs, 44000);
-  assert.ok(night.spawnQueue.some((event) => event.id.startsWith('night-')));
-  assert.ok(night.selectedCards.includes('chomper'));
+  assert.equal(night.scenarioId, '2-01');
+  assert.equal(night.chapterTitle, '夜幕救场');
+  assert.equal(night.sun, 125);
+  assert.equal(night.waveDurationMs, 40_000);
+  assert.ok(night.spawnQueue.some((event) => event.id.startsWith('2-01-')));
+  assert.ok(night.selectedCards.includes('cherryBomb'));
   assert.equal(night.mode, 'adventure');
+});
+
+test('roof setup only preselects cards that are actually placeable on roof', () => {
+  const roof = createPvZBoardState('roof');
+
+  assert.deepEqual(roof.selectedCards, ['flowerPot', 'cabbagePult']);
+  assert.ok(roof.selectedCards.every((plantId) => roof.availablePlants.includes(plantId)));
 });
 
 test('setPvZChapter only works in setup phase', () => {
   const setup = createPvZBoardState();
   const switched = setPvZChapter(setup, 'roof');
   assert.equal(switched.chapterId, 'roof');
-  assert.ok(switched.spawnQueue.some((event) => event.id.startsWith('roof-')));
+  assert.equal(switched.scenarioId, '5-01');
+  assert.ok(switched.spawnQueue.some((event) => event.id.startsWith('5-01-')));
 
   const playing = startPvZBattle(setup);
   const ignored = setPvZChapter(playing, 'roof');
@@ -147,44 +166,46 @@ test('restartPvZBattle re-enters playing phase with chapter and selected cards',
     ...startPvZBattle(createPvZBoardState('roof')),
     phase: 'lost' as const,
     status: 'lost' as const,
-    selectedCards: ['sunflower', 'repeater', 'wallnut'],
+    selectedCards: ['flowerPot', 'cabbagePult'],
   };
   const restarted = restartPvZBattle(ended);
 
   assert.equal(restarted.phase, 'playing');
   assert.equal(restarted.status, 'playing');
   assert.equal(restarted.chapterId, 'roof');
-  assert.deepEqual(restarted.selectedCards, ['sunflower', 'repeater', 'wallnut']);
+  assert.deepEqual(restarted.selectedCards, ['flowerPot', 'cabbagePult']);
 });
 
 test('setPvZScenario switches to lab or survival setup with scenario metadata', () => {
   const setup = createPvZBoardState();
-  const lab = setPvZScenario(setup, 'night_blackout');
-  const survival = setPvZScenario(setup, 'day_endurance');
+  const lab = setPvZScenario(setup, 'lab-night-blackout');
+  const survival = setPvZScenario(setup, 'survival-day-endurance');
 
   assert.equal(lab.mode, 'lab');
   assert.equal(lab.chapterId, 'night');
   assert.equal(lab.sun, 75);
-  assert.match(lab.scenarioObjective, /夜间/);
+  assert.ok(lab.scenarioObjective.includes('38'));
+  assert.ok(lab.defaultCards.includes('sunShroom'));
   assert.equal(survival.mode, 'survival');
-  assert.ok(survival.waveDurationMs > 100000);
-  assert.ok(survival.spawnQueue.length > setup.spawnQueue.length);
+  assert.equal(survival.scenarioSegmentsTotal, 3);
+  assert.equal(survival.waveDurationMs, 120_000);
+  assert.equal(survival.scenarioSegmentDurationMs, 40_000);
 });
 
 test('lab scenario drains sun faster than adventure', () => {
-  const lab = startPvZBattle(createPvZBoardState({ scenarioId: 'night_blackout' }));
+  const lab = startPvZBattle(createPvZBoardState({ scenarioId: 'lab-night-blackout' }));
   const afterTick = tickPvZBoard(lab, 4_000);
   assert.ok(afterTick.sun < lab.sun - 0.8);
 });
 
 test('survival scenario keeps playing across segments before winning', () => {
-  const survival = startPvZBattle(createPvZBoardState({ scenarioId: 'day_endurance' }));
+  const survival = startPvZBattle(createPvZBoardState({ scenarioId: 'survival-day-endurance' }));
   const nearEnd: PvZBoardState = {
     ...survival,
     spawnQueue: [],
     zombies: [],
-    elapsedMs: survival.scenarioSegmentDurationMs,
-    waveProgress: 1,
+    elapsedMs: survival.scenarioSegmentDurationMs - 500,
+    waveProgress: 0.99,
   };
   const next = tickPvZBoard(nearEnd, 1_000);
   assert.equal(next.status, 'playing');
