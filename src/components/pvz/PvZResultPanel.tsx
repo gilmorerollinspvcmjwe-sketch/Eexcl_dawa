@@ -63,7 +63,7 @@ export const PvZResultPanel: React.FC<PvZResultPanelProps> = ({ state, onRetry, 
             <strong>🎉 新解锁内容</strong>
             {newUnlocks.plants.length > 0 && (
               <span>
-                植物：{newUnlocks.plants.map((id) => PVZ_PLANT_MAP[id]?.name ?? id).join('、')}
+                植物：{newUnlocks.plants.map((id) => PVZ_PLANT_MAP[id as keyof typeof PVZ_PLANT_MAP]?.name ?? id).join('、')}
               </span>
             )}
             {newUnlocks.zombies.length > 0 && (

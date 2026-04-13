@@ -14,6 +14,7 @@ import type {
   PvZScenarioId,
   PvZSpawnEvent,
   PvZZombieId,
+  PvZZombieInstance,
 } from './pvzTypes.ts';
 
 const ROWS = 5;
@@ -429,6 +430,86 @@ function applyPlantAttacks(state: PvZBoardState, elapsedMs: number) {
       return { ...plant, attackTimerMs: 0 };
     }
 
+    // 猫尾草：全路追踪射击（水面专属）
+    if (plant.plantId === 'cattail' && definition.projectileKind && definition.multiLane === 'all') {
+      const hasZombie = state.zombies.some((zombie) => zombie.x >= plant.col - 2);
+      if (!hasZombie) return plant;
+
+      const nextTimer = plant.attackTimerMs + elapsedMs;
+      if (nextTimer < definition.attackIntervalMs) {
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+
+      // 追踪最近的僵尸
+      const nearestZombie = state.zombies
+        .filter((zombie) => zombie.x >= plant.col - 2)
+        .sort((a, b) => a.x - b.x)[0];
+      if (nearestZombie) {
+        createdProjectiles.push(createProjectile(definition.projectileKind, nearestZombie.row, plant.col + 0.6, definition.damage));
+      }
+
+      return { ...plant, attackTimerMs: 0 };
+    }
+
+    // 香蒲投手：全路追踪抛投（水面专属）
+    if (plant.plantId === 'reedPult' && definition.projectileKind && definition.multiLane === 'all') {
+      const hasZombie = state.zombies.some((zombie) => zombie.x >= plant.col - 2);
+      if (!hasZombie) return plant;
+
+      const nextTimer = plant.attackTimerMs + elapsedMs;
+      if (nextTimer < definition.attackIntervalMs) {
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+
+      // 追踪最近的僵尸
+      const nearestZombie = state.zombies
+        .filter((zombie) => zombie.x >= plant.col - 2)
+        .sort((a, b) => a.x - b.x)[0];
+      if (nearestZombie) {
+        createdProjectiles.push(createProjectile(definition.projectileKind, nearestZombie.row, plant.col + 0.6, definition.damage));
+      }
+
+      return { ...plant, attackTimerMs: 0 };
+    }
+
+    // 毁灭菇：超大范围爆炸
+    if (plant.plantId === 'doomShroom' && definition.damage && definition.explodeRadius) {
+      const explodeRadius = definition.explodeRadius;
+      const zombiesInRange = state.zombies.filter((zombie) => {
+        const rowDiff = Math.abs(zombie.row - plant.row);
+        const colDiff = Math.abs(zombie.x - plant.col);
+        return rowDiff <= 2 && colDiff <= explodeRadius;
+      });
+      if (zombiesInRange.length > 0) {
+        const nextTimer = plant.attackTimerMs + elapsedMs;
+        if (nextTimer >= (definition.attackIntervalMs || 1000)) {
+          for (const zombie of zombiesInRange) {
+            zombieDamage.set(zombie.instanceId, (zombieDamage.get(zombie.instanceId) || 0) + definition.damage);
+          }
+          // 毁灭菇使用后消失
+          return { ...plant, hp: 0, attackTimerMs: 0 };
+        }
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+      return plant;
+    }
+
+    // 催眠蘑菇：反转最近的僵尸
+    if (plant.plantId === 'hypnoShroom' && definition.damage && definition.attackIntervalMs) {
+      const targetZombie = state.zombies.find((zombie) => zombie.row === plant.row && zombie.x > plant.col && zombie.x < plant.col + 2);
+      if (targetZombie) {
+        const nextTimer = plant.attackTimerMs + elapsedMs;
+        if (nextTimer >= definition.attackIntervalMs) {
+          // 催眠效果：直接消灭该僵尸
+          zombieDamage.set(targetZombie.instanceId, targetZombie.hp);
+          // 催眠蘑菇使用后消失
+          return { ...plant, hp: 0, attackTimerMs: 0 };
+        }
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+      return plant;
+    }
+
     // 普通射击逻辑
     const zombieAhead = state.zombies.find((zombie) => zombie.row === plant.row && zombie.x >= plant.col);
     if (!zombieAhead) return plant;
@@ -496,19 +577,73 @@ function spawnQueuedZombies(state: PvZBoardState) {
 }
 
 function moveZombies(state: PvZBoardState, elapsedMs: number): PvZBoardState {
+  const newZombies: PvZZombieInstance[] = [];
   const nextZombies = state.zombies.map((zombie) => {
     const definition = PVZ_ZOMBIE_MAP[zombie.zombieId];
     const blocker = state.plants.find((plant) => plant.row === zombie.row && Math.abs(zombie.x - plant.col) < 0.45);
     if (blocker) {
       return zombie;
     }
+
+    // 潜水僵尸：水路潜行，接近前线才显形
+    if (zombie.zombieId === 'snorkel') {
+      const isStealth = zombie.x > 3;
+      return { ...zombie, x: zombie.x - definition.speed * elapsedMs, isStealth };
+    }
+
+    // 气球僵尸：空中路线，不受地面植物阻挡
+    if (zombie.zombieId === 'balloon') {
+      return { ...zombie, x: zombie.x - definition.speed * elapsedMs, isAirborne: true };
+    }
+
+    // 矿工僵尸：从后排切入
+    if (zombie.zombieId === 'miner') {
+      return { ...zombie, x: zombie.x - definition.speed * elapsedMs };
+    }
+
+    // 舞王僵尸：定期召唤伴舞
+    if (zombie.zombieId === 'dancing' && definition.summonIds) {
+      const summonTimer = (zombie as any).summonTimerMs || 0;
+      const nextSummonTimer = summonTimer + elapsedMs;
+      if (nextSummonTimer >= 8000) {
+        for (const summonId of definition.summonIds) {
+          newZombies.push({
+            instanceId: `${summonId}-${zombie.row}-${Date.now()}-${Math.random()}`,
+            zombieId: summonId as PvZZombieId,
+            row: zombie.row,
+            x: zombie.x + 0.5,
+            hp: PVZ_ZOMBIE_MAP[summonId as PvZZombieId]?.maxHp || 200,
+          });
+        }
+        return { ...zombie, x: zombie.x - definition.speed * elapsedMs, summonTimerMs: 0 };
+      }
+      return { ...zombie, x: zombie.x - definition.speed * elapsedMs, summonTimerMs: nextSummonTimer };
+    }
+
+    // 巨人僵尸：半血时投掷小鬼
+    if (zombie.zombieId === 'gargantuar' && definition.summonIds) {
+      const hasThrown = (zombie as any).hasThrownImp;
+      if (!hasThrown && zombie.hp < definition.maxHp * 0.5) {
+        for (const summonId of definition.summonIds) {
+          newZombies.push({
+            instanceId: `${summonId}-${zombie.row}-${Date.now()}-${Math.random()}`,
+            zombieId: summonId as PvZZombieId,
+            row: zombie.row,
+            x: zombie.x - 1.5,
+            hp: PVZ_ZOMBIE_MAP[summonId as PvZZombieId]?.maxHp || 140,
+          });
+        }
+        return { ...zombie, x: zombie.x - definition.speed * elapsedMs, hasThrownImp: true };
+      }
+    }
+
     return { ...zombie, x: zombie.x - definition.speed * elapsedMs };
   });
 
   const breached = nextZombies.some((zombie) => zombie.x < 0);
   return {
     ...state,
-    zombies: nextZombies,
+    zombies: [...nextZombies, ...newZombies],
     status: breached ? 'lost' : state.status,
     phase: breached ? 'lost' : state.phase,
   };

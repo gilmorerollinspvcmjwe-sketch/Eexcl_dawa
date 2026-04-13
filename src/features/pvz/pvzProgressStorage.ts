@@ -1,5 +1,5 @@
 /* PvZ 进度存储层。管理玩家通关进度、解锁状态、关卡记录的持久化。 */
-import type { PvZLevelId, PvZPlantId, PvZZombieId } from './pvzTypes.ts';
+import type { PvZPlantId, PvZZombieId } from './pvzTypes.ts';
 import { PVZ_ADVENTURE_LEVELS, PVZ_ADVENTURE_LEVEL_MAP } from './pvzAdventureLevels.ts';
 import { PVZ_PLANTS } from './pvzPlantRegistry.ts';
 import { PVZ_ZOMBIES } from './pvzZombieRegistry.ts';

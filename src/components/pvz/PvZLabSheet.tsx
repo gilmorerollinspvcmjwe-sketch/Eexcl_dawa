@@ -131,7 +131,7 @@ export const PvZLabSheet: React.FC<PvZLabSheetProps> = ({ onFormulaChange }) => 
                 )}
                 {status === 'completed' && progress.levelRecords[scenario.id] && (
                   <small className="pvz-completed-hint">
-                    卡组: {progress.levelRecords[scenario.id].usedCards.map((id) => PVZ_PLANT_MAP[id]?.shortName ?? id).join(' ')}
+                    卡组: {progress.levelRecords[scenario.id].usedCards.map((id) => PVZ_PLANT_MAP[id as keyof typeof PVZ_PLANT_MAP]?.shortName ?? id).join(' ')}
                   </small>
                 )}
                 <div className="pvz-recommended-cards">
