@@ -249,6 +249,10 @@ export interface PvZLevelDefinition {
   enemyRoster: PvZZombieId[];
   spawnQueue: PvZSpawnEvent[];
   isExam?: boolean;
+  previousLevelId?: string;
+  nextLevelId?: string;
+  chapterTitle?: string;
+  isBossLevel?: boolean;
 }
 
 export interface PvZBoardState {

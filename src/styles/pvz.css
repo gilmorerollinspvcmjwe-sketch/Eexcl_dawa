@@ -795,3 +795,127 @@
     grid-template-columns: repeat(9, minmax(62px, 1fr));
   }
 }
+
+/* ==================== 解锁树 UI ==================== */
+.pvz-progress-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pvz-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pvz-stat-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.pvz-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #107c41;
+}
+
+.pvz-scenario-card--completed {
+  border-left: 3px solid #107c41;
+}
+
+.pvz-scenario-card--unlocked {
+  border-left: 3px solid #f59e0b;
+}
+
+.pvz-scenario-card--locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-left: 3px solid #9ca3af;
+}
+
+.pvz-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.pvz-status-badge {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.pvz-lock-hint {
+  color: #ef4444;
+  font-size: 0.7rem;
+}
+
+.pvz-completed-hint {
+  color: #107c41;
+  font-size: 0.7rem;
+}
+
+.pvz-recommended-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.pvz-card-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  font-size: 0.68rem;
+  color: #374151;
+}
+
+.pvz-small-btn {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+
+.pvz-small-btn:hover {
+  background: #f3f4f6;
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.pvz-card--locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+.pvz-card-cooldown--locked {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.pvz-unlock-notice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pvz-unlock-notice strong {
+  color: #92400e;
+  font-size: 0.85rem;
+}
+
+.pvz-unlock-notice span {
+  color: #78350f;
+  font-size: 0.78rem;
+}

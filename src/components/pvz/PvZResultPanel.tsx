@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { getPvZOutcomeRecommendation } from '../../features/pvz/pvzChapterGuidance';
+import { completeLevel, loadProgress } from '../../features/pvz/pvzProgressStorage';
 import type { PvZBoardState } from '../../features/pvz/pvzTypes';
+import { PVZ_PLANT_MAP } from '../../features/pvz/pvzPlantRegistry';
 
 interface PvZResultPanelProps {
   state: PvZBoardState;
@@ -16,6 +18,28 @@ function formatDuration(ms: number): string {
 }
 
 export const PvZResultPanel: React.FC<PvZResultPanelProps> = ({ state, onRetry, onBackToSetup }) => {
+  const [newUnlocks, setNewUnlocks] = useState<{ plants: string[]; zombies: string[] } | null>(null);
+
+  useEffect(() => {
+    if (state.phase === 'won' && state.levelId) {
+      const progress = loadProgress();
+      const previousUnlockedPlants = new Set(progress.unlockedPlants);
+      const previousUnlockedZombies = new Set(progress.unlockedZombies);
+
+      const updated = completeLevel(progress, state.levelId, {
+        bestTime: state.elapsedMs,
+        usedCards: state.selectedCards,
+      });
+
+      const newPlants = updated.unlockedPlants.filter((id) => !previousUnlockedPlants.has(id));
+      const newZombies = updated.unlockedZombies.filter((id) => !previousUnlockedZombies.has(id));
+
+      if (newPlants.length > 0 || newZombies.length > 0) {
+        setNewUnlocks({ plants: newPlants, zombies: newZombies });
+      }
+    }
+  }, [state.phase, state.levelId, state.elapsedMs, state.selectedCards]);
+
   if (state.phase !== 'won' && state.phase !== 'lost') return null;
 
   const title = state.phase === 'won' ? '章节通关' : '防线失守';
@@ -34,6 +58,21 @@ export const PvZResultPanel: React.FC<PvZResultPanelProps> = ({ state, onRetry, 
         <span>用时：{formatDuration(state.elapsedMs)} | 波次：{Math.round(state.waveProgress * 100)}% | 剩余阳光：{state.sun}</span>
         <span>场上单位：植物 {state.plants.length} / 僵尸 {state.zombies.length}</span>
         <span>{getPvZOutcomeRecommendation(state)}</span>
+        {newUnlocks && (
+          <div className="pvz-unlock-notice">
+            <strong>🎉 新解锁内容</strong>
+            {newUnlocks.plants.length > 0 && (
+              <span>
+                植物：{newUnlocks.plants.map((id) => PVZ_PLANT_MAP[id]?.name ?? id).join('、')}
+              </span>
+            )}
+            {newUnlocks.zombies.length > 0 && (
+              <span>
+                僵尸：{newUnlocks.zombies.join('、')}
+              </span>
+            )}
+          </div>
+        )}
       </div>
       <div style={{ display: 'grid', gap: 8 }}>
         <button className="pvz-start-btn" onClick={onRetry}>同章再战</button>

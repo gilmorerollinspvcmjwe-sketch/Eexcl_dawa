@@ -1,4 +1,4 @@
-﻿// 涓绘父鎴忛€昏緫鍗忚皟灞?- 鏁村悎鍚勫瓙绯荤粺
+﻿﻿// 涓绘父鎴忛€昏緫鍗忚皟灞?- 鏁村悎鍚勫瓙绯荤粺
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GameMode, TimedDuration, HitEffect, LevelConfig, MultiGridEnemy, EnemyPart } from '../types';

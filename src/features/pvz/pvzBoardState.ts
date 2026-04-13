@@ -299,8 +299,137 @@ function applyPlantAttacks(state: PvZBoardState, elapsedMs: number) {
   const zombieDamage = new Map<string, number>();
   const nextPlants = state.plants.map((plant) => {
     const definition = PVZ_PLANT_MAP[plant.plantId];
+    if (!definition.damage && !definition.producesSun) return plant;
+
+    // 地刺/地刺王：对经过的僵尸持续造成伤害
+    if (plant.plantId === 'spikeweed' || plant.plantId === 'spikerock') {
+      const zombiesOnTile = state.zombies.filter((zombie) => zombie.row === plant.row && Math.abs(zombie.x - plant.col) < 0.5);
+      if (zombiesOnTile.length > 0 && definition.damage) {
+        const nextTimer = plant.attackTimerMs + elapsedMs;
+        if (nextTimer >= (definition.attackIntervalMs || 1000)) {
+          for (const zombie of zombiesOnTile) {
+            zombieDamage.set(zombie.instanceId, (zombieDamage.get(zombie.instanceId) || 0) + definition.damage);
+          }
+          return { ...plant, attackTimerMs: 0 };
+        }
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+      return plant;
+    }
+
+    // 忧郁蘑菇：3×3 范围伤害
+    if (plant.plantId === 'gloomShroom' && definition.damage && definition.attackIntervalMs) {
+      const zombiesInRange = state.zombies.filter((zombie) => {
+        const rowDiff = Math.abs(zombie.row - plant.row);
+        const colDiff = Math.abs(zombie.x - plant.col);
+        return rowDiff <= 1 && colDiff <= 1.5;
+      });
+      if (zombiesInRange.length > 0) {
+        const nextTimer = plant.attackTimerMs + elapsedMs;
+        if (nextTimer >= definition.attackIntervalMs) {
+          for (const zombie of zombiesInRange) {
+            zombieDamage.set(zombie.instanceId, (zombieDamage.get(zombie.instanceId) || 0) + definition.damage);
+          }
+          return { ...plant, attackTimerMs: 0 };
+        }
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+      return plant;
+    }
+
+    // 窝瓜：跳跃砸击最近的僵尸
+    if (plant.plantId === 'squash' && definition.damage && definition.attackIntervalMs) {
+      const targetZombie = state.zombies.find((zombie) => zombie.row === plant.row && zombie.x > plant.col && zombie.x < plant.col + 3);
+      if (targetZombie) {
+        const nextTimer = plant.attackTimerMs + elapsedMs;
+        if (nextTimer >= definition.attackIntervalMs) {
+          zombieDamage.set(targetZombie.instanceId, (zombieDamage.get(targetZombie.instanceId) || 0) + definition.damage);
+          // 窝瓜使用后消失
+          return { ...plant, hp: 0, attackTimerMs: 0 };
+        }
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+      return plant;
+    }
+
     if (!definition.damage || !definition.attackIntervalMs) return plant;
 
+    // 裂荚射手：前后双向射击
+    if (plant.plantId === 'splitPea') {
+      const zombieAhead = state.zombies.find((zombie) => zombie.row === plant.row && zombie.x >= plant.col);
+      const zombieBehind = state.zombies.find((zombie) => zombie.row === plant.row && zombie.x < plant.col && zombie.x > plant.col - 5);
+      if (!zombieAhead && !zombieBehind) return plant;
+
+      const nextTimer = plant.attackTimerMs + elapsedMs;
+      if (nextTimer < definition.attackIntervalMs) {
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+
+      if (zombieAhead && definition.projectileKind) {
+        createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6, definition.damage));
+      }
+      if (zombieBehind && definition.projectileKind) {
+        createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col - 0.3, definition.damage));
+      }
+
+      return { ...plant, attackTimerMs: 0 };
+    }
+
+    // 星星果：5 方向射击
+    if (plant.plantId === 'starfruit') {
+      const hasZombieAhead = state.zombies.some((zombie) => zombie.row === plant.row && zombie.x >= plant.col);
+      const hasZombieBehind = state.zombies.some((zombie) => zombie.row === plant.row && zombie.x < plant.col && zombie.x > plant.col - 5);
+      const hasZombieAbove = state.zombies.some((zombie) => zombie.row < plant.row && Math.abs(zombie.x - plant.col) < 2);
+      const hasZombieBelow = state.zombies.some((zombie) => zombie.row > plant.row && Math.abs(zombie.x - plant.col) < 2);
+
+      if (!hasZombieAhead && !hasZombieBehind && !hasZombieAbove && !hasZombieBelow) return plant;
+
+      const nextTimer = plant.attackTimerMs + elapsedMs;
+      if (nextTimer < definition.attackIntervalMs) {
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+
+      if (hasZombieAhead && definition.projectileKind) {
+        createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6, definition.damage));
+      }
+      if (hasZombieBehind && definition.projectileKind) {
+        createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col - 0.3, definition.damage));
+      }
+      if (hasZombieAbove && definition.projectileKind) {
+        createdProjectiles.push(createProjectile(definition.projectileKind, plant.row - 1, plant.col + 0.3, definition.damage));
+      }
+      if (hasZombieBelow && definition.projectileKind) {
+        createdProjectiles.push(createProjectile(definition.projectileKind, plant.row + 1, plant.col + 0.3, definition.damage));
+      }
+
+      return { ...plant, attackTimerMs: 0 };
+    }
+
+    // 三线射手：相邻三路射击
+    if (definition.multiLane === 'adjacent' && definition.projectileKind) {
+      const lanes = [plant.row];
+      if (plant.row > 0) lanes.push(plant.row - 1);
+      if (plant.row < ROWS - 1) lanes.push(plant.row + 1);
+
+      const hasZombie = lanes.some((lane) => state.zombies.some((zombie) => zombie.row === lane && zombie.x >= plant.col));
+      if (!hasZombie) return plant;
+
+      const nextTimer = plant.attackTimerMs + elapsedMs;
+      if (nextTimer < definition.attackIntervalMs) {
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+
+      for (const lane of lanes) {
+        const zombieAhead = state.zombies.find((zombie) => zombie.row === lane && zombie.x >= plant.col);
+        if (zombieAhead) {
+          createdProjectiles.push(createProjectile(definition.projectileKind, lane, plant.col + 0.6, definition.damage));
+        }
+      }
+
+      return { ...plant, attackTimerMs: 0 };
+    }
+
+    // 普通射击逻辑
     const zombieAhead = state.zombies.find((zombie) => zombie.row === plant.row && zombie.x >= plant.col);
     if (!zombieAhead) return plant;
 

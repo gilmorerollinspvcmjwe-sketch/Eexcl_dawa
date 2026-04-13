@@ -15,6 +15,7 @@ import {
   getPvZAdventureScenariosByChapterIndex,
   getPvZScenariosByMode,
 } from '../../features/pvz/pvzScenarioCatalog';
+import { loadProgress, isLevelUnlocked } from '../../features/pvz/pvzProgressStorage';
 import type { PvZBoardState, PvZMode, PvZPlantId, PvZScenarioId } from '../../features/pvz/pvzTypes';
 import { PvZHud } from './PvZHud';
 import { PvZCardTray } from './PvZCardTray';
@@ -37,6 +38,7 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
   const [state, setState] = useState<PvZBoardState>(() => createPvZBoardState());
   const [adventurePackIndex, setAdventurePackIndex] = useState(1);
   const [setupCollapsed, setSetupCollapsed] = useState(false);
+  const progress = useMemo(() => loadProgress(), []);
   const chapterGuidance = getPvZChapterGuidance(state.chapterId);
   const modeLabel = MODE_LABELS[state.mode];
   const visibleScenarios = useMemo(
@@ -182,23 +184,30 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
                 ) : null}
 
                 <div className="pvz-scenario-grid">
-                  {visibleScenarios.map((scenario) => (
-                    <button
-                      key={scenario.id}
-                      type="button"
-                      className={`pvz-scenario-card${state.scenarioId === scenario.id ? ' active' : ''}`}
-                      onClick={() => handleScenarioSelect(scenario.id)}
-                    >
-                      <strong>
-                        {scenario.levelNumber ? `${scenario.id} ${scenario.title}` : scenario.title}
-                      </strong>
-                      <span>{scenario.summary}</span>
-                      <small>{scenario.objective}</small>
-                      <small>
-                        {scenario.intensity ? `强度 ${scenario.intensity}` : '特别规则'} · 阳光 {scenario.baseSun ?? state.sun}
-                      </small>
-                    </button>
-                  ))}
+                  {visibleScenarios.map((scenario) => {
+                    const unlocked = state.mode !== 'adventure' || isLevelUnlocked(progress, scenario.id);
+                    return (
+                      <button
+                        key={scenario.id}
+                        type="button"
+                        className={`pvz-scenario-card${state.scenarioId === scenario.id ? ' active' : ''}${!unlocked ? ' pvz-scenario-card--locked' : ''}`}
+                        onClick={() => unlocked && handleScenarioSelect(scenario.id)}
+                        disabled={!unlocked}
+                      >
+                        <strong>
+                          {scenario.levelNumber ? `${scenario.id} ${scenario.title}` : scenario.title}
+                        </strong>
+                        <span>{scenario.summary}</span>
+                        <small>{scenario.objective}</small>
+                        <small>
+                          {scenario.intensity ? `强度 ${scenario.intensity}` : '特别规则'} · 阳光 {scenario.baseSun ?? state.sun}
+                        </small>
+                        {!unlocked && (
+                          <small className="pvz-lock-hint">需通过前置关卡解锁</small>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </>
@@ -221,6 +230,7 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
               : { ...current, selectedPlantId: plantId },
           )
         }
+        unlockedPlants={progress.unlockedPlants}
       />
 
       {state.phase !== 'setup' ? (

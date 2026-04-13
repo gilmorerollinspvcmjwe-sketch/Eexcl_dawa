@@ -12,9 +12,10 @@ import type { PvZBoardState, PvZPlantId } from '../../features/pvz/pvzTypes';
 interface PvZCardTrayProps {
   state: PvZBoardState;
   onSelect: (plantId: PvZPlantId) => void;
+  unlockedPlants?: string[];
 }
 
-export const PvZCardTray: React.FC<PvZCardTrayProps> = ({ state, onSelect }) => {
+export const PvZCardTray: React.FC<PvZCardTrayProps> = ({ state, onSelect, unlockedPlants }) => {
   const availablePlantIds = state.phase === 'setup' ? state.availablePlants : state.selectedCards;
   const availablePlants = PVZ_PLANTS
     .filter((plant) => availablePlantIds.includes(plant.id))
@@ -47,6 +48,7 @@ export const PvZCardTray: React.FC<PvZCardTrayProps> = ({ state, onSelect }) => 
           const isSelectedInSetup = state.phase === 'setup' && state.selectedCards.includes(plant.id);
           const isSelectedInBattle = state.phase !== 'setup' && state.selectedPlantId === plant.id;
           const isRecommended = state.phase === 'setup' && state.recommendedCards.includes(plant.id);
+          const isUnlocked = !unlockedPlants || unlockedPlants.includes(plant.id);
           const disabled =
             state.phase === 'setup'
               ? state.selectedCards.length >= 6 && !state.selectedCards.includes(plant.id)
@@ -54,9 +56,9 @@ export const PvZCardTray: React.FC<PvZCardTrayProps> = ({ state, onSelect }) => 
           return (
             <button
               key={plant.id}
-              className={`pvz-card ${getPvZPlantToneClass(plant.id)} ${isSelectedInSetup || isSelectedInBattle ? 'selected' : ''} ${isRecommended ? 'pvz-card--recommended' : ''}`.trim()}
-              disabled={disabled || (state.phase !== 'setup' && state.status !== 'playing')}
-              onClick={() => onSelect(plant.id)}
+              className={`pvz-card ${getPvZPlantToneClass(plant.id)} ${isSelectedInSetup || isSelectedInBattle ? 'selected' : ''} ${isRecommended ? 'pvz-card--recommended' : ''} ${!isUnlocked ? 'pvz-card--locked' : ''}`.trim()}
+              disabled={disabled || (state.phase !== 'setup' && state.status !== 'playing') || !isUnlocked}
+              onClick={() => isUnlocked && onSelect(plant.id)}
             >
               <span className="pvz-card-topline">
                 <span className="pvz-card-short">{plant.shortName}</span>
@@ -69,7 +71,9 @@ export const PvZCardTray: React.FC<PvZCardTrayProps> = ({ state, onSelect }) => 
                 {isRecommended ? <span className="pvz-card-stat pvz-card-stat--recommend">推荐</span> : null}
               </div>
               <span className="pvz-card-meta">阳光 {plant.cost}</span>
-              {state.phase === 'setup' ? (
+              {!isUnlocked ? (
+                <span className="pvz-card-cooldown pvz-card-cooldown--locked">🔒 未解锁</span>
+              ) : state.phase === 'setup' ? (
                 <span className="pvz-card-cooldown">
                   {state.selectedCards.includes(plant.id)
                     ? '已编入卡组'

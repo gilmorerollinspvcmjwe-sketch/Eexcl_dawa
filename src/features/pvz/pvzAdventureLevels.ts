@@ -1,5 +1,6 @@
 /* PvZ 主线 100 关数据。用章节包 + 生成器压缩维护成本，供 Sheet7/Sheet9 直接消费。 */
 import type { PvZChapterId, PvZLevelDefinition, PvZPlantId, PvZSpawnEvent, PvZZombieId } from './pvzTypes.ts';
+import { PVZ_CHAPTERS } from './pvzChapters.ts';
 
 type LevelIntensity = PvZLevelDefinition['intensity'];
 type LevelTuple = [
@@ -277,6 +278,10 @@ const ADVENTURE_SEEDS = flattenLevelPacks();
 export const PVZ_ADVENTURE_LEVELS: PvZLevelDefinition[] = ADVENTURE_SEEDS.map((seed, index) => {
   const availablePlants = buildAvailablePlants(CHAPTER_PACKS.flatMap((pack) => pack.levels), index);
   const waveDurationMs = seed.waveSeconds * 1000;
+  const chapter = PVZ_CHAPTERS.find((c) => c.id === seed.chapterId);
+  const prevLevelId = index > 0 ? ADVENTURE_SEEDS[index - 1]?.id : undefined;
+  const nextLevelId = index < ADVENTURE_SEEDS.length - 1 ? ADVENTURE_SEEDS[index + 1]?.id : undefined;
+  const isBossLevel = seed.isExam || index === ADVENTURE_SEEDS.length - 1;
   return {
     id: seed.id,
     levelNumber: index + 1,
@@ -299,6 +304,10 @@ export const PVZ_ADVENTURE_LEVELS: PvZLevelDefinition[] = ADVENTURE_SEEDS.map((s
     enemyRoster: seed.enemyRoster,
     spawnQueue: buildSpawnQueue(seed.id, seed.enemyRoster, seed.intensity, seed.chapterIndex, waveDurationMs),
     isExam: seed.isExam,
+    previousLevelId: prevLevelId,
+    nextLevelId: nextLevelId,
+    chapterTitle: chapter?.title,
+    isBossLevel,
   };
 });
 
