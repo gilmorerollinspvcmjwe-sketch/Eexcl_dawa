@@ -200,6 +200,11 @@ export interface PvZPlantInstance {
   attackTimerMs: number;
   sunTimerMs: number;
   armed: boolean;
+  isAttacking?: boolean;
+  attackTargetRow?: number;
+  lastAttackTime?: number;
+  isBeingAttacked?: boolean;
+  attackFlashTimerMs?: number;
 }
 
 export interface PvZZombieInstance {
@@ -208,6 +213,13 @@ export interface PvZZombieInstance {
   row: number;
   x: number;
   hp: number;
+  isStealth?: boolean;
+  isAirborne?: boolean;
+  isSummoning?: boolean;
+  summonTimerMs?: number;
+  hasThrownImp?: boolean;
+  isAttacking?: boolean;
+  attackTargetId?: string;
 }
 
 export interface PvZProjectile {
@@ -218,6 +230,11 @@ export interface PvZProjectile {
   speed: number;
   damage: number;
   targetZombieId?: string;
+  splashRadius?: number;
+  slowEffect?: boolean;
+  targetRow?: number;
+  isTracking?: boolean;
+  markEffect?: boolean;
 }
 
 export interface PvZSpawnEvent {
@@ -225,6 +242,15 @@ export interface PvZSpawnEvent {
   zombieId: PvZZombieId;
   row: number;
   spawnAtMs: number;
+}
+
+export interface PvZWaveConfig {
+  waveIndex: number;
+  waveType: 'small' | 'large' | 'final';
+  zombieCount: number;
+  zombieTypes: PvZZombieId[];
+  spawnIntervalMs: number;
+  preWaveDelayMs: number;
 }
 
 export interface PvZLevelDefinition {
@@ -248,12 +274,35 @@ export interface PvZLevelDefinition {
   unlockZombies: PvZZombieId[];
   enemyRoster: PvZZombieId[];
   spawnQueue: PvZSpawnEvent[];
+  waves: PvZWaveConfig[];
+  hasLawnMowers: boolean;
+  skyDropSun: boolean;
+  environment: 'day' | 'night' | 'pool' | 'fog' | 'roof';
   isExam?: boolean;
   previousLevelId?: string;
   nextLevelId?: string;
   chapterTitle?: string;
   isBossLevel?: boolean;
 }
+
+export interface PvZSunDrop {
+  dropId: string;
+  row: number;
+  x: number;
+  y: number;
+  targetY: number;
+  amount: number;
+  spawnTime: number;
+  lifetimeMs: number;
+}
+
+export interface PvZLawnMowerState {
+  active: boolean;
+  triggered: boolean;
+  x: number;
+}
+
+export type PvZFogMask = boolean[][];
 
 export interface PvZBoardState {
   rows: number;
@@ -291,9 +340,21 @@ export interface PvZBoardState {
   spawnQueue: PvZSpawnEvent[];
   scenarioSpawnQueueBase: PvZSpawnEvent[];
   lawnMowers: boolean[];
+  lawnMowerStates: PvZLawnMowerState[];
   cardCooldownsMs: Partial<Record<PvZPlantId, number>>;
   scenarioSegmentsTotal: number;
   scenarioSegmentIndex: number;
   scenarioSunDrainPerSecond: number;
   scenarioSegmentDurationMs: number;
+  currentWaveIndex: number;
+  waveState: 'idle' | 'active' | 'complete' | 'interval';
+  waves: PvZWaveConfig[];
+  waveTimerMs: number;
+  skyDrops: PvZSunDrop[];
+  lastSkySunTime: number;
+  shovelMode: boolean;
+  gameSpeed: 1 | 2;
+  isPaused: boolean;
+  environment: PvZLevelDefinition['environment'];
+  fogMask: PvZFogMask;
 }

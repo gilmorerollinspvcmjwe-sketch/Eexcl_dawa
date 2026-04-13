@@ -2,10 +2,23 @@ import React from 'react';
 import { getPvZChapterGuidance } from '../../features/pvz/pvzChapterGuidance';
 import type { PvZBoardState } from '../../features/pvz/pvzTypes';
 
-export const PvZHud: React.FC<{ state: PvZBoardState }> = ({ state }) => {
+interface PvZHudProps {
+  state: PvZBoardState;
+  onTogglePause?: () => void;
+  onToggleSpeed?: () => void;
+  onToggleShovel?: () => void;
+}
+
+export const PvZHud: React.FC<PvZHudProps> = ({ state, onTogglePause, onToggleSpeed, onToggleShovel }) => {
   const guidance = getPvZChapterGuidance(state.chapterId);
   const modeLabel = state.mode === 'adventure' ? '章节征途' : state.mode === 'lab' ? '洞察试验' : '长线生存';
   const levelLabel = state.levelNumber ? `${state.levelId} ${state.levelTitle}` : state.chapterTitle;
+
+  const currentWave = state.waves[state.currentWaveIndex];
+  const isLargeWave = currentWave?.waveType === 'large';
+  const isFinalWave = currentWave?.waveType === 'final';
+  const showWaveAlert = state.waveState === 'interval' && (isLargeWave || isFinalWave);
+
   return (
     <div className="pvz-hud">
       <div className="pvz-hud-item pvz-hud-mode">
@@ -42,6 +55,42 @@ export const PvZHud: React.FC<{ state: PvZBoardState }> = ({ state }) => {
       <div className={`pvz-hud-item status-${state.status}`}>
         {state.status === 'playing' ? '进行中' : state.status === 'won' ? '胜利' : '失败'}
       </div>
+
+      {onToggleShovel && (
+        <button
+          className={`pvz-hud-btn pvz-shovel-btn ${state.shovelMode ? 'pvz-shovel-btn--active' : ''}`}
+          onClick={onToggleShovel}
+          title="铲子：移除植物"
+        >
+          🗑️ {state.shovelMode ? '铲子模式' : '铲子'}
+        </button>
+      )}
+
+      {onTogglePause && (
+        <button
+          className="pvz-hud-btn pvz-pause-btn"
+          onClick={onTogglePause}
+          title={state.isPaused ? '恢复游戏' : '暂停游戏'}
+        >
+          {state.isPaused ? '▶️ 恢复' : '⏸️ 暂停'}
+        </button>
+      )}
+
+      {onToggleSpeed && (
+        <button
+          className={`pvz-hud-btn pvz-speed-btn ${state.gameSpeed === 2 ? 'pvz-speed-btn--fast' : ''}`}
+          onClick={onToggleSpeed}
+          title={state.gameSpeed === 1 ? '加速游戏' : '正常速度'}
+        >
+          {state.gameSpeed === 1 ? '⏩ 加速' : '⏩ 2x'}
+        </button>
+      )}
+
+      {showWaveAlert && (
+        <div className={`pvz-wave-alert ${isFinalWave ? 'pvz-wave-alert--final' : 'pvz-wave-alert--large'}`}>
+          {isFinalWave ? '⚠️ 最终波！' : '⚠️ 大波僵尸来袭！'}
+        </div>
+      )}
     </div>
   );
 };

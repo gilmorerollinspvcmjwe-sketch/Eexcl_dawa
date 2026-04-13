@@ -1,5 +1,5 @@
 /* PvZ 主线 100 关数据。用章节包 + 生成器压缩维护成本，供 Sheet7/Sheet9 直接消费。 */
-import type { PvZChapterId, PvZLevelDefinition, PvZPlantId, PvZSpawnEvent, PvZZombieId } from './pvzTypes.ts';
+import type { PvZChapterId, PvZLevelDefinition, PvZPlantId, PvZSpawnEvent, PvZWaveConfig, PvZZombieId } from './pvzTypes.ts';
 import { PVZ_CHAPTERS } from './pvzChapters.ts';
 
 type LevelIntensity = PvZLevelDefinition['intensity'];
@@ -31,6 +31,16 @@ const INTENSITY_EVENT_COUNT: Record<LevelIntensity, number> = {
   S5: 14,
   'S5+': 16,
   S6: 18,
+};
+
+const INTENSITY_WAVE_COUNT: Record<LevelIntensity, number> = {
+  S1: 2,
+  S2: 3,
+  S3: 4,
+  S4: 5,
+  S5: 6,
+  'S5+': 6,
+  S6: 8,
 };
 
 const CHAPTER_PACKS: ChapterPack[] = [
@@ -229,6 +239,30 @@ function buildSpawnQueue(levelId: string, enemyRoster: PvZZombieId[], intensity:
   }));
 }
 
+function buildWaves(enemyRoster: PvZZombieId[], intensity: LevelIntensity, waveDurationMs: number): PvZWaveConfig[] {
+  const waveCount = INTENSITY_WAVE_COUNT[intensity];
+  const baseZombieCount = Math.ceil(INTENSITY_EVENT_COUNT[intensity] / waveCount);
+  const waveIntervalMs = Math.max(800, Math.floor(waveDurationMs / waveCount));
+  const preWaveDelayBase = 3000;
+
+  return Array.from({ length: waveCount }, (_, index) => {
+    const isFinal = index === waveCount - 1;
+    const zombieCount = isFinal ? Math.ceil(baseZombieCount * 1.5) : baseZombieCount;
+    const zombieTypes = enemyRoster.length > 2
+      ? enemyRoster.slice(0, Math.min(2 + index, enemyRoster.length))
+      : enemyRoster;
+
+    return {
+      waveIndex: index,
+      waveType: isFinal ? 'final' : (index % 2 === 0 ? 'small' : 'large') as 'small' | 'large' | 'final',
+      zombieCount,
+      zombieTypes,
+      spawnIntervalMs: Math.max(600, waveIntervalMs - index * 100),
+      preWaveDelayMs: index === 0 ? 0 : preWaveDelayBase + index * 500,
+    };
+  });
+}
+
 function buildAvailablePlants(flattenedLevels: LevelTuple[], currentIndex: number): PvZPlantId[] {
   const unlockedBefore = flattenedLevels.slice(0, currentIndex + 1).flatMap((level) => level[2]);
   const recommended = flattenedLevels[currentIndex][5];
@@ -282,6 +316,7 @@ export const PVZ_ADVENTURE_LEVELS: PvZLevelDefinition[] = ADVENTURE_SEEDS.map((s
   const prevLevelId = index > 0 ? ADVENTURE_SEEDS[index - 1]?.id : undefined;
   const nextLevelId = index < ADVENTURE_SEEDS.length - 1 ? ADVENTURE_SEEDS[index + 1]?.id : undefined;
   const isBossLevel = seed.isExam || index === ADVENTURE_SEEDS.length - 1;
+  const environment: PvZLevelDefinition['environment'] = seed.chapterId as PvZLevelDefinition['environment'];
   return {
     id: seed.id,
     levelNumber: index + 1,
@@ -303,11 +338,15 @@ export const PVZ_ADVENTURE_LEVELS: PvZLevelDefinition[] = ADVENTURE_SEEDS.map((s
     unlockZombies: seed.unlockZombies,
     enemyRoster: seed.enemyRoster,
     spawnQueue: buildSpawnQueue(seed.id, seed.enemyRoster, seed.intensity, seed.chapterIndex, waveDurationMs),
+    waves: buildWaves(seed.enemyRoster, seed.intensity, waveDurationMs),
     isExam: seed.isExam,
     previousLevelId: prevLevelId,
     nextLevelId: nextLevelId,
     chapterTitle: chapter?.title,
     isBossLevel,
+    hasLawnMowers: true,
+    skyDropSun: true,
+    environment,
   };
 });
 

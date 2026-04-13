@@ -9,6 +9,7 @@ import type {
   PvZScenarioFamily,
   PvZScenarioId,
   PvZSpawnEvent,
+  PvZWaveConfig,
 } from './pvzTypes.ts';
 
 export interface PvZScenarioDefinition {
@@ -36,6 +37,7 @@ export interface PvZScenarioDefinition {
   unlockZombies?: PvZLevelDefinition['unlockZombies'];
   enemyRoster?: PvZLevelDefinition['enemyRoster'];
   isExam?: boolean;
+  waves?: PvZWaveConfig[];
 }
 
 function cloneQueue(queue: PvZSpawnEvent[]): PvZSpawnEvent[] {

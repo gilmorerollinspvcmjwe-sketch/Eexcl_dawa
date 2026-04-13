@@ -5,14 +5,18 @@ import { getDefaultPvZScenarioIdForChapter, getPvZScenarioById } from './pvzScen
 import type {
   PvZBoardState,
   PvZChapterId,
+  PvZFogMask,
   PvZLevelDefinition,
   PvZMode,
   PvZPlantId,
+  PvZPlantDefinition,
   PvZPlantInstance,
   PvZProjectile,
   PvZProjectileKind,
   PvZScenarioId,
   PvZSpawnEvent,
+  PvZSunDrop,
+  PvZWaveConfig,
   PvZZombieId,
   PvZZombieInstance,
 } from './pvzTypes.ts';
@@ -20,6 +24,86 @@ import type {
 const ROWS = 5;
 const COLS = 9;
 const CARD_LIMIT = 6;
+
+function isWaterTile(environment: PvZLevelDefinition['environment'], row: number): boolean {
+  if (environment !== 'pool' && environment !== 'fog') return false;
+  return row === 1 || row === 3;
+}
+
+function canPlantOnWater(definition: PvZPlantDefinition, plantsOnTile: PvZPlantInstance[]): boolean {
+  if (definition.requiresTile === 'water') return true;
+  if (definition.id === 'lilyPad') return true;
+  const hasLilyPad = plantsOnTile.some((plant) => plant.plantId === 'lilyPad');
+  return hasLilyPad;
+}
+
+function isRoofTile(environment: PvZLevelDefinition['environment']): boolean {
+  return environment === 'roof';
+}
+
+function canPlantOnRoof(definition: PvZPlantDefinition, plantsOnTile: PvZPlantInstance[]): boolean {
+  if (definition.id === 'flowerPot') return true;
+  const hasFlowerPot = plantsOnTile.some((plant) => plant.plantId === 'flowerPot');
+  return hasFlowerPot;
+}
+
+function isLobberPlant(plantId: PvZPlantId): boolean {
+  const definition = PVZ_PLANT_MAP[plantId];
+  if (!definition) return false;
+  if (plantId === 'flowerPot') return true;
+  return definition.archetype === 'lobber';
+}
+
+const FOG_VISIBILITY_RADIUS = 1;
+
+function createFogMask(rows: number, cols: number, isFogEnvironment: boolean): PvZFogMask {
+  if (!isFogEnvironment) {
+    return Array.from({ length: rows }, () => Array.from({ length: cols }, () => false));
+  }
+  return Array.from({ length: rows }, () => Array.from({ length: cols }, () => true));
+}
+
+export function updateFogVisibility(state: PvZBoardState): PvZBoardState {
+  if (state.environment !== 'fog') {
+    return {
+      ...state,
+      fogMask: createFogMask(state.rows, state.cols, false),
+    };
+  }
+
+  const newFogMask: PvZFogMask = Array.from({ length: state.rows }, () =>
+    Array.from({ length: state.cols }, () => true),
+  );
+
+  const planterns = state.plants.filter((plant) => plant.plantId === 'plantern');
+
+  for (const plantern of planterns) {
+    for (let rowOffset = -FOG_VISIBILITY_RADIUS; rowOffset <= FOG_VISIBILITY_RADIUS; rowOffset += 1) {
+      for (let colOffset = -FOG_VISIBILITY_RADIUS; colOffset <= FOG_VISIBILITY_RADIUS; colOffset += 1) {
+        const targetRow = plantern.row + rowOffset;
+        const targetCol = plantern.col + colOffset;
+        if (targetRow >= 0 && targetRow < state.rows && targetCol >= 0 && targetCol < state.cols) {
+          newFogMask[targetRow][targetCol] = false;
+        }
+      }
+    }
+  }
+
+  return { ...state, fogMask: newFogMask };
+}
+
+export function checkPlantInFog(state: PvZBoardState, row: number, col: number): boolean {
+  if (state.environment !== 'fog') return false;
+  if (row < 0 || row >= state.rows || col < 0 || col >= state.cols) return false;
+  return state.fogMask[row]?.[col] ?? false;
+}
+
+export function checkZombieInFog(state: PvZBoardState, row: number, x: number): boolean {
+  if (state.environment !== 'fog') return false;
+  const col = Math.floor(x);
+  if (row < 0 || row >= state.rows || col < 0 || col >= state.cols) return false;
+  return state.fogMask[row]?.[col] ?? false;
+}
 
 type CreatePvZBoardOptions = {
   chapterId?: PvZChapterId;
@@ -46,7 +130,19 @@ function createPlantInstance(plantId: PvZPlantId, row: number, col: number): PvZ
   };
 }
 
-function createProjectile(kind: PvZProjectileKind, row: number, x: number, damage: number): PvZProjectile {
+function createProjectile(
+  kind: PvZProjectileKind,
+  row: number,
+  x: number,
+  damage: number,
+  options?: {
+    splashRadius?: number;
+    slowEffect?: boolean;
+    targetRow?: number;
+    isTracking?: boolean;
+    markEffect?: boolean;
+  },
+): PvZProjectile {
   const speeds: Record<PvZProjectileKind, number> = {
     pea: 0.0015,
     'double-pea': 0.0018,
@@ -64,7 +160,64 @@ function createProjectile(kind: PvZProjectileKind, row: number, x: number, damag
     x,
     speed: speeds[kind],
     damage,
+    splashRadius: options?.splashRadius,
+    slowEffect: options?.slowEffect,
+    targetRow: options?.targetRow,
+    isTracking: options?.isTracking,
+    markEffect: options?.markEffect,
   };
+}
+
+const SKY_SUN_FALL_SPEED = 0.0003;
+const SKY_SUN_LIFETIME_MS = 10000;
+
+function spawnSkySun(state: PvZBoardState): PvZBoardState {
+  const row = Math.floor(Math.random() * ROWS);
+  const x = 0.5 + Math.random() * (COLS - 1);
+  const amount = Math.random() < 0.8 ? 25 : 50;
+  const targetY = row;
+  const drop: PvZSunDrop = {
+    dropId: `sun-${Date.now()}-${Math.random()}`,
+    row,
+    x,
+    y: -0.5,
+    targetY,
+    amount,
+    spawnTime: state.elapsedMs,
+    lifetimeMs: SKY_SUN_LIFETIME_MS,
+  };
+  return {
+    ...state,
+    skyDrops: [...state.skyDrops, drop],
+  };
+}
+
+export function collectSunDrop(state: PvZBoardState, dropId: string): PvZBoardState {
+  const drop = state.skyDrops.find((d) => d.dropId === dropId);
+  if (!drop) return state;
+  return {
+    ...state,
+    sun: state.sun + drop.amount,
+    skyDrops: state.skyDrops.filter((d) => d.dropId !== dropId),
+  };
+}
+
+function updateSkyDrops(state: PvZBoardState, elapsedMs: number): PvZBoardState {
+  if (state.skyDrops.length === 0) return state;
+  const now = state.elapsedMs;
+  const updatedDrops: PvZSunDrop[] = [];
+  for (const drop of state.skyDrops) {
+    if (now - drop.spawnTime > drop.lifetimeMs) continue;
+    let newY = drop.y;
+    if (drop.y < drop.targetY) {
+      newY = drop.y + SKY_SUN_FALL_SPEED * elapsedMs;
+      if (newY >= drop.targetY) {
+        newY = drop.targetY;
+      }
+    }
+    updatedDrops.push({ ...drop, y: newY });
+  }
+  return { ...state, skyDrops: updatedDrops };
 }
 
 function resolveScenarioId(options?: CreatePvZBoardOptions): PvZScenarioId {
@@ -128,9 +281,13 @@ export function createPvZBoardState(input: PvZChapterId | CreatePvZBoardOptions 
   const segmentDurationMs = scenario.segmentDurationMs ?? scenario.waveDurationMs ?? chapter.waveDurationMs;
   const totalDurationMs = scenario.mode === 'survival' ? segmentDurationMs * segmentsTotal : segmentDurationMs;
   const defaultCards = [...(scenario.defaultCards ?? chapter.defaultCards)];
-  const availablePlants = levelMeta.availablePlants && levelMeta.availablePlants.length > 0
+  const environment: PvZLevelDefinition['environment'] = chapter.id as PvZLevelDefinition['environment'];
+  const baseAvailablePlants = levelMeta.availablePlants && levelMeta.availablePlants.length > 0
     ? [...levelMeta.availablePlants]
     : [...defaultCards];
+  const availablePlants = environment === 'roof'
+    ? baseAvailablePlants.filter((plantId) => isLobberPlant(plantId))
+    : baseAvailablePlants;
   const recommendedCards = levelMeta.recommendedCards && levelMeta.recommendedCards.length > 0
     ? [...levelMeta.recommendedCards]
     : [...defaultCards];
@@ -144,6 +301,7 @@ export function createPvZBoardState(input: PvZChapterId | CreatePvZBoardOptions 
     levelNumber: levelMeta.levelNumber ?? null,
     levelTitle: levelMeta.title ?? scenario.title,
     chapterId: chapter.id,
+    environment,
     chapterTitle: scenario.title,
     chapterSummary: scenario.summary,
     scenarioRules: [...scenario.rules],
@@ -174,7 +332,18 @@ export function createPvZBoardState(input: PvZChapterId | CreatePvZBoardOptions 
     scenarioSunDrainPerSecond: scenario.sunDrainPerSecond ?? 0,
     scenarioSegmentDurationMs: segmentDurationMs,
     lawnMowers: Array.from({ length: ROWS }, () => true),
+    lawnMowerStates: Array.from({ length: ROWS }, () => ({ active: true, triggered: false, x: -0.5 })),
     cardCooldownsMs: {},
+    currentWaveIndex: 0,
+    waveState: 'idle',
+    waves: [...(scenario.waves ?? [])],
+    waveTimerMs: 0,
+    skyDrops: [],
+    lastSkySunTime: 0,
+    shovelMode: false,
+    gameSpeed: 1,
+    isPaused: false,
+    fogMask: createFogMask(ROWS, COLS, environment === 'fog'),
   };
 }
 
@@ -232,10 +401,15 @@ export function placePlant(state: PvZBoardState, plantId: PvZPlantId, row: numbe
   const definition = PVZ_PLANT_MAP[plantId];
   if (!definition) return state;
   if (state.sun < definition.cost) return state;
-  if (state.plants.some((plant) => plant.row === row && plant.col === col)) return state;
+  const plantsOnTile = state.plants.filter((plant) => plant.row === row && plant.col === col);
+  const hasPlatform = plantsOnTile.some((plant) => plant.plantId === 'lilyPad' || plant.plantId === 'flowerPot');
+  if (plantsOnTile.length > 0 && !hasPlatform) return state;
   if ((state.cardCooldownsMs[plantId] || 0) > 0) return state;
 
-  return {
+  if (isWaterTile(state.environment, row) && !canPlantOnWater(definition, plantsOnTile)) return state;
+  if (isRoofTile(state.environment) && !canPlantOnRoof(definition, plantsOnTile)) return state;
+
+  const newState = {
     ...state,
     sun: state.sun - definition.cost,
     plants: [...state.plants, createPlantInstance(plantId, row, col)],
@@ -244,6 +418,8 @@ export function placePlant(state: PvZBoardState, plantId: PvZPlantId, row: numbe
       [plantId]: definition.cooldownMs,
     },
   };
+
+  return updateFogVisibility(newState);
 }
 
 export function spawnZombieNow(state: PvZBoardState, zombieId: PvZZombieId, row: number, x = COLS - 0.2): PvZBoardState {
@@ -510,6 +686,67 @@ function applyPlantAttacks(state: PvZBoardState, elapsedMs: number) {
       return plant;
     }
 
+    // 激光豆：整线穿透攻击
+    if (plant.plantId === 'laserBean' && definition.projectileKind === 'shock') {
+      const zombiesInLane = state.zombies.filter((zombie) => zombie.row === plant.row && zombie.x >= plant.col);
+      if (zombiesInLane.length > 0) {
+        const nextTimer = plant.attackTimerMs + elapsedMs;
+        if (nextTimer >= definition.attackIntervalMs) {
+          // 对整行所有僵尸造成伤害
+          for (const zombie of zombiesInLane) {
+            zombieDamage.set(zombie.instanceId, (zombieDamage.get(zombie.instanceId) || 0) + definition.damage);
+          }
+          return { ...plant, attackTimerMs: 0, isAttacking: true, lastAttackTime: Date.now() };
+        }
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+      return plant;
+    }
+
+    // 菜问：高速近战连打
+    if (plant.plantId === 'bonkChoy' && definition.damage && definition.attackIntervalMs) {
+      const adjacentZombies = state.zombies.filter((zombie) => {
+        const rowDiff = Math.abs(zombie.row - plant.row);
+        const colDiff = Math.abs(zombie.x - plant.col);
+        return rowDiff <= 1 && colDiff <= 1.5;
+      });
+      if (adjacentZombies.length > 0) {
+        const nextTimer = plant.attackTimerMs + elapsedMs;
+        if (nextTimer >= definition.attackIntervalMs) {
+          // 对相邻僵尸造成伤害
+          for (const zombie of adjacentZombies) {
+            zombieDamage.set(zombie.instanceId, (zombieDamage.get(zombie.instanceId) || 0) + definition.damage);
+          }
+          return { ...plant, attackTimerMs: 0, isAttacking: true, lastAttackTime: Date.now() };
+        }
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+      return plant;
+    }
+
+    // 磁暴菇：群体脱甲
+    if (plant.plantId === 'magnetBurstShroom' && definition.supportEffect === 'armor-strip') {
+      const armoredZombies = state.zombies.filter((zombie) => {
+        const rowDiff = Math.abs(zombie.row - plant.row);
+        const colDiff = Math.abs(zombie.x - plant.col);
+        const zombieDef = PVZ_ZOMBIE_MAP[zombie.zombieId];
+        return rowDiff <= 2 && colDiff <= 3 && (zombieDef.armorHp ?? 0) > 0;
+      });
+      if (armoredZombies.length > 0) {
+        const nextTimer = plant.attackTimerMs + elapsedMs;
+        if (nextTimer >= (definition.attackIntervalMs || 10000)) {
+          // 移除护甲（简化实现：直接扣除护甲血量）
+          for (const zombie of armoredZombies) {
+            const zombieDef = PVZ_ZOMBIE_MAP[zombie.zombieId];
+            zombieDamage.set(zombie.instanceId, (zombieDamage.get(zombie.instanceId) || 0) + (zombieDef.armorHp ?? 0));
+          }
+          return { ...plant, attackTimerMs: 0, isAttacking: true, lastAttackTime: Date.now() };
+        }
+        return { ...plant, attackTimerMs: nextTimer };
+      }
+      return plant;
+    }
+
     // 普通射击逻辑
     const zombieAhead = state.zombies.find((zombie) => zombie.row === plant.row && zombie.x >= plant.col);
     if (!zombieAhead) return plant;
@@ -522,13 +759,44 @@ function applyPlantAttacks(state: PvZBoardState, elapsedMs: number) {
     if (definition.projectileKind) {
       const projectileCount = definition.projectileCount || 1;
       for (let index = 0; index < projectileCount; index += 1) {
-        createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage));
+        // 寒冰射手：减速效果
+        if (plant.plantId === 'snowPea') {
+          createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage, { slowEffect: true }));
+        }
+        // 西瓜投手：溅射效果
+        else if (plant.plantId === 'melonPult') {
+          createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage, { splashRadius: 3 }));
+        }
+        // 冰瓜投手：溅射 + 减速效果
+        else if (plant.plantId === 'winterMelon') {
+          createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage, { splashRadius: 3, slowEffect: true }));
+        }
+        // 冰西瓜藤：强控抛投（溅射 + 减速）
+        else if (plant.plantId === 'frostMelonVine') {
+          createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage, { splashRadius: 3, slowEffect: true }));
+        }
+        // 审计豆：高威胁标记
+        else if (plant.plantId === 'auditBean') {
+          createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage, { markEffect: true }));
+        }
+        // 猫尾草：追踪效果
+        else if (plant.plantId === 'cattail') {
+          createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage, { isTracking: true, targetRow: plant.row }));
+        }
+        // 香蒲投手：追踪抛投效果
+        else if (plant.plantId === 'reedPult') {
+          createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage, { isTracking: true, targetRow: plant.row }));
+        }
+        // 普通弹道
+        else {
+          createdProjectiles.push(createProjectile(definition.projectileKind, plant.row, plant.col + 0.6 + index * 0.15, definition.damage));
+        }
       }
     } else {
       zombieDamage.set(zombieAhead.instanceId, (zombieDamage.get(zombieAhead.instanceId) || 0) + definition.damage);
     }
 
-    return { ...plant, attackTimerMs: 0 };
+    return { ...plant, attackTimerMs: 0, isAttacking: true, lastAttackTime: Date.now() };
   });
 
   const nextZombies = state.zombies
@@ -540,13 +808,45 @@ function applyPlantAttacks(state: PvZBoardState, elapsedMs: number) {
 
 function moveProjectiles(state: PvZBoardState, elapsedMs: number) {
   const zombieDamage = new Map<string, number>();
+  const zombieSlow = new Map<string, boolean>();
   const remainingProjectiles: PvZProjectile[] = [];
 
   for (const projectile of state.projectiles) {
     const nextX = projectile.x + projectile.speed * elapsedMs;
     const target = state.zombies.find((zombie) => zombie.row === projectile.row && zombie.x <= nextX + 0.3 && zombie.x >= nextX - 0.2);
     if (target) {
-      zombieDamage.set(target.instanceId, (zombieDamage.get(target.instanceId) || 0) + projectile.damage);
+      // 标记效果：增加 50% 伤害
+      const damageMultiplier = projectile.markEffect ? 1.5 : 1;
+      zombieDamage.set(target.instanceId, (zombieDamage.get(target.instanceId) || 0) + projectile.damage * damageMultiplier);
+      if (projectile.slowEffect) {
+        zombieSlow.set(target.instanceId, true);
+      }
+      // 电击连锁效果：对相邻僵尸造成 50% 伤害
+      if (projectile.kind === 'shock') {
+        const chainTargets = state.zombies.filter((zombie) => {
+          const rowDiff = Math.abs(zombie.row - projectile.row);
+          const colDiff = Math.abs(zombie.x - projectile.x);
+          return rowDiff <= 1 && colDiff <= 1 && zombie.instanceId !== target.instanceId;
+        });
+        for (const chainTarget of chainTargets) {
+          zombieDamage.set(chainTarget.instanceId, (zombieDamage.get(chainTarget.instanceId) || 0) + Math.floor(projectile.damage * 0.5));
+        }
+      }
+      // 溅射效果：对周围僵尸也造成伤害
+      if (projectile.splashRadius) {
+        const splashRadius = projectile.splashRadius;
+        const splashTargets = state.zombies.filter((zombie) => {
+          const rowDiff = Math.abs(zombie.row - projectile.row);
+          const colDiff = Math.abs(zombie.x - projectile.x);
+          return rowDiff <= 1 && colDiff <= splashRadius && zombie.instanceId !== target.instanceId;
+        });
+        for (const splashTarget of splashTargets) {
+          zombieDamage.set(splashTarget.instanceId, (zombieDamage.get(splashTarget.instanceId) || 0) + Math.floor(projectile.damage * 0.5));
+          if (projectile.slowEffect) {
+            zombieSlow.set(splashTarget.instanceId, true);
+          }
+        }
+      }
       continue;
     }
     if (nextX < COLS + 0.5) {
@@ -576,29 +876,153 @@ function spawnQueuedZombies(state: PvZBoardState) {
   return nextState;
 }
 
+function moveLawnMower(state: PvZBoardState, elapsedMs: number): PvZBoardState {
+  const mowerSpeed = 0.003;
+  const killedZombieIds = new Set<string>();
+
+  const nextMowerStates = state.lawnMowerStates.map((mower, row) => {
+    if (!mower.triggered) return mower;
+
+    const nextX = mower.x + mowerSpeed * elapsedMs;
+
+    state.zombies.forEach((zombie) => {
+      if (zombie.row === row && zombie.x >= mower.x && zombie.x <= nextX + 0.5) {
+        killedZombieIds.add(zombie.instanceId);
+      }
+    });
+
+    if (nextX >= COLS + 1) {
+      return { ...mower, active: false, triggered: false, x: nextX };
+    }
+    return { ...mower, x: nextX };
+  });
+
+  const nextZombies = state.zombies.filter((zombie) => !killedZombieIds.has(zombie.instanceId));
+
+  return {
+    ...state,
+    lawnMowerStates: nextMowerStates,
+    zombies: nextZombies,
+  };
+}
+
+function getZombieAttackDamagePerSecond(zombieId: PvZZombieId): number {
+  const definition = PVZ_ZOMBIE_MAP[zombieId];
+  if (!definition) return 20;
+  if (definition.archetype === 'boss') return 40;
+  if (definition.archetype === 'fast') return 30;
+  if (definition.archetype === 'armored') return 25;
+  return 20;
+}
+
+function zombieAttackPlant(
+  zombie: PvZZombieInstance,
+  plant: PvZPlantInstance,
+  elapsedMs: number,
+): { plantHp: number; plantFlashTimer: number } {
+  const damagePerSecond = getZombieAttackDamagePerSecond(zombie.zombieId);
+  const damage = (damagePerSecond / 1000) * elapsedMs;
+  const newHp = plant.hp - damage;
+  const flashTimer = (plant.attackFlashTimerMs || 0) + elapsedMs;
+  return { plantHp: newHp, plantFlashTimer: flashTimer > 200 ? 0 : flashTimer };
+}
+
+function applyZombieAttacks(state: PvZBoardState, elapsedMs: number): {
+  nextPlants: PvZPlantInstance[];
+  nextZombies: PvZZombieInstance[];
+} {
+  const plantDamage = new Map<string, number>();
+  const plantFlashTimers = new Map<string, number>();
+  const attackingZombieIds = new Set<string>();
+  const zombieTargetMap = new Map<string, string>();
+
+  for (const zombie of state.zombies) {
+    const targetPlant = state.plants.find(
+      (plant) => plant.row === zombie.row && Math.abs(zombie.x - plant.col) < 0.45,
+    );
+    if (targetPlant) {
+      attackingZombieIds.add(zombie.instanceId);
+      zombieTargetMap.set(zombie.instanceId, targetPlant.instanceId);
+      const attackResult = zombieAttackPlant(zombie, targetPlant, elapsedMs);
+      plantDamage.set(
+        targetPlant.instanceId,
+        (plantDamage.get(targetPlant.instanceId) || 0) + (targetPlant.hp - attackResult.plantHp),
+      );
+      plantFlashTimers.set(targetPlant.instanceId, attackResult.plantFlashTimer);
+    }
+  }
+
+  const nextPlants = state.plants
+    .map((plant) => {
+      const damage = plantDamage.get(plant.instanceId);
+      if (damage) {
+        return {
+          ...plant,
+          hp: plant.hp - damage,
+          isBeingAttacked: true,
+          attackFlashTimerMs: plantFlashTimers.get(plant.instanceId) || 0,
+        };
+      }
+      return { ...plant, isBeingAttacked: false, attackFlashTimerMs: 0 };
+    })
+    .filter((plant) => plant.hp > 0);
+
+  const deadPlantIds = state.plants
+    .filter((plant) => plantDamage.has(plant.instanceId) && plant.hp - (plantDamage.get(plant.instanceId) || 0) <= 0)
+    .map((plant) => plant.instanceId);
+
+  const nextZombies = state.zombies.map((zombie) => {
+    if (attackingZombieIds.has(zombie.instanceId)) {
+      const targetId = zombieTargetMap.get(zombie.instanceId);
+      const targetDead = deadPlantIds.includes(targetId || '');
+      return {
+        ...zombie,
+        isAttacking: !targetDead,
+        attackTargetId: targetDead ? undefined : targetId,
+      };
+    }
+    return { ...zombie, isAttacking: false, attackTargetId: undefined };
+  });
+
+  return { nextPlants, nextZombies };
+}
+
 function moveZombies(state: PvZBoardState, elapsedMs: number): PvZBoardState {
   const newZombies: PvZZombieInstance[] = [];
+  const auditChiefZombies = state.zombies.filter((z) => z.zombieId === 'auditChief');
+
   const nextZombies = state.zombies.map((zombie) => {
+    if (zombie.isAttacking) {
+      return zombie;
+    }
     const definition = PVZ_ZOMBIE_MAP[zombie.zombieId];
     const blocker = state.plants.find((plant) => plant.row === zombie.row && Math.abs(zombie.x - plant.col) < 0.45);
     if (blocker) {
       return zombie;
     }
 
+    // 检查是否有审计官僵尸在附近提供增益
+    const nearbyAuditChief = auditChiefZombies.find((z) => {
+      const rowDiff = Math.abs(z.row - zombie.row);
+      const colDiff = Math.abs(z.x - zombie.x);
+      return rowDiff <= 1 && colDiff <= 2 && z.instanceId !== zombie.instanceId;
+    });
+    const boostedSpeed = nearbyAuditChief ? definition.speed * 1.2 : definition.speed;
+
     // 潜水僵尸：水路潜行，接近前线才显形
     if (zombie.zombieId === 'snorkel') {
       const isStealth = zombie.x > 3;
-      return { ...zombie, x: zombie.x - definition.speed * elapsedMs, isStealth };
+      return { ...zombie, x: zombie.x - boostedSpeed * elapsedMs, isStealth };
     }
 
     // 气球僵尸：空中路线，不受地面植物阻挡
     if (zombie.zombieId === 'balloon') {
-      return { ...zombie, x: zombie.x - definition.speed * elapsedMs, isAirborne: true };
+      return { ...zombie, x: zombie.x - boostedSpeed * elapsedMs, isAirborne: true };
     }
 
     // 矿工僵尸：从后排切入
     if (zombie.zombieId === 'miner') {
-      return { ...zombie, x: zombie.x - definition.speed * elapsedMs };
+      return { ...zombie, x: zombie.x - boostedSpeed * elapsedMs };
     }
 
     // 舞王僵尸：定期召唤伴舞
@@ -615,9 +1039,9 @@ function moveZombies(state: PvZBoardState, elapsedMs: number): PvZBoardState {
             hp: PVZ_ZOMBIE_MAP[summonId as PvZZombieId]?.maxHp || 200,
           });
         }
-        return { ...zombie, x: zombie.x - definition.speed * elapsedMs, summonTimerMs: 0 };
+        return { ...zombie, x: zombie.x - boostedSpeed * elapsedMs, summonTimerMs: 0 };
       }
-      return { ...zombie, x: zombie.x - definition.speed * elapsedMs, summonTimerMs: nextSummonTimer };
+      return { ...zombie, x: zombie.x - boostedSpeed * elapsedMs, summonTimerMs: nextSummonTimer };
     }
 
     // 巨人僵尸：半血时投掷小鬼
@@ -633,11 +1057,22 @@ function moveZombies(state: PvZBoardState, elapsedMs: number): PvZBoardState {
             hp: PVZ_ZOMBIE_MAP[summonId as PvZZombieId]?.maxHp || 140,
           });
         }
-        return { ...zombie, x: zombie.x - definition.speed * elapsedMs, hasThrownImp: true };
+        return { ...zombie, x: zombie.x - boostedSpeed * elapsedMs, hasThrownImp: true };
       }
     }
 
-    return { ...zombie, x: zombie.x - definition.speed * elapsedMs };
+    // 审计官僵尸：标记召唤状态（光环效果）
+    if (zombie.zombieId === 'auditChief') {
+      const nearbyZombies = state.zombies.filter((z) => {
+        const rowDiff = Math.abs(z.row - zombie.row);
+        const colDiff = Math.abs(z.x - zombie.x);
+        return rowDiff <= 1 && colDiff <= 2 && z.instanceId !== zombie.instanceId;
+      });
+      const isSummoning = nearbyZombies.length > 0;
+      return { ...zombie, x: zombie.x - definition.speed * elapsedMs, isSummoning };
+    }
+
+    return { ...zombie, x: zombie.x - boostedSpeed * elapsedMs };
   });
 
   const breached = nextZombies.some((zombie) => zombie.x < 0);
@@ -649,46 +1084,212 @@ function moveZombies(state: PvZBoardState, elapsedMs: number): PvZBoardState {
   };
 }
 
+export function setGameSpeed(state: PvZBoardState, speed: 1 | 2): PvZBoardState {
+  return { ...state, gameSpeed: speed };
+}
+
+export function togglePause(state: PvZBoardState): PvZBoardState {
+  return { ...state, isPaused: !state.isPaused };
+}
+function generateWaveZombies(state: PvZBoardState, wave: PvZWaveConfig): PvZSpawnEvent[] {
+  const events: PvZSpawnEvent[] = [];
+  const baseSpawnTime = state.elapsedMs + wave.preWaveDelayMs;
+  const zombiePool: PvZZombieId[] = wave.zombieTypes.length > 0 ? wave.zombieTypes : ['normal'];
+  
+  for (let i = 0; i < wave.zombieCount; i++) {
+    const zombieId = zombiePool[Math.floor(Math.random() * zombiePool.length)] as PvZZombieId;
+    const row = Math.floor(Math.random() * ROWS);
+    const spawnTime = baseSpawnTime + i * wave.spawnIntervalMs;
+    events.push({
+      id: `wave-${wave.waveIndex}-${i}-${Date.now()}`,
+      zombieId,
+      row,
+      spawnAtMs: spawnTime,
+    });
+  }
+  
+  return events;
+}
+
+function startNextWave(state: PvZBoardState): PvZBoardState {
+  const nextWaveIndex = state.currentWaveIndex + 1;
+  const nextWave = state.waves[nextWaveIndex];
+  
+  if (!nextWave) {
+    return {
+      ...state,
+      waveState: 'complete',
+      currentWaveIndex: nextWaveIndex,
+    };
+  }
+  
+  const newSpawnEvents = generateWaveZombies(state, nextWave);
+  
+  return {
+    ...state,
+    currentWaveIndex: nextWaveIndex,
+    waveState: 'active',
+    waveTimerMs: 0,
+    spawnQueue: [...state.spawnQueue, ...newSpawnEvents],
+  };
+}
+
+function processWaves(state: PvZBoardState, elapsedMs: number): PvZBoardState {
+  if (state.waves.length === 0) {
+    return state;
+  }
+  
+  const nextWaveTimerMs = state.waveTimerMs + elapsedMs;
+  
+  if (state.waveState === 'idle') {
+    if (state.elapsedMs >= 2000) {
+      return startNextWave(state);
+    }
+    return { ...state, waveTimerMs: nextWaveTimerMs };
+  }
+  
+  if (state.waveState === 'interval') {
+    const intervalDurationMs = 3000 + Math.random() * 2000;
+    if (nextWaveTimerMs >= intervalDurationMs) {
+      return startNextWave(state);
+    }
+    return { ...state, waveTimerMs: nextWaveTimerMs };
+  }
+  
+  if (state.waveState === 'active') {
+    const currentWave = state.waves[state.currentWaveIndex];
+    if (!currentWave) {
+      return state;
+    }
+    
+    const waveSpawnQueue = state.spawnQueue.filter(event => 
+      event.id.startsWith(`wave-${currentWave.waveIndex}-`)
+    );
+    const waveZombiesAlive = state.zombies.some(zombie => 
+      zombie.x >= COLS - 2
+    );
+    
+    if (waveSpawnQueue.length === 0 && !waveZombiesAlive) {
+      if (currentWave.waveType === 'final') {
+        return {
+          ...state,
+          waveState: 'complete',
+          waveTimerMs: nextWaveTimerMs,
+        };
+      }
+      return {
+        ...state,
+        waveState: 'interval',
+        waveTimerMs: 0,
+      };
+    }
+    
+    return { ...state, waveTimerMs: nextWaveTimerMs };
+  }
+  
+  return state;
+}
+
 export function tickPvZBoard(state: PvZBoardState, elapsedMs: number): PvZBoardState {
   if (state.phase !== 'playing' || state.status !== 'playing') return state;
-  const nextElapsedMs = state.elapsedMs + elapsedMs;
+  if (state.isPaused) return state;
+  const adjustedElapsedMs = elapsedMs * state.gameSpeed;
+  const nextElapsedMs = state.elapsedMs + adjustedElapsedMs;
   const segmentDurationMs = Math.max(1_000, state.scenarioSegmentDurationMs);
-  const sunDrainMs = (state.scenarioSunDrainPerSecond / 1000) * elapsedMs;
+  const sunDrainMs = (state.scenarioSunDrainPerSecond / 1000) * adjustedElapsedMs;
   const drainedSun = Math.max(0, state.sun - sunDrainMs);
 
   const elapsedState = {
     ...state,
     elapsedMs: nextElapsedMs,
     waveProgress: Math.min(1, nextElapsedMs / segmentDurationMs),
-    cardCooldownsMs: tickCooldowns(state, elapsedMs),
+    cardCooldownsMs: tickCooldowns(state, adjustedElapsedMs),
     sun: drainedSun,
   };
 
   const spawnedState = spawnQueuedZombies(elapsedState);
-  const { nextPlants, gainedSun } = applyPlantEconomy(spawnedState, elapsedMs);
-  const attackState = applyPlantAttacks({ ...spawnedState, plants: nextPlants }, elapsedMs);
+  const { nextPlants, gainedSun } = applyPlantEconomy(spawnedState, adjustedElapsedMs);
+  const attackState = applyPlantAttacks({ ...spawnedState, plants: nextPlants }, adjustedElapsedMs);
   const projectileState = moveProjectiles({
     ...spawnedState,
     plants: attackState.nextPlants,
     zombies: attackState.nextZombies,
     projectiles: [...spawnedState.projectiles, ...attackState.createdProjectiles],
-  }, elapsedMs);
-  const movedState = moveZombies({
+  }, adjustedElapsedMs);
+
+  const preMoveState = {
     ...spawnedState,
     plants: attackState.nextPlants,
     zombies: projectileState.nextZombies,
     projectiles: projectileState.remainingProjectiles,
     sun: spawnedState.sun + gainedSun,
-  }, elapsedMs);
+  };
+  const movedState = moveZombies(preMoveState, adjustedElapsedMs);
 
   if (movedState.status === 'lost') return movedState;
-  const waveComplete = movedState.spawnQueue.length === 0 && movedState.zombies.length === 0 && movedState.elapsedMs >= segmentDurationMs;
-  if (waveComplete && movedState.mode === 'survival' && movedState.scenarioSegmentIndex < movedState.scenarioSegmentsTotal) {
-    return startNextSurvivalSegment(movedState);
-  }
-  if (waveComplete) {
-    return { ...movedState, status: 'won', phase: 'won' };
+
+  const zombieAttackState = applyZombieAttacks({
+    ...movedState,
+    plants: preMoveState.plants,
+    zombies: movedState.zombies,
+  }, adjustedElapsedMs);
+  const plantsState = { ...movedState, plants: zombieAttackState.nextPlants, zombies: zombieAttackState.nextZombies };
+
+  const mowerState = moveLawnMower(plantsState, adjustedElapsedMs);
+  const skyDropState = updateSkyDrops(mowerState, adjustedElapsedMs);
+
+  let finalState = { ...skyDropState, plants: plantsState.plants };
+
+  if (finalState.elapsedMs % 8000 < adjustedElapsedMs) {
+    finalState = spawnSkySun(finalState);
   }
 
-  return movedState;
+  if (finalState.mode === 'survival' && finalState.elapsedMs > 0) {
+    const segmentProgress = finalState.elapsedMs % finalState.scenarioSegmentDurationMs;
+    if (segmentProgress < adjustedElapsedMs && finalState.elapsedMs > adjustedElapsedMs) {
+      finalState = startNextSurvivalSegment(finalState);
+    }
+  }
+
+  finalState = processWaves(finalState, adjustedElapsedMs);
+
+  const allWavesComplete = finalState.waves.length > 0 && finalState.waveState === 'complete';
+  const allZombiesDead = finalState.zombies.length === 0 && finalState.spawnQueue.length === 0;
+  if (allWavesComplete && allZombiesDead) {
+    return { ...finalState, status: 'won', phase: 'won' };
+  }
+
+  return finalState;
+}
+
+// 切换铲子模式
+export function toggleShovelMode(state: PvZBoardState): PvZBoardState {
+  if (state.phase !== 'playing') return state;
+  return {
+    ...state,
+    shovelMode: !state.shovelMode,
+    selectedPlantId: state.shovelMode ? state.selectedPlantId : null,
+  };
+}
+
+// 使用铲子移除植物，返还 50% 阳光成本
+export function removePlantWithShovel(state: PvZBoardState, row: number, col: number): PvZBoardState {
+  if (state.phase !== 'playing') return state;
+  if (!state.shovelMode) return state;
+
+  const plantIndex = state.plants.findIndex((plant) => plant.row === row && plant.col === col);
+  if (plantIndex === -1) return state;
+
+  const plant = state.plants[plantIndex];
+  const definition = PVZ_PLANT_MAP[plant.plantId];
+  const refundSun = Math.floor(definition.cost * 0.5);
+
+  const newState = {
+    ...state,
+    plants: state.plants.filter((_, index) => index !== plantIndex),
+    sun: state.sun + refundSun,
+    shovelMode: false,
+  };
+
+  return updateFogVisibility(newState);
 }

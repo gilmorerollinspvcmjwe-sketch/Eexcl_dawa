@@ -919,3 +919,135 @@
   color: #78350f;
   font-size: 0.78rem;
 }
+
+/* ==================== 植物攻击动画 ==================== */
+.pvz-plant--attacking {
+  animation: pvz-attack-pulse 0.3s ease-out;
+}
+
+.pvz-plant--splash-attack {
+  animation: pvz-splash-pulse 0.5s ease-out;
+}
+
+.pvz-plant--range-attack {
+  animation: pvz-range-pulse 0.4s ease-out;
+}
+
+@keyframes pvz-attack-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 8px rgba(16, 124, 65, 0.6); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pvz-splash-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); box-shadow: 0 0 12px rgba(255, 140, 0, 0.7); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pvz-range-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); box-shadow: 0 0 10px rgba(138, 43, 226, 0.5); }
+  100% { transform: scale(1); }
+}
+
+/* ==================== 僵尸状态动画 ==================== */
+.pvz-zombie--stealth {
+  opacity: 0.4;
+  animation: pvz-stealth-wave 1s infinite;
+}
+
+.pvz-zombie--airborne {
+  animation: pvz-fly-bounce 0.5s infinite;
+}
+
+.pvz-zombie--summoning {
+  animation: pvz-summon-glow 1s infinite;
+}
+
+@keyframes pvz-stealth-wave {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50% { opacity: 0.6; transform: translateY(-2px); }
+}
+
+@keyframes pvz-fly-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes pvz-summon-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+}
+
+/* ==================== 弹道特效动画 ==================== */
+.pvz-projectile--snow-pea {
+  filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.6));
+}
+
+.pvz-projectile--fire-pea {
+  filter: drop-shadow(0 0 4px rgba(255, 100, 0, 0.7));
+}
+
+.pvz-projectile--shock {
+  filter: drop-shadow(0 0 3px rgba(250, 204, 21, 0.6));
+}
+
+.pvz-hit-effect--splash {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 140, 0, 0.4) 0%, transparent 70%);
+  animation: pvz-splash-expand 0.3s ease-out forwards;
+}
+
+.pvz-hit-effect--slow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.5) 0%, transparent 60%);
+  animation: pvz-ice-freeze 0.5s ease-out forwards;
+}
+
+.pvz-hit-effect--fire {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 100, 0, 0.6) 0%, transparent 50%);
+  animation: pvz-fire-burst 0.2s ease-out forwards;
+}
+
+.pvz-hit-effect--shock {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.5) 0%, transparent 60%);
+  animation: pvz-shock-chain 0.3s ease-out forwards;
+}
+
+@keyframes pvz-splash-expand {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes pvz-ice-freeze {
+  0% { transform: scale(0.3); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes pvz-fire-burst {
+  0% { transform: scale(0.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes pvz-shock-chain {
+  0% { transform: scale(0.4); opacity: 1; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+/* ==================== Boss 关特效 ==================== */
+.pvz-zombie--boss {
+  animation: pvz-boss-glow 1s infinite;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+}
+
+@keyframes pvz-boss-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.5); }
+  50% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); }
+}
