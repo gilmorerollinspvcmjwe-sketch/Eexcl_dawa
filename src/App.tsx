@@ -1,4 +1,4 @@
-﻿﻿import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { ExcelHeader } from './components/ExcelHeader';
 import { SheetTabs } from './components/SheetTabs';
 import { ExcelGrid } from './components/ExcelGrid';
@@ -17,6 +17,8 @@ import { TetrisSheet } from './components/tetris/TetrisSheet';
 import { FancyFeedback } from './components/FancyFeedback';
 import { FirstTimeGuide } from './components/FirstTimeGuide';
 import { ModeTutorialModal } from './components/ModeTutorialModal';
+import { SaveManager } from './components/SaveManager';
+import { GameSelector } from './components/GameSelector';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useFeedbackSystem } from './hooks/useFeedbackSystem';
 import { useTutorial } from './hooks/useTutorial';
@@ -27,6 +29,7 @@ import type { PerlerProgressSummary } from './features/hub/hubData';
 import type { DifficultyLevel, GameModeType } from './components/GameHub';
 import type { AppSheetId } from './features/sheets/sheetRegistry';
 import type { WorkbookStatusSummary } from './types';
+import type { GameId } from './types/save.ts';
 
 const PERLER_PROGRESS_KEY = 'excel-aim-perler-state-v1';
 
@@ -83,6 +86,9 @@ function AppContent() {
   const [tetrisStatusSummary, setTetrisStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
   const [, setModeConfig] = useState<FPSConfigMap>({});
+  const [selectedGame, setSelectedGame] = useState<GameId | null>(null);
+  const [showSaveManager, setShowSaveManager] = useState(false);
+  const [showGameSelector, setShowGameSelector] = useState(false);
 
   const {
     gameState,
@@ -220,6 +226,7 @@ function AppContent() {
 
   const handleExitCurrentGame = () => {
     setActiveArcadeGame(null);
+    setSelectedGame(null);
     setPerlerEntryMode('library');
     setPerlerSelectedCell(null);
     setSnakeStatusSummary(undefined);
@@ -303,6 +310,143 @@ function AppContent() {
         size={settings.crosshairSize || 12}
         visible={isCrosshairVisible}
       />
+
+      {/* 左上角存档菜单按钮 */}
+      {!isHidden && (
+        <button
+          style={{
+            position: 'fixed',
+            top: 8,
+            left: 8,
+            zIndex: 200,
+            background: '#107c41',
+            color: 'white',
+            border: 'none',
+            borderRadius: 4,
+            padding: '6px 12px',
+            fontSize: 12,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}
+          onClick={() => setShowSaveManager(true)}
+        >
+          📂 存档
+        </button>
+      )}
+
+      {/* 开始按钮 - 显示游戏选择界面 */}
+      {!isHidden && !selectedGame && (
+        <button
+          style={{
+            position: 'fixed',
+            top: 8,
+            left: 80,
+            zIndex: 200,
+            background: '#2563eb',
+            color: 'white',
+            border: 'none',
+            borderRadius: 4,
+            padding: '6px 16px',
+            fontSize: 12,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}
+          onClick={() => setShowGameSelector(true)}
+        >
+          🎮 开始
+        </button>
+      )}
+
+      {/* 存档管理弹窗 */}
+      {showSaveManager && selectedGame && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setShowSaveManager(false)}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 8,
+              padding: 24,
+              maxWidth: 500,
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <SaveManager
+              gameId={selectedGame}
+              onLoad={(data) => {
+                console.log('加载存档:', data);
+                setShowSaveManager(false);
+              }}
+            />
+            <button
+              style={{
+                marginTop: 16,
+                width: '100%',
+                padding: '8px 16px',
+                background: '#f3f3f3',
+                border: '1px solid #d4d4d4',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+              onClick={() => setShowSaveManager(false)}
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 游戏选择界面 */}
+      {showGameSelector && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            zIndex: 400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setShowGameSelector(false)}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 12,
+              padding: 32,
+              maxWidth: 700,
+              width: '90%',
+              maxHeight: '85vh',
+              overflow: 'auto',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.4)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <GameSelector
+              onSelectGame={(gameId) => {
+                setSelectedGame(gameId);
+                setShowGameSelector(false);
+              }}
+              onBack={() => setShowGameSelector(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {activeArcadeGame === 'aim' && settings.feedbackMode !== 'excel' && currentFeedback && (
         <FancyFeedback feedback={currentFeedback} />
@@ -423,7 +567,39 @@ function AppContent() {
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {currentSheet === 'hub' ? (
+          {selectedGame ? (
+            // 选择游戏后仅显示该游戏的核心界面
+            selectedGame === 'pvz' ? (
+              <PvZGameSheet onFormulaChange={setPvZFormulaText} />
+            ) : selectedGame === 'snake' ? (
+              <SnakeSheet
+                onFormulaChange={setSnakeFormulaText}
+                onStatusChange={setSnakeStatusSummary}
+                onExit={handleExitCurrentGame}
+              />
+            ) : selectedGame === 'tetris' ? (
+              <TetrisSheet
+                onFormulaChange={setTetrisFormulaText}
+                onStatusChange={setTetrisStatusSummary}
+                onExit={handleExitCurrentGame}
+              />
+            ) : (
+              <GameHub
+                onStartGame={handleStartGameFromHub}
+                onStartPerler={handleStartPerlerFromHub}
+                onStartSnake={handleStartSnakeFromHub}
+                onStartTetris={handleStartTetrisFromHub}
+                onStartPvZ={handleStartPvZFromHub}
+                onSwitchSheet={(sheet) => handleSheetSwitch(sheet)}
+                trainingDuration={settings.trainingDuration}
+                difficulty={settings.difficulty as DifficultyLevel}
+                totalGames={stats.totalGames}
+                totalScore={stats.totalScore}
+                perlerProgress={perlerProgress}
+                onFormulaChange={setHubFormulaText}
+              />
+            )
+          ) : currentSheet === 'hub' ? (
             <GameHub
               onStartGame={handleStartGameFromHub}
               onStartPerler={handleStartPerlerFromHub}
