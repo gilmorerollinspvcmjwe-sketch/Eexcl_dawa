@@ -1,49 +1,42 @@
-// 游戏选择界面 - 显示可用游戏列表供用户选择
-
 import React from 'react';
-import { GAME_NAMES, type GameId } from '../types/save.ts';
+import { ARCADE_MODULE_REGISTRY } from '../features/workbook/workbookRegistry';
 
 interface GameSelectorProps {
-  onSelectGame: (gameId: GameId) => void;
-  onBack?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectGame: (gameType: string) => void;
 }
 
-const GAME_ICONS: Record<GameId, string> = {
-  pvz: '🌻',
-  snake: '🐍',
-  tetris: '🧱',
-  match3: '💎',
-  pacman: '👾',
-  zuma: '🔮',
-};
-
-export const GameSelector: React.FC<GameSelectorProps> = ({ onSelectGame, onBack }) => {
-  const gameIds: GameId[] = ['pvz', 'snake', 'tetris', 'match3', 'pacman', 'zuma'];
+export const GameSelector: React.FC<GameSelectorProps> = ({ isOpen, onClose, onSelectGame }) => {
+  if (!isOpen) return null;
 
   return (
-    <div className="game-selector">
-      <div className="game-selector-header">
-        <h2>选择游戏</h2>
-        {onBack && (
-          <button className="game-selector-back-btn" onClick={onBack}>
-            返回
-          </button>
-        )}
-      </div>
-      <div className="game-selector-grid">
-        {gameIds.map(gameId => (
-          <button
-            key={gameId}
-            className="game-selector-card"
-            onClick={() => onSelectGame(gameId)}
-          >
-            <span className="game-selector-icon">{GAME_ICONS[gameId]}</span>
-            <span className="game-selector-name">{GAME_NAMES[gameId]}</span>
-          </button>
-        ))}
+    <div className="game-selector-overlay" onClick={onClose}>
+      <div className="game-selector-dialog" onClick={e => e.stopPropagation()}>
+        <div className="game-selector-header">
+          <h3>选择游戏</h3>
+          <button className="game-selector-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="game-selector-list">
+          {ARCADE_MODULE_REGISTRY.map(game => (
+            <button
+              key={game.id}
+              className="game-selector-item"
+              onClick={() => {
+                onSelectGame(game.id);
+                onClose();
+              }}
+            >
+              <span className="game-selector-icon">{game.accent ? '🎮' : '🎮'}</span>
+              <div className="game-selector-info">
+                <span className="game-selector-name">{game.title}</span>
+                <span className="game-selector-desc">{game.summary.replace(/^=/, '')}</span>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 };
-
-export default GameSelector;

@@ -1,197 +1,115 @@
-// 存档管理组件：显示存档列表，支持新建、保存、加载、删除存档
-import React, { useState, useEffect, useCallback } from 'react';
-import { listSaves, saveToStorage, loadFromStorage, deleteFromStorage, createSlot } from '../utils/saveStorage.ts';
-import type { SaveSlot, SaveData, GameId } from '../types/save.ts';
-import { GAME_NAMES } from '../types/save.ts';
+import React, { useMemo, useState } from 'react';
+import type { SaveSlot } from '../types/save';
+import { listSaves, listSavesByGame, deleteFromStorage, createNewSlot, saveToStorage } from '../utils/saveStorage';
 
 interface SaveManagerProps {
-  gameId: GameId;
-  currentGameState?: Record<string, unknown>;
-  onLoad?: (data: SaveData) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  currentGame?: SaveSlot['gameType'];
+  currentSlotId?: string | null;
+  onSave?: (slot: SaveSlot) => void;
+  onLoad?: (slot: SaveSlot) => void;
 }
 
-export const SaveManager: React.FC<SaveManagerProps> = ({
-  gameId,
-  currentGameState,
-  onLoad,
-}) => {
-  const [saves, setSaves] = useState<SaveSlot[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showNewNameInput, setShowNewNameInput] = useState(false);
-  const [newName, setNewName] = useState('');
+export const SaveManager: React.FC<SaveManagerProps> = ({ isOpen, onClose, currentGame, currentSlotId, onSave, onLoad }) => {
+  const [selectedSlot, setSelectedSlot] = useState<SaveSlot | null>(null);
+  const [showNewSaveDialog, setShowNewSaveDialog] = useState(false);
+  const [newSaveName, setNewSaveName] = useState('');
+  const saves = useMemo(
+    () => (currentGame ? listSavesByGame(currentGame) : listSaves()),
+    [currentGame],
+  );
 
-  const refreshSaves = useCallback(() => {
-    setSaves(listSaves(gameId));
-  }, [gameId]);
-
-  useEffect(() => {
-    refreshSaves();
-  }, [refreshSaves]);
-
-  const handleCreate = () => {
-    if (!newName.trim()) return;
-    const slot = createSlot(newName.trim(), gameId);
-    const data: SaveData = {
-      slotId: slot.id,
-      gameId,
-      gameState: currentGameState || {},
-      savedAt: Date.now(),
-    };
-    saveToStorage(slot, data);
-    setNewName('');
-    setShowNewNameInput(false);
-    refreshSaves();
-  };
-
-  const handleSave = () => {
-    if (!selectedId || !currentGameState) return;
-    const slot = saves.find(s => s.id === selectedId);
-    if (!slot) return;
-    const data: SaveData = {
-      slotId: selectedId,
-      gameId,
-      gameState: currentGameState,
-      savedAt: Date.now(),
-    };
-    saveToStorage(slot, data);
-    refreshSaves();
-  };
-
-  const handleLoad = () => {
-    if (!selectedId) return;
-    const data = loadFromStorage(selectedId);
-    if (data && onLoad) {
-      onLoad(data);
+  const handleDelete = (slotId: string) => {
+    if (window.confirm('确定要删除这个存档吗？')) {
+      deleteFromStorage(slotId);
+      setSelectedSlot(null);
     }
   };
 
-  const handleDeleteRequest = () => {
-    if (!selectedId) return;
-    setShowDeleteConfirm(true);
+  const handleNewSave = () => {
+    if (!newSaveName.trim()) return;
+    const gameType = currentGame || 'pvz';
+    const newSlot = createNewSlot(newSaveName, gameType, {
+      gameType,
+      workspaceId: gameType,
+      currentSheet: gameType === 'pvz' ? 'pvz' : gameType === 'perler' ? 'perler' : gameType === 'snake' ? 'snake' : gameType === 'tetris' ? 'tetris' : gameType === 'pacman' ? 'pacman' : gameType === 'zuma' ? 'zuma' : gameType === 'match3' ? 'match3' : 'game',
+      payload: {},
+    });
+    saveToStorage(newSlot);
+    setShowNewSaveDialog(false);
+    setNewSaveName('');
+    if (onSave) onSave(newSlot);
   };
 
-  const handleDeleteConfirm = () => {
-    if (!selectedId) return;
-    deleteFromStorage(selectedId);
-    setSelectedId(null);
-    setShowDeleteConfirm(false);
-    refreshSaves();
+  const handleLoad = (slot: SaveSlot) => {
+    setSelectedSlot(slot);
+    if (onLoad) onLoad(slot);
+    onClose();
   };
 
-  const handleDeleteCancel = () => {
-    setShowDeleteConfirm(false);
-  };
-
-  const selectedSlot = saves.find(s => s.id === selectedId) || null;
-
-  const formatTime = (ts: number) => {
-    const d = new Date(ts);
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
+  if (!isOpen) return null;
 
   return (
-    <div className="save-manager-container">
-      <div className="save-manager-header">
-        <span className="save-manager-title">📂 存档管理</span>
-        <span className="save-manager-game-tag">{GAME_NAMES[gameId]}</span>
-      </div>
+    <div className="save-manager-overlay" onClick={onClose}>
+      <div className="save-manager-dialog" onClick={e => e.stopPropagation()}>
+        <div className="save-manager-header">
+          <h3>存档管理</h3>
+          <button className="save-manager-close" onClick={onClose}>✕</button>
+        </div>
 
-      {/* 新建存档 */}
-      <div className="save-manager-actions">
-        {!showNewNameInput ? (
-          <button className="save-btn save-btn-create" onClick={() => setShowNewNameInput(true)}>
-            ＋ 新建存档
+        {currentGame && <div className="save-manager-current-game">当前游戏：{currentGame}</div>}
+
+        <div className="save-manager-actions">
+          <button className="save-manager-btn primary" onClick={() => setShowNewSaveDialog(true)}>
+            新建存档
           </button>
-        ) : (
-          <div className="save-new-input-row">
+        </div>
+
+        {showNewSaveDialog && (
+          <div className="save-manager-new-save">
             <input
-              className="save-new-input"
               type="text"
               placeholder="输入存档名称"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreate()}
-              maxLength={20}
-              autoFocus
+              value={newSaveName}
+              onChange={e => setNewSaveName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleNewSave()}
             />
-            <button className="save-btn save-btn-sm save-btn-confirm" onClick={handleCreate} disabled={!newName.trim()}>
-              确定
-            </button>
-            <button className="save-btn save-btn-sm save-btn-cancel" onClick={() => { setShowNewNameInput(false); setNewName(''); }}>
-              取消
-            </button>
+            <button className="save-manager-btn primary" onClick={handleNewSave}>确定</button>
+            <button className="save-manager-btn" onClick={() => setShowNewSaveDialog(false)}>取消</button>
           </div>
         )}
-      </div>
 
-      {/* 存档列表 */}
-      <div className="save-list">
-        {saves.length === 0 ? (
-          <div className="save-list-empty">暂无存档，点击上方按钮创建</div>
-        ) : (
-          saves.map(slot => (
-            <div
-              key={slot.id}
-              className={`save-list-item ${selectedId === slot.id ? 'selected' : ''}`}
-              onClick={() => setSelectedId(slot.id)}
-            >
-              <div className="save-item-info">
-                <div className="save-item-name">{slot.name}</div>
-                <div className="save-item-time">{formatTime(slot.updatedAt)}</div>
+        <div className="save-manager-list">
+          {saves.length === 0 ? (
+            <p className="save-manager-empty">暂无存档</p>
+          ) : (
+            saves.map(slot => (
+              <div
+                key={slot.id}
+                className={`save-manager-item ${(selectedSlot?.id === slot.id || currentSlotId === slot.id) ? 'selected' : ''}`}
+                onClick={() => setSelectedSlot(slot)}
+              >
+                <div className="save-manager-item-info">
+                  <span className="save-manager-item-name">{slot.name}</span>
+                  <span className="save-manager-item-game">{slot.gameType}</span>
+                  <span className="save-manager-item-time">
+                    {new Date(slot.timestamp).toLocaleString('zh-CN')}
+                  </span>
+                </div>
+                <div className="save-manager-item-actions">
+                  <button className="save-manager-btn small" onClick={() => handleLoad(slot)}>
+                    加载
+                  </button>
+                  <button className="save-manager-btn small danger" onClick={() => handleDelete(slot.id)}>
+                    删除
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* 操作按钮 */}
-      <div className="save-manager-buttons">
-        <button
-          className="save-btn save-btn-load"
-          onClick={handleLoad}
-          disabled={!selectedId}
-        >
-          📥 加载存档
-        </button>
-        <button
-          className="save-btn save-btn-save"
-          onClick={handleSave}
-          disabled={!selectedId || !currentGameState}
-        >
-          💾 保存当前
-        </button>
-        <button
-          className="save-btn save-btn-delete"
-          onClick={handleDeleteRequest}
-          disabled={!selectedId}
-        >
-          🗑️ 删除存档
-        </button>
-      </div>
-
-      {/* 删除确认对话框 */}
-      {showDeleteConfirm && selectedSlot && (
-        <div className="save-confirm-overlay" onClick={handleDeleteCancel}>
-          <div className="save-confirm-dialog" onClick={e => e.stopPropagation()}>
-            <div className="save-confirm-title">⚠️ 确认删除</div>
-            <div className="save-confirm-message">
-              确定要删除存档「{selectedSlot.name}」吗？此操作不可撤销。
-            </div>
-            <div className="save-confirm-buttons">
-              <button className="save-btn save-btn-sm save-btn-cancel" onClick={handleDeleteCancel}>
-                取消
-              </button>
-              <button className="save-btn save-btn-sm save-btn-danger" onClick={handleDeleteConfirm}>
-                确认删除
-              </button>
-            </div>
-          </div>
+            ))
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
-
-export default SaveManager;

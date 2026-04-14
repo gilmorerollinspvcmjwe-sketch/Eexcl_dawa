@@ -1,50 +1,43 @@
-import type { SaveSlot, SaveData, GameId } from '../types/save.ts';
+import type { SaveSlot, SaveData } from '../types/save';
 
-const STORAGE_PREFIX = 'game-save-';
-const SLOTS_KEY = 'game-save-slots';
+const STORAGE_KEY = 'excel-aim-trainer-saves';
 
-export function listSaves(gameId?: GameId): SaveSlot[] {
-  const slotsJson = localStorage.getItem(SLOTS_KEY);
-  if (!slotsJson) return [];
-  const slots: SaveSlot[] = JSON.parse(slotsJson);
-  if (gameId) return slots.filter(s => s.gameId === gameId);
-  return slots;
-}
-
-export function saveToStorage(slot: SaveSlot, data: SaveData): void {
-  const slotsJson = localStorage.getItem(SLOTS_KEY);
-  const slots: SaveSlot[] = slotsJson ? JSON.parse(slotsJson) : [];
-  const existingIndex = slots.findIndex(s => s.id === slot.id);
+export function saveToStorage(slot: SaveSlot): void {
+  const saves = listSaves();
+  const existingIndex = saves.findIndex(s => s.id === slot.id);
   if (existingIndex >= 0) {
-    slots[existingIndex] = { ...slot, updatedAt: Date.now() };
+    saves[existingIndex] = slot;
   } else {
-    slots.push(slot);
+    saves.push(slot);
   }
-  localStorage.setItem(SLOTS_KEY, JSON.stringify(slots));
-  localStorage.setItem(STORAGE_PREFIX + slot.id, JSON.stringify(data));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saves));
 }
 
-export function loadFromStorage(slotId: string): SaveData | null {
-  const json = localStorage.getItem(STORAGE_PREFIX + slotId);
-  if (!json) return null;
-  return JSON.parse(json);
+export function loadFromStorage(slotId: string): SaveSlot | null {
+  const saves = listSaves();
+  return saves.find(s => s.id === slotId) || null;
 }
 
 export function deleteFromStorage(slotId: string): void {
-  const slotsJson = localStorage.getItem(SLOTS_KEY);
-  if (!slotsJson) return;
-  const slots: SaveSlot[] = JSON.parse(slotsJson);
-  const filtered = slots.filter(s => s.id !== slotId);
-  localStorage.setItem(SLOTS_KEY, JSON.stringify(filtered));
-  localStorage.removeItem(STORAGE_PREFIX + slotId);
+  const saves = listSaves().filter(s => s.id !== slotId);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saves));
 }
 
-export function createSlot(name: string, gameId: GameId): SaveSlot {
+export function listSaves(): SaveSlot[] {
+  const data = localStorage.getItem(STORAGE_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export function listSavesByGame(gameType: SaveSlot['gameType']): SaveSlot[] {
+  return listSaves().filter((slot) => slot.gameType === gameType);
+}
+
+export function createNewSlot(name: string, gameType: SaveSlot['gameType'], data: SaveData): SaveSlot {
   return {
-    id: `${gameId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `save-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     name,
-    gameId,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    gameType,
+    timestamp: Date.now(),
+    data,
   };
 }

@@ -3,15 +3,16 @@ import { SHEET_REGISTRY, type AppSheetId } from '../features/sheets/sheetRegistr
 
 interface SheetTabsProps {
   currentSheet: AppSheetId;
+  visibleSheets: AppSheetId[];
   onSwitch: (sheet: AppSheetId) => void;
   isHidden: boolean;
 }
 
-export const SheetTabs: React.FC<SheetTabsProps> = ({ currentSheet, onSwitch, isHidden }) => {
+export const SheetTabs: React.FC<SheetTabsProps> = ({ currentSheet, visibleSheets, onSwitch, isHidden }) => {
   return (
     <div className="excel-sheet-bar">
       <div className="excel-sheet-tabs">
-        {SHEET_REGISTRY.map((sheet) => (
+        {SHEET_REGISTRY.filter((sheet) => visibleSheets.includes(sheet.id)).map((sheet) => (
           <div
             key={sheet.id}
             className={`excel-sheet-tab ${currentSheet === sheet.id ? 'active' : ''}`}

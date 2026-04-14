@@ -9,7 +9,13 @@ export type AppSheetId =
   | 'pvz_collection'
   | 'pvz_lab'
   | 'snake'
-  | 'tetris';
+  | 'tetris'
+  | 'pacman'
+  | 'pacman_guide'
+  | 'zuma'
+  | 'zuma_collection'
+  | 'match3'
+  | 'match3_lab';
 
 export interface SheetDefinition {
   id: AppSheetId;
@@ -18,7 +24,7 @@ export interface SheetDefinition {
   title: string;
 }
 
-export type ArcadeGameId = 'aim' | 'snake' | 'tetris' | 'perler' | 'pvz';
+export type ArcadeGameId = 'aim' | 'snake' | 'tetris' | 'perler' | 'pvz' | 'pacman' | 'zuma' | 'match3';
 
 export interface ArcadeModuleDefinition {
   id: ArcadeGameId;
@@ -27,6 +33,9 @@ export interface ArcadeModuleDefinition {
   summary: string;
   accent: string;
   supportsResume: boolean;
+  supportsSave: boolean;
+  entrySheetId: AppSheetId;
+  defaultConfigSheetId: AppSheetId;
 }
 
 export const SHEET_REGISTRY: SheetDefinition[] = [
@@ -41,6 +50,12 @@ export const SHEET_REGISTRY: SheetDefinition[] = [
   { id: 'pvz_lab', label: 'Sheet9', icon: '🧪', title: '实验室' },
   { id: 'snake', label: 'Sheet10', icon: '🐍', title: '贪吃蛇' },
   { id: 'tetris', label: 'Sheet11', icon: '🧱', title: '俄罗斯方块' },
+  { id: 'pacman', label: 'Sheet12', icon: '🟡', title: '吃豆人' },
+  { id: 'pacman_guide', label: 'Sheet13', icon: '📖', title: '吃豆人图鉴' },
+  { id: 'zuma', label: 'Sheet14', icon: '🐸', title: '祖玛' },
+  { id: 'zuma_collection', label: 'Sheet15', icon: '📚', title: '祖玛图鉴' },
+  { id: 'match3', label: 'Sheet16', icon: '💎', title: '三消' },
+  { id: 'match3_lab', label: 'Sheet17', icon: '📖', title: '三消实验室' },
 ];
 
 export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
@@ -51,6 +66,9 @@ export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
     summary: '=练枪 / 热手 / 立即开。',
     accent: '#16a34a',
     supportsResume: false,
+    supportsSave: true,
+    entrySheetId: 'game',
+    defaultConfigSheetId: 'config',
   },
   {
     id: 'snake',
@@ -59,6 +77,9 @@ export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
     summary: '=贪吃蛇 / 数据流 / Sheet10。',
     accent: '#0ea5e9',
     supportsResume: true,
+    supportsSave: true,
+    entrySheetId: 'snake',
+    defaultConfigSheetId: 'snake',
   },
   {
     id: 'tetris',
@@ -67,6 +88,9 @@ export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
     summary: '=俄罗斯方块 / 整理流 / Sheet11。',
     accent: '#475569',
     supportsResume: true,
+    supportsSave: true,
+    entrySheetId: 'tetris',
+    defaultConfigSheetId: 'tetris',
   },
   {
     id: 'perler',
@@ -75,6 +99,9 @@ export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
     summary: '=拼豆 / Sheet6。',
     accent: '#c084fc',
     supportsResume: true,
+    supportsSave: true,
+    entrySheetId: 'perler',
+    defaultConfigSheetId: 'perler',
   },
   {
     id: 'pvz',
@@ -83,6 +110,42 @@ export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
     summary: '=植物大战僵尸 / Sheet7。',
     accent: '#f59e0b',
     supportsResume: false,
+    supportsSave: true,
+    entrySheetId: 'pvz',
+    defaultConfigSheetId: 'pvz_lab',
+  },
+  {
+    id: 'pacman',
+    sheetId: 'pacman',
+    title: '吃豆人',
+    summary: '=吃豆人 / 迷宫流 / Sheet12。',
+    accent: '#facc15',
+    supportsResume: true,
+    supportsSave: true,
+    entrySheetId: 'pacman',
+    defaultConfigSheetId: 'pacman_guide',
+  },
+  {
+    id: 'zuma',
+    sheetId: 'zuma',
+    title: '祖玛',
+    summary: '=祖玛 / 轨道流 / Sheet14。',
+    accent: '#22c55e',
+    supportsResume: true,
+    supportsSave: true,
+    entrySheetId: 'zuma',
+    defaultConfigSheetId: 'zuma_collection',
+  },
+  {
+    id: 'match3',
+    sheetId: 'match3',
+    title: '三消',
+    summary: '=三消 / 消除流 / Sheet16。',
+    accent: '#6366f1',
+    supportsResume: true,
+    supportsSave: true,
+    entrySheetId: 'match3',
+    defaultConfigSheetId: 'match3_lab',
   },
 ];
 

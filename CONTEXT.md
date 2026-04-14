@@ -1,7 +1,24 @@
 # 当前进度
 
-- 当前正在做什么：已把 PvZ 从“小型章节示意”升级到“66 植物 / 30 僵尸 / 100 关主线”的数据驱动结构，并把 Sheet7/8/9 重新接成正式入口；Snake、Tetris 暂无本轮改动。
-- 上次停在哪里：上一轮停在 PvZ 的设计总纲与 30/50/100 关文档阶段，运行时代码仍只有 12 植物、8 僵尸和少量场景。
+- 当前正在做什么：已完成“奇幻战线对推”正式设计稿编写，定位为传统奇幻题材包装的轻量赤潮式 PvE 横版战线玩法，下一步可直接进入实现计划拆分。
+- 上次停在哪里：上一轮先完成了“赤潮式横版战线”玩法调研，本轮已把调研收口为正式设计文档，仍未动现有模块代码。
+- 近期关键决定和原因：
+  - 2026-04-14 新增正式设计稿 `design/fantasy_lane_battle_game_design.md`，明确这款新模块采用“轻配队 + 局内出兵 + 玩家手动技能 + 英雄局外成长 + 单人章节 PvE”的组合，原因是这样既保留赤潮式战线对推的核心乐趣，又更适合当前 arcade 合集的短局、低门槛和 Excel 壳层方向。
+  - 2026-04-14 奇幻战线对推的关键设计已定：题材用传统 RPG（哥布林、兽人、法师、火龙），不做重 PvP 和重微操；战场采用单线推进 + 前中后排/空层抽象；首发建议 3 名英雄、18~24 个兵种、5 章 30 关，用章节主题和 Boss 关建立内容节奏。
+  - 2026-04-14 补充了“赤潮式横版战线”玩法调研结论：这类玩法本质上更接近“单线出兵对推 + 编队克制 + 经济节奏”而不是纯塔防或纯 RTS，核心乐趣来自读对方阵容、安排出兵节奏、把前线慢慢压过去；后续如果要做同类模块，应优先保留“自动行军交战、持续出兵、单位相克、基地血量拉扯、局间选兵/局内攒费”这几根主骨架。
+  - 新增两份正式游戏设计稿：`design/auto_chess_game_design.md`（横版自走棋）、`design/tower_defense_game_design.md`（塔防），统一按现有设计文档结构整理，后续可直接按文档拆实现任务。
+  - 横版自走棋设计：8×4横版棋盘、棋子购买/放置/升星、7职业+7种族羁绊系统、5品质棋子、商店刷新概率、经济系统（利息/连胜/连败）、自动战斗AI、PVE野怪回合、装备系统。
+  - 塔防设计：固定路径塔防、6种防御塔（箭/炮/法师/减速/兵营/增益）、7种敌人类型、3级塔升级系统、波次递进（每10波Boss）、经济系统（击杀/波次/利息）、特殊地形（高地/草丛）、路径跟随算法。
+  - 所有设计文档保持统一的Excel伪装风格，游戏内容、界面元素、操作提示及用户反馈均使用中文。
+  - 两款游戏均采用"状态层 + UI壳层"模块边界模式，与现有设计文档保持一致的集成方案（Sheet Registry + Arcade Module Registry）。
+- 近期关键决定和原因：
+  - 新增四份正式游戏设计稿：`design/bomberman_game_design.md`（泡泡堂）、`design/fishing_game_design.md`（捕鱼达人）、`design/angry_birds_game_design.md`（愤怒的小鸟）、`design/game2048_design.md`（2048），统一按"游戏概述/原版分析/核心玩法/类型定义/道具或角色系统/关卡设计/数值平衡/操作流程/UI布局/美术风格/音效设计/技术难点/文件结构/集成方案/数据存储/测试要点/开发计划"结构整理，后续可直接按文档拆实现任务。
+  - 泡泡堂设计：13×15网格、炸弹放置/爆炸传播/障碍物破坏规则、3基础+6特殊道具系统、4种敌人AI、3关卡包共36关、地图可达性验证算法。
+  - 捕鱼达人设计：炮台射击+鱼类行为系统（15种鱼+4种Boss）、7级炮台+7种子弹类型、5个场景、捕获概率公式、金币经济循环、技能系统。
+  - 愤怒的小鸟设计：弹弓发射（最大拖拽80px、角度-70°~+70°）、6种鸟类角色+5种猪类型、3种材质（玻璃/木头/石头）、5章节78关、简易2D物理引擎设计。
+  - 2048设计：4×4网格移动合并算法、4种游戏模式（经典/限时/目标/无尽）、撤销功能、3个挑战包共30关、完整数字方块颜色方案（2到8192+）。
+  - 所有设计文档保持统一的Excel伪装风格，游戏内容、界面元素、操作提示及用户反馈均使用中文。
+  - 四款游戏均采用"状态层 + UI壳层"模块边界模式，与现有黄金矿工、推币机、音游设计文档保持一致的集成方案（Sheet Registry + Arcade Module Registry）。
 - 近期关键决定和原因：
   - Sheet1 只做简洁的游戏总控表，减少说明文字，视觉焦点放回游戏入口表。
   - Sheet5 恢复为旧版练枪开始页，保证原始练枪启动流还在。
@@ -15,6 +32,7 @@
   - 新增 Sheet7/8/9：Sheet7 为格子 PvZ 主玩法，Sheet8 为植物/僵尸图鉴，Sheet9 为章节与规则实验室。
   - PvZ 当前是完整可玩的第一版：5×9 棋盘、阳光、卡槽、基础植物、基础僵尸、波次推进、胜负判定都已接通。
   - PvZ 已补上选卡阶段，并把植物池、僵尸池、波次和弹道类型继续扩了一轮，当前更接近“可持续扩展的完整模块”。
+  - 开始进入“动态工作簿平台”改造：已补 `workspaceRegistry / workspaceState / saveAdapters` 三层基础设施，工作区可见 sheet、游戏入口元数据、统一存档载荷已开始从手写 if/else 迁移到注册表驱动。
   - 新增 Sheet10/11：Sheet10 为贪吃蛇，Sheet11 为俄罗斯方块，两者都已接入工作簿状态栏、公式栏和首页入口。
   - 本轮统一清理了 Snake、Tetris、配置页、状态栏、引导页、统计页和 PvZ 部分界面的英文显示，只保留 Excel、EXP、PvZ 一类必要术语。
   - 代码内原有的可见乱码已确认主要集中在 `src/index.css` 注释，本轮已修正，用户界面扫描未再发现 `�` 类损坏字符。
@@ -77,3 +95,14 @@
   - 2026-04-14 补上了关卡结算闭环：胜负结果改成覆盖在战场上的结算弹层，胜利时会真正写入 `saveProgress`，同时提供“重开本局 / 返回选关 / 继续调整卡组”三个明确出口，不再出现通关后无结算、无返回路径的问题。
   - 2026-04-14 已同步更新 `.trae/specs/pvz-core-mechanics/tasks.md` 与 `.trae/specs/pvz-core-mechanics/checklist.md`，将本轮 PvZ 机制修复、Sheet7 UI 收口和结算流程补齐纳入当前实现记录。
   - 2026-04-14 当前整包回归结果：`npm test` 143 通过、0 失败；`npm run build` 通过。构建仅保留 Vite chunk size 警告，暂未发现新的功能性回归。
+  - 2026-04-14 完成了祖玛模块 Phase A 核心运行时：创建了 `src/features/zuma/zumaTypes.ts`（轨道、彩球链、炮台、道具球、危险等级等核心类型定义）和 `src/features/zuma/zumaBoardState.ts`（轨道离散采样样条、彩球链推进与回缩逻辑、炮台旋转瞄准与发射、碰撞检测与插入判定、三消消除与连锁触发、胜利/失败判定、危险分层预警系统）；已更新 `.trae/specs/zuma-module-spec/tasks.md` 中 Task 1-5 的 checkbox 状态为已完成。
+  - 2026-04-14 完成了三消模块 Phase A 核心运行时：创建了 `src/features/match3/match3Types.ts`（棋盘、色块、特殊块、障碍、目标、状态机等核心类型定义，包含6色普通块、条纹块横/纵、包装块、彩球，以及冻结层、锁链块、木箱/石块、传送口、蔓延块等障碍类型）和 `src/features/match3/match3BoardState.ts`（棋盘初始化、曼哈顿相邻交换判定、合法交换判定、非法交换回弹、步数扣减、横纵连续段扫描、多群组清除、逐列压缩掉落、顶部补牌、连锁判定与倍率、无合法交换自动洗牌、特殊块生成与组合效果、障碍击破、胜利/失败判定与改进建议生成）；已更新 `.trae/specs/match3-module-spec/tasks.md` 中 Task 1-6 的 checkbox 状态为已完成；`npm run build` 中 match3 模块无错误。
+  - 2026-04-14 完成了吃豆人模块 Phase A 核心运行时：创建了 `src/features/pacman/pacmanTypes.ts`（迷宫、豆子、能量豆、水果、鬼魂等核心类型，包含地图单元类型、鬼魂状态、四鬼类型、水果序列、方向向量、分数常量等）；`src/features/pacman/pacmanBoardState.ts`（经典迷宫定义、豆子分布、能量豆分布、传送门逻辑、拾取与得分、Frightened触发）；`src/features/pacman/pacmanMovement.ts`（方向输入处理、转向缓存机制、位移与碰撞判定、传送门穿越）；`src/features/pacman/pacmanFruit.ts`（水果触发逻辑、出现时间限制、拾取与得分、水果序列进阶）；`src/features/pacman/pacmanAi.ts`（四鬼目标逻辑：Blinky直接追踪、Pinky前方偏移含原版异常开关、Inky向量构造、Clyde距离判定；鬼魂状态机、鬼屋放行机制）；`src/features/pacman/pacmanLevelTuning.ts`（Scatter/Chase周期表驱动、模式切换反向行为、Frightened结束恢复、速度参数表）；`src/features/pacman/pacmanGameLogic.ts`（清豆胜利判定、生命归零失败判定、碰撞处理、吃鬼计分递增、重生逻辑）；已更新 `.trae/specs/pacman-module-spec/tasks.md` 中 Task 1-7 的 checkbox 状态为已完成；`npm run build` 通过。
+  - 2026-04-14 完成了祖玛模块 Phase B 关卡数据与存档系统：创建了 `src/features/zuma/zumaLevelCatalog.ts`（轨道定义系统、关卡脚本结构、神庙征途包12关、连锁回缩包8关、计时冲分包3档时长×6张地图）和 `src/features/zuma/zumaProgressStorage.ts`（存档字段：clearedLevels、levelRecords、timedRecords、practiceRecords、全局统计、存档读写与持久化、进度展示接口）；已更新 `.trae/specs/zuma-module-spec/tasks.md` 中 Task 6-7 的 checkbox 状态为已完成；`npm run build` 通过。
+  - 2026-04-14 完成了三消模块 Phase B 关卡数据与存档系统：创建了 `src/features/match3/match3LevelCatalog.ts`（关卡脚本结构定义、三个关卡包：新手入门包12关、步数策略包20关、果冻清理包18关，共50关关卡数据）和 `src/features/match3/match3ProgressStorage.ts`（存档字段定义、存档读写与持久化、进度展示接口、关卡解锁判定、包进度统计）；已更新 `.trae/specs/match3-module-spec/tasks.md` 中 Task 7-8 的 checkbox 状态为已完成；`npm run build` 通过。
+  - 2026-04-14 完成了吃豆人模块 Phase B 关卡数据与存档系统：创建了 `src/features/pacman/pacmanMapRegistry.ts`（关卡包类型定义、关卡元数据、关卡包注册表、经典街机包21关+循环、路线教学包10关）和 `src/features/pacman/pacmanContent.ts`（完整调优参数表：Scatter/Chase周期表、速度参数表、Frightened持续时间表、Elroy阈值表、关卡难度描述、速度描述、Frightened效果描述）和 `src/features/pacman/pacmanStorage.ts`（存档字段：单关卡最佳记录、关卡包进度、全局统计、存档读写与持久化、进度展示接口、关卡状态列表、Hub摘要）；已更新 `.trae/specs/pacman-module-spec/tasks.md` 中 Task 8-9 的 checkbox 状态为已完成；`npm run build` 通过。
+  - 2026-04-14 完成了祖玛模块 Phase C UI组件与HUD：创建了 `src/components/zuma/ZumaGameSheet.tsx`（选关、模式切换入口）、`src/components/zuma/ZumaBoard.tsx`（轨道、球链、炮台Canvas渲染）、`src/components/zuma/ZumaHud.tsx`（顶部信息栏：关卡编号、分数、连锁、球预览、危险等级、控制按钮）、`src/components/zuma/ZumaResultPanel.tsx`（胜利/失败结算面板：用时、命中率、最高连锁、星级、推荐训练项、三个出口）、`src/styles/zuma.css`（祖玛模块样式）；已更新 `.trae/specs/zuma-module-spec/tasks.md` 中 Task 8-10 的 checkbox 状态为已完成；祖玛模块构建无错误。
+  - 2026-04-14 完成了三消模块 Phase C UI组件与HUD：创建了 `src/components/match3/Match3Sheet.tsx`（选关、模式切换入口）、`src/components/match3/Match3Board.tsx`（棋盘、色块、障碍渲染）、`src/components/match3/Match3Hud.tsx`（顶部信息栏：关卡概览、目标进度、步数/时间、分数、连锁段数、蔓延威胁、控制按钮）、`src/components/match3/Match3ResultPanel.tsx`（胜利/失败结算面板：星级、分数明细、连锁峰值、目标完成率、失败原因、建议策略、三个出口）、`src/styles/match3.css`（三消模块样式）；已更新 `.trae/specs/match3-module-spec/tasks.md` 中 Task 9-11 的 checkbox 状态为已完成；三消模块构建无错误。
+  - 2026-04-14 完成了吃豆人模块 Phase C UI组件与HUD：创建了 `src/components/pacman/PacmanSheet.tsx`（选关、关卡包切换入口、游戏状态管理、键盘输入处理）、`src/components/pacman/PacmanBoard.tsx`（迷宫、豆子、能量豆、角色渲染）、`src/components/pacman/PacmanHud.tsx`（顶部信息栏：分数、关卡、生命、用时、模式、豆子进度、水果状态、吃鬼次数、能量豆、惊吓剩余时间）、`src/components/pacman/PacmanOverlay.tsx`（胜利/失败结算面板：用时、剩余命、豆子清空率、水果收益、吃鬼次数、死亡位置热区、建议改进点、三个出口）、`src/styles/pacman.css`（吃豆人模块样式）；已更新 `.trae/specs/pacman-module-spec/tasks.md` 中 Task 10-12 的 checkbox 状态为已完成；`npm run build` 通过。
+  - 2026-04-14 完成了吃豆人模块 Phase D 视觉音效系统：扩展了 `src/styles/pacman.css`（Pac-Man张嘴动画带方向、鬼魂移动动画、Frightened闪烁预警、吃豆消失动画、能量豆脉冲、吃鬼动画+得分飘字、水果出现/消失动画、传送门穿越动画、死亡动画、重生动画、胜利/失败结算特效）；更新了 `src/components/pacman/PacmanBoard.tsx`（动画类名应用、得分飘字渲染、水果出现动画触发）；创建了 `src/features/pacman/pacmanSound.ts`（吃豆音效连续递增、能量豆音效、吃鬼音效递增、水果音效、死亡音效、Frightened预警音效、胜利/失败结算音效、开始音效）；更新了 `src/components/pacman/PacmanSheet.tsx`（音效系统集成、音效开关按钮）；已更新 `.trae/specs/pacman-module-spec/tasks.md` 中 Task 13-14 的 checkbox 状态为已完成；`npm run build` 通过。
+  - 2026-04-14 完成了祖玛模块 Phase D 道具球与视觉音效系统：扩展了 `src/features/zuma/zumaTypes.ts`（新增 ZumaVisualEffect 类型、visualEffects 和 dangerPulsePhase 字段）；更新了 `src/features/zuma/zumaBoardState.ts`（视觉效果生成函数、视觉效果更新函数、危险脉冲更新函数、碰撞处理中添加视觉效果生成）；创建了 `src/utils/zumaSoundUtils.ts`（发射音效、命中音效、空枪音效、消除音效递增音调、连锁音效、换弹音效、道具球音效、危险预警音效、胜利/失败结算音效）；扩展了 `src/styles/zuma.css`（道具球脉冲动画、球链回缩动画、减速效果、终点线危险预警动画、得分飘字动画、连锁特效动画、消除特效动画、插入动画、道具球触发特效、危险屏幕边缘效果）；更新了 `src/components/zuma/ZumaBoard.tsx`（视觉效果Canvas渲染、危险预警终点线动画）；更新了 `src/components/zuma/ZumaGameSheet.tsx`（音效系统集成、事件监听触发音效）；已更新 `.trae/specs/zuma-module-spec/tasks.md` 中 Task 11-13 的 checkbox 状态为已完成；`npm run build` 通过。
