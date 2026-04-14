@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ExcelHeader } from './components/ExcelHeader';
 import { SheetTabs } from './components/SheetTabs';
 import { ExcelGrid } from './components/ExcelGrid';
@@ -564,6 +564,11 @@ function AppContent() {
                       ? '#334155'
                       : undefined
           }
+          onNewSave={() => setShowSaveManager(true)}
+          onSave={() => setShowSaveManager(true)}
+          onLoad={() => setShowSaveManager(true)}
+          onDelete={() => setShowSaveManager(true)}
+          onStartGame={() => setShowGameSelector(true)}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
