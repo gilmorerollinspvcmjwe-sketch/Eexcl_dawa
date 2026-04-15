@@ -28,7 +28,6 @@ import type {
 import {
   ZUMA_BALL_RADIUS,
   ZUMA_BALL_SPACING,
-  ZUMA_BASE_CHAIN_SPEED,
   ZUMA_FLYING_BALL_SPEED,
   ZUMA_MATCH_MIN_LENGTH,
   ZUMA_POWERUP_EFFECTS,
@@ -373,6 +372,7 @@ export function createZumaBoardStateFromLevel(level: ZumaLevelDefinition): ZumaB
     levelNumber: level.levelNumber,
     levelTitle: level.title,
     spawnScript: level.spawnScript,
+    initialBallCount: level.initialBallCount,
     winCondition: level.winCondition,
     lossCondition: level.lossCondition,
     endlessConfig: level.endlessConfig,
@@ -788,7 +788,9 @@ function processFlyingBallCollisions(state: ZumaBoardState): ZumaBoardState {
         processedBallIds.push(flyingBall.ballId);
 
         const hitPos = sampleTrackAtDistance(state.trackDefinition, collision.insertDistance);
-        const insertEffect = createVisualEffect('insert', hitPos.x, hitPos.y, state.elapsedMs, 1);
+        const insertEffect = createVisualEffect('insert', hitPos.x, hitPos.y, state.elapsedMs, 1, {
+          color: String(flyingBall.color),
+        });
         newVisualEffects.push(insertEffect);
 
         const isPowerup = flyingBall.isPowerup;
@@ -827,7 +829,9 @@ function processFlyingBallCollisions(state: ZumaBoardState): ZumaBoardState {
             const score = calculateClearScore(matchResult.matchLength, chainComboLevel);
 
             const clearPos = sampleTrackAtDistance(state.trackDefinition, collision.insertDistance);
-            const clearEffect = createVisualEffect('clear', clearPos.x, clearPos.y, state.elapsedMs, matchResult.matchLength);
+            const clearEffect = createVisualEffect('clear', clearPos.x, clearPos.y, state.elapsedMs, matchResult.matchLength, {
+              color: String(matchResult.matchColor),
+            });
             newVisualEffects.push(clearEffect);
 
             const scoreEffect = createVisualEffect('scorePopup', clearPos.x, clearPos.y - 20, state.elapsedMs, 1, { text: `+${score}` });
@@ -879,7 +883,9 @@ function processFlyingBallCollisions(state: ZumaBoardState): ZumaBoardState {
                 const comboScore = calculateClearScore(afterRewindMatch.matchLength, chainComboLevel);
 
                 const junctionPos = sampleTrackAtDistance(state.trackDefinition, rewoundChain.balls[gapCheck.gapStartIndex]?.distanceAlongTrack || 0);
-                const comboEffect = createVisualEffect('chainCombo', junctionPos.x, junctionPos.y, state.elapsedMs, chainComboLevel);
+                const comboEffect = createVisualEffect('chainCombo', junctionPos.x, junctionPos.y, state.elapsedMs, chainComboLevel, {
+                  color: String(afterRewindMatch.matchColor),
+                });
                 newVisualEffects.push(comboEffect);
 
                 const comboScoreEffect = createVisualEffect('scorePopup', junctionPos.x, junctionPos.y - 30, state.elapsedMs, chainComboLevel, { text: `+${comboScore} 连锁!` });
@@ -1144,14 +1150,14 @@ function processPowerupTrigger(
 
 function advanceChains(state: ZumaBoardState, elapsedMs: number): ZumaBoardState {
   const deltaSeconds = elapsedMs / 1000;
-  const baseSpeed = ZUMA_BASE_CHAIN_SPEED * deltaSeconds;
+  const baseMovement = deltaSeconds;
 
   const updatedChains = state.chains.map((chain) => {
     if (chain.balls.length === 0) return chain;
 
     const slowExpired = chain.slowEffectEndsAtMs !== null && state.elapsedMs >= chain.slowEffectEndsAtMs;
     const temporarySpeedMultiplier = slowExpired ? 1 : chain.temporarySpeedMultiplier;
-    const forwardSpeed = baseSpeed * chain.speedFactor * temporarySpeedMultiplier;
+    const forwardSpeed = chain.speedFactor * temporarySpeedMultiplier * baseMovement;
     let movementDelta = forwardSpeed;
 
     if (chain.isRewinding) {

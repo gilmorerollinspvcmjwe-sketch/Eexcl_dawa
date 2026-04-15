@@ -88,7 +88,7 @@ test('球链会朝终点推进并在越过失败线后判负', () => {
   const advanced = tickZumaBoard(state, 1000);
   assert.ok(advanced.chains[0].headDistance > state.chains[0].headDistance);
 
-  const nearFinish = withChainHeadDistance(advanced, advanced.trackDefinition.finishLineDistance - 1);
+  const nearFinish = withChainHeadDistance(advanced, advanced.trackDefinition.finishLineDistance - 0.05);
   const lost = tickZumaBoard(nearFinish, 100);
   assert.equal(lost.phase, 'lost');
   assert.equal(lost.status, 'lost');
@@ -272,6 +272,16 @@ test('限弹目标会在最后一发失效后判负', () => {
 });
 
 test('按关卡定义建盘会带上目标与时长配置', () => {
+  const firstLevel = getLevelDefinition('zuma-adventure-001');
+  assert.ok(firstLevel);
+
+  const firstLevelState = startZumaGame(createZumaBoardStateFromLevel(firstLevel!));
+  const firstStep = tickZumaBoard(firstLevelState, 1000);
+  const firstLevelDelta = firstStep.chains[0].headDistance - firstLevelState.chains[0].headDistance;
+
+  assert.equal(firstLevelState.chains[0].balls.length, firstLevel!.initialBallCount);
+  assert.ok(firstLevelDelta >= 18 && firstLevelDelta <= 30, `unexpected level-1 speed delta: ${firstLevelDelta}`);
+
   const chainLevel = getLevelDefinition('zuma-adventure-015');
   assert.ok(chainLevel);
 

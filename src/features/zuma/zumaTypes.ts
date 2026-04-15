@@ -126,6 +126,7 @@ export interface ZumaLevelDefinition {
   colorPool: ZumaBallColor[];
   baseSpeed: number;
   difficultyMultiplier: number;
+  initialBallCount?: number;
   spawnScript: ZumaSpawnEvent[];
   powerupPool: ZumaPowerupType[];
   powerupSpawnChance: number;
