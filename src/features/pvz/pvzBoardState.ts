@@ -1,4 +1,4 @@
-﻿import { PVZ_PLANT_MAP } from './pvzPlantRegistry.ts';
+import { PVZ_PLANT_MAP } from './pvzPlantRegistry.ts';
 import { PVZ_ZOMBIE_MAP } from './pvzZombieRegistry.ts';
 import { DEFAULT_PVZ_CHAPTER_ID, getPvZChapterById } from './pvzChapters.ts';
 import { getDefaultPvZScenarioIdForChapter, getPvZScenarioById } from './pvzScenarioCatalog.ts';
@@ -1117,7 +1117,7 @@ function moveZombies(state: PvZBoardState, elapsedMs: number): PvZBoardState {
 
     // 舞王僵尸：定期召唤伴舞
     if (zombie.zombieId === 'dancing' && definition.summonIds) {
-      const summonTimer = (zombie as any).summonTimerMs || 0;
+      const summonTimer = zombie.summonTimerMs || 0;
       const nextSummonTimer = summonTimer + elapsedMs;
       if (nextSummonTimer >= 8000) {
         for (const summonId of definition.summonIds) {
@@ -1138,7 +1138,7 @@ function moveZombies(state: PvZBoardState, elapsedMs: number): PvZBoardState {
 
     // 巨人僵尸：半血时投掷小鬼
     if (zombie.zombieId === 'gargantuar' && definition.summonIds) {
-      const hasThrown = (zombie as any).hasThrownImp;
+      const hasThrown = zombie.hasThrownImp;
       if (!hasThrown && zombie.hp < definition.maxHp * 0.5) {
         for (const summonId of definition.summonIds) {
           newZombies.push({

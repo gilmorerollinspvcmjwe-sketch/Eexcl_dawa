@@ -1,303 +1,268 @@
-/* 存档管理组件样式 */
+/* ==================== 存档管理系统样式 ==================== */
 
-.save-manager-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  background: #fbfcfb;
-  border: 1px solid #d7dfd8;
-  border-radius: 4px;
-  font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  max-height: 420px;
-}
-
-/* 标题栏 */
-.save-manager-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
-  color: white;
-  border-radius: 3px;
-}
-
-.save-manager-title {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.save-manager-game-tag {
-  font-size: 11px;
-  opacity: 0.85;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
-/* 操作区 */
-.save-manager-actions {
-  min-height: 32px;
-}
-
-.save-new-input-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.save-new-input {
-  flex: 1;
-  padding: 5px 8px;
-  border: 1px solid #d4d4d4;
-  border-radius: 3px;
-  font-size: 12px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.save-new-input:focus {
-  border-color: #107c41;
-  box-shadow: 0 0 0 1px rgba(16, 124, 65, 0.2);
-}
-
-/* 存档列表 */
-.save-list {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 3px;
-  background: white;
-  min-height: 80px;
-  max-height: 200px;
-}
-
-.save-list-empty {
+/* 存档管理器 */
+.save-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 80px;
-  color: #9ca3af;
-  font-size: 12px;
-  font-style: italic;
+  z-index: 2000;
 }
 
-.save-list-item {
+.save-manager-dialog {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 500px;
+  max-height: 80vh;
   display: flex;
+  flex-direction: column;
+}
+
+.save-manager-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
-  border-bottom: 1px dotted #e5e7eb;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.save-manager-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.save-manager-close {
+  background: none;
+  border: none;
+  font-size: 18px;
   cursor: pointer;
-  transition: background 0.1s ease;
+  color: #666;
+  padding: 4px 8px;
 }
 
-.save-list-item:last-child {
-  border-bottom: none;
+.save-manager-close:hover {
+  color: #333;
 }
 
-.save-list-item:hover {
-  background: #f0fdf4;
+.save-manager-actions {
+  padding: 12px 20px;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-.save-list-item.selected {
-  background: #edf7f0;
-  border-left: 3px solid #107c41;
-  padding-left: 7px;
-}
-
-.save-item-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.save-item-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: #1f2937;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.save-item-time {
-  font-size: 10px;
-  color: #9ca3af;
-  margin-top: 2px;
-}
-
-/* 按钮区 */
-.save-manager-buttons {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.save-btn {
-  padding: 6px 12px;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  font-size: 12px;
-  font-weight: 500;
-  font-family: inherit;
+.save-manager-btn {
+  padding: 6px 16px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
   cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
+  font-size: 13px;
+  border-radius: 2px;
+  transition: all 0.15s;
 }
 
-.save-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.save-manager-btn:hover {
+  background: #f5f5f5;
 }
 
-.save-btn-create {
+.save-manager-btn.primary {
   background: #107c41;
-  color: white;
-  border-color: #0c5a2f;
-  width: 100%;
-  text-align: center;
+  color: #fff;
+  border-color: #107c41;
 }
 
-.save-btn-create:hover:not(:disabled) {
-  background: #149452;
+.save-manager-btn.primary:hover {
+  background: #0e6b38;
 }
 
-.save-btn-load {
-  flex: 1;
-  background: #3b82f6;
-  color: white;
-  border-color: #2563eb;
-}
-
-.save-btn-load:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.save-btn-save {
-  flex: 1;
-  background: #f59e0b;
-  color: white;
-  border-color: #d97706;
-}
-
-.save-btn-save:hover:not(:disabled) {
-  background: #d97706;
-}
-
-.save-btn-delete {
-  flex: 1;
-  background: #ef4444;
-  color: white;
+.save-manager-btn.danger {
+  color: #dc2626;
   border-color: #dc2626;
 }
 
-.save-btn-delete:hover:not(:disabled) {
-  background: #dc2626;
+.save-manager-btn.danger:hover {
+  background: #fef2f2;
 }
 
-.save-btn-sm {
+.save-manager-btn.small {
   padding: 4px 10px;
+  font-size: 12px;
+}
+
+.save-manager-new-save {
+  padding: 12px 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.save-manager-new-save input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  font-size: 13px;
+}
+
+.save-manager-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 20px;
+}
+
+.save-manager-empty {
+  text-align: center;
+  color: #999;
+  padding: 40px 0;
+}
+
+.save-manager-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.save-manager-item:hover {
+  border-color: #107c41;
+  background: #f8fdf9;
+}
+
+.save-manager-item.selected {
+  border-color: #107c41;
+  background: #e8f5e9;
+}
+
+.save-manager-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.save-manager-item-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.save-manager-item-game {
   font-size: 11px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 2px;
+  display: inline-block;
+  width: fit-content;
 }
 
-.save-btn-confirm {
-  background: #107c41;
-  color: white;
-  border-color: #0c5a2f;
+.save-manager-item-time {
+  font-size: 11px;
+  color: #999;
 }
 
-.save-btn-confirm:hover:not(:disabled) {
-  background: #149452;
+.save-manager-item-actions {
+  display: flex;
+  gap: 8px;
 }
 
-.save-btn-cancel {
-  background: #e5e7eb;
-  color: #374151;
-  border-color: #d1d5db;
-}
-
-.save-btn-cancel:hover:not(:disabled) {
-  background: #d1d5db;
-}
-
-.save-btn-danger {
-  background: #dc2626;
-  color: white;
-  border-color: #b91c1c;
-}
-
-.save-btn-danger:hover:not(:disabled) {
-  background: #b91c1c;
-}
-
-/* 确认对话框 */
-.save-confirm-overlay {
+/* 游戏选择器 */
+.game-selector-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
-  animation: saveFadeIn 0.15s ease-out;
+  z-index: 2000;
 }
 
-@keyframes saveFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.game-selector-dialog {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 400px;
 }
 
-.save-confirm-dialog {
-  background: white;
-  border-radius: 6px;
-  padding: 20px 24px;
-  min-width: 300px;
-  max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  animation: savePopIn 0.2s ease-out;
-}
-
-@keyframes savePopIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.save-confirm-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 10px;
-}
-
-.save-confirm-message {
-  font-size: 13px;
-  color: #4b5563;
-  margin-bottom: 16px;
-  line-height: 1.5;
-}
-
-.save-confirm-buttons {
+.game-selector-header {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-/* 滚动条 */
-.save-list::-webkit-scrollbar {
-  width: 8px;
+.game-selector-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
 }
 
-.save-list::-webkit-scrollbar-track {
-  background: #f0f0f0;
+.game-selector-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #666;
+  padding: 4px 8px;
+}
+
+.game-selector-close:hover {
+  color: #333;
+}
+
+.game-selector-list {
+  padding: 12px;
+}
+
+.game-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
   border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: #fff;
+  transition: all 0.15s;
+  text-align: left;
 }
 
-.save-list::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+.game-selector-item:hover {
+  border-color: #107c41;
+  background: #f8fdf9;
 }
 
-.save-list::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+.game-selector-icon {
+  font-size: 28px;
+}
+
+.game-selector-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.game-selector-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.game-selector-desc {
+  font-size: 12px;
+  color: #666;
 }

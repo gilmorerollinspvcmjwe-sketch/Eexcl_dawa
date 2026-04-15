@@ -1,13 +1,14 @@
 /* 三消主玩法组件。包含选关、模式切换入口，整合棋盘、HUD和结算面板。 */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  checkLoseCondition,
+  checkWinCondition,
   canSwap,
   createBoard,
   createBoardFromConfig,
   decrementMoves,
   executeSwap,
-  generateResult,
   hasValidSwaps,
   processChain,
   selectTile,
@@ -16,20 +17,34 @@ import {
   clearSelection,
 } from '../../features/match3/match3BoardState';
 import {
-  getAllLevels,
+  getDefaultFocusTile,
+  moveFocusTile,
+  resolveConfirmAction,
+} from '../../features/match3/match3Keyboard';
+import {
   getLevelById,
   getLevelsByPack,
   getPackById,
   convertScriptToConfig,
+  getNextLevel,
   MATCH3_LEVEL_PACKS,
+  type Match3LevelScript,
 } from '../../features/match3/match3LevelCatalog';
+import {
+  MATCH3_RUNTIME_MODES,
+  convertModeLevelToConfig,
+  getModeChapters,
+  getModeLevelById,
+  getModeLevelsByChapter,
+  type Match3ModeLevel,
+} from '../../features/match3/match3ModeRuntime';
 import {
   isLevelUnlocked,
   isLevelCompleted,
   getLevelStars,
   recordLevelPlay,
 } from '../../features/match3/match3ProgressStorage';
-import type { Match3BoardState } from '../../features/match3/match3Types';
+import type { Match3BoardState, Match3ModeId } from '../../features/match3/match3Types';
 import { Match3Board } from './Match3Board';
 import { Match3Hud } from './Match3Hud';
 import { Match3ResultPanel } from './Match3ResultPanel';
@@ -48,17 +63,55 @@ interface Match3SheetProps {
   onSnapshotChange?: (snapshot: Record<string, unknown>) => void;
 }
 
-export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExit: _onExit, initialSnapshot, onSnapshotChange }) => {
+function getGoalSummary(state: Match3BoardState): string {
+  const comboLabels = {
+    'striped-striped': '条纹+条纹',
+    'striped-wrapped': '条纹+包装',
+    'wrapped-wrapped': '包装+包装',
+    'colorBomb-special': '彩球+特殊块',
+    'colorBomb-colorBomb': '双彩球',
+  } as const;
+  return state.goals.map((goal) => {
+    switch (goal.type) {
+      case 'score':
+        return `分数 ${goal.current}/${goal.target}`;
+      case 'collectColor':
+        return `收集 ${goal.colorTarget ?? ''}色 ${goal.current}/${goal.target}`;
+      case 'clearOverlay':
+        return `清覆盖 ${goal.current}/${goal.target}`;
+      case 'dropCollect':
+        return `送出 ${goal.current}/${goal.target}`;
+      case 'clearObstacle':
+        return `拆障碍 ${goal.current}/${goal.target}`;
+      case 'triggerCombo':
+        return `触发 ${goal.comboTarget ? comboLabels[goal.comboTarget] : '组合'} ${goal.current}/${goal.target}`;
+      default:
+        return `目标 ${goal.current}/${goal.target}`;
+    }
+  }).join(' / ');
+}
+
+function getModeLabel(modeId: Match3ModeId): string {
+  if (modeId === 'blitz') return 'Blitz';
+  if (modeId === 'puzzle') return 'Puzzle';
+  if (modeId === 'practice') return 'Practice';
+  return 'Adventure';
+}
+
+export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExit, initialSnapshot, onSnapshotChange }) => {
   const snapshot = initialSnapshot as {
     state?: Match3BoardState;
+    selectedModeId?: Match3ModeId;
     selectedPackId?: string;
     selectedLevelId?: string;
     setupCollapsed?: boolean;
     isPaused?: boolean;
     gameSpeed?: number;
     soundEnabled?: boolean;
+    focusedTile?: { row: number; col: number } | null;
   } | null;
   const [state, setState] = useState<Match3BoardState>(() => snapshot?.state ?? createBoard());
+  const [selectedModeId, setSelectedModeId] = useState<Match3ModeId>(snapshot?.selectedModeId ?? 'adventure');
   const [selectedPackId, setSelectedPackId] = useState<string>(snapshot?.selectedPackId ?? 'beginner');
   const [selectedLevelId, setSelectedLevelId] = useState<string>(snapshot?.selectedLevelId ?? 'beginner-01');
   const [setupCollapsed, setSetupCollapsed] = useState(snapshot?.setupCollapsed ?? false);
@@ -66,10 +119,47 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
   const [gameSpeed, setGameSpeed] = useState(snapshot?.gameSpeed ?? 1);
   const [soundEnabled, setSoundEnabled] = useState(snapshot?.soundEnabled ?? true);
   const [showShuffleHint, setShowShuffleHint] = useState(false);
+  const [focusedTile, setFocusedTile] = useState<{ row: number; col: number } | null>(snapshot?.focusedTile ?? null);
+  const onExitRef = useRef(onExit);
 
-  const selectedPack = useMemo(() => getPackById(selectedPackId), [selectedPackId]);
-  const selectedLevel = useMemo(() => getLevelById(selectedLevelId), [selectedLevelId]);
-  const packLevels = useMemo(() => getLevelsByPack(selectedPackId), [selectedPackId]);
+  const selectedPack = useMemo(
+    () => (selectedModeId === 'adventure' ? getPackById(selectedPackId) : getModeChapters(selectedModeId).find((chapter) => chapter.id === selectedPackId)),
+    [selectedModeId, selectedPackId]
+  );
+  const selectedLevel = useMemo(
+    () => (selectedModeId === 'adventure' ? getLevelById(selectedLevelId) : getModeLevelById(selectedLevelId)),
+    [selectedModeId, selectedLevelId]
+  );
+  const packLevels = useMemo(
+    () => (selectedModeId === 'adventure' ? getLevelsByPack(selectedPackId) : getModeLevelsByChapter(selectedModeId, selectedPackId)),
+    [selectedModeId, selectedPackId]
+  );
+
+  const previewSetupBoard = useCallback((modeId: Match3ModeId, level: Match3LevelScript | Match3ModeLevel | undefined) => {
+    if (state.phase !== 'setup' || !level) return;
+    const config = modeId === 'adventure'
+      ? convertScriptToConfig(level as Match3LevelScript)
+      : convertModeLevelToConfig(level as Match3ModeLevel);
+    setState(createBoardFromConfig(config));
+  }, [state.phase]);
+
+  useEffect(() => {
+    if (!selectedLevel || state.phase !== 'setup') return;
+    const targetChapterId = selectedModeId === 'adventure'
+      ? (selectedLevel as Match3LevelScript).packId
+      : (selectedLevel as Match3ModeLevel).chapterId;
+    if (
+      state.modeId !== selectedModeId ||
+      state.chapterId !== targetChapterId ||
+      state.boardTemplateId !== selectedLevel.boardTemplateId
+    ) {
+      previewSetupBoard(selectedModeId, selectedLevel as Match3LevelScript | Match3ModeLevel);
+    }
+  }, [previewSetupBoard, selectedLevel, selectedModeId, state.phase, state.modeId, state.chapterId, state.boardTemplateId]);
+
+  useEffect(() => {
+    onExitRef.current = onExit;
+  }, [onExit]);
 
   useEffect(() => {
     if (state.phase === 'playing' && !isPaused) {
@@ -78,16 +168,21 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
           if (current.phase !== 'playing' || current.isAnimating) return current;
 
           if (current.maxTimeMs !== null && current.timeMs !== null) {
-            const decrement = gameSpeed === 2 ? 200 : 200;
+            const decrement = gameSpeed === 2 ? 100 : 200;
             const newTimeMs = current.timeMs - decrement;
             if (newTimeMs <= 0) {
-              playMatch3LoseSound(soundEnabled);
+              const nextPhase = current.modeId === 'blitz' && checkWinCondition(current) ? 'won' : 'lost';
+              if (nextPhase === 'won') {
+                playMatch3WinSound(soundEnabled);
+              } else {
+                playMatch3LoseSound(soundEnabled);
+              }
               return {
                 ...current,
                 timeMs: 0,
-                phase: 'lost',
-                failureReason: '时间耗尽',
-                failureSuggestion: '尝试更快完成目标，优先处理高价值目标',
+                phase: nextPhase,
+                failureReason: nextPhase === 'lost' ? '时间耗尽' : undefined,
+                failureSuggestion: nextPhase === 'lost' ? '尝试更快完成目标，优先处理高价值目标' : undefined,
               };
             }
             return { ...current, timeMs: newTimeMs };
@@ -110,15 +205,16 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
                 setTimeout(() => setShowShuffleHint(false), 1500);
               }
 
-              const loseCheck = generateResult(current);
-              if (!loseCheck.won) {
-                playMatch3LoseSound(soundEnabled);
-                current.phase = 'lost';
-                current.failureReason = loseCheck.failureReason;
-                current.failureSuggestion = loseCheck.suggestion;
-              } else if (generateResult(current).won) {
+              const won = current.modeId === 'blitz' ? false : checkWinCondition(current);
+              const loseCheck = checkLoseCondition(current);
+              if (won) {
                 playMatch3WinSound(soundEnabled);
                 current.phase = 'won';
+              } else if (loseCheck.lost) {
+                playMatch3LoseSound(soundEnabled);
+                current.phase = 'lost';
+                current.failureReason = loseCheck.reason;
+                current.failureSuggestion = loseCheck.suggestion;
               }
             }
             return { ...current };
@@ -130,61 +226,98 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
 
       return () => window.clearInterval(timer);
     }
-  }, [state.phase, isPaused, gameSpeed]);
+  }, [state.phase, isPaused, gameSpeed, soundEnabled]);
 
   useEffect(() => {
     const levelName = selectedLevel?.name ?? '三消关卡';
-    const packName = selectedPack?.name ?? '关卡包';
+    const packName = selectedPack?.name ?? '章节';
+    const modeName = getModeLabel(selectedModeId);
     const phaseLabel = state.phase === 'setup' ? '准备' : state.phase === 'playing' ? '进行中' : state.phase === 'won' ? '胜利' : '失败';
 
     onFormulaChange?.(
       state.phase === 'setup'
-        ? `=${levelName} | ${packName} | 目标：${state.goals.map((g) => `${g.type}:${g.target}`).join(' / ')} | ${state.maxMoves ?? '无限'}步`
+        ? `=${modeName} | ${levelName} | ${packName} | 目标：${getGoalSummary(state)} | ${state.maxMoves ?? '无限'}步`
         : state.phase === 'playing'
-          ? `=${levelName} | ${phaseLabel} | 分数 ${state.score} | 步数 ${state.moves}/${state.maxMoves ?? '无限'} | 连锁 ${state.comboLevel + 1}段`
-          : `=${levelName} | ${phaseLabel} | 分数 ${state.score} | 目标完成 ${state.goals.filter((g) => g.current >= g.target).length}/${state.goals.length}`,
+          ? `=${modeName} | ${levelName} | ${phaseLabel} | 分数 ${state.score} | 步数 ${state.moves}/${state.maxMoves ?? '无限'} | 连锁 ${state.comboLevel + 1}段`
+          : `=${modeName} | ${levelName} | ${phaseLabel} | 分数 ${state.score} | ${getGoalSummary(state)}`,
     );
-  }, [onFormulaChange, state, selectedLevel, selectedPack]);
+  }, [onFormulaChange, state, selectedLevel, selectedPack, selectedModeId]);
 
   useEffect(() => {
     onSnapshotChange?.({
       state,
+      selectedModeId,
       selectedPackId,
       selectedLevelId,
       setupCollapsed,
       isPaused,
       gameSpeed,
       soundEnabled,
+      focusedTile,
     });
-  }, [state, selectedPackId, selectedLevelId, setupCollapsed, isPaused, gameSpeed, soundEnabled, onSnapshotChange]);
+  }, [state, selectedModeId, selectedPackId, selectedLevelId, setupCollapsed, isPaused, gameSpeed, soundEnabled, focusedTile, onSnapshotChange]);
+
+  const handleModeSelect = (modeId: Match3ModeId) => {
+    setSelectedModeId(modeId);
+    if (modeId === 'adventure') {
+      const firstPack = MATCH3_LEVEL_PACKS[0];
+      const firstLevels = getLevelsByPack(firstPack?.id ?? 'beginner');
+      const firstUnlocked = firstLevels.find((level) => isLevelUnlocked(level.id));
+      const nextLevel = firstUnlocked ?? firstLevels[0];
+      setSelectedPackId(firstPack?.id ?? 'beginner');
+      setSelectedLevelId(nextLevel?.id ?? 'beginner-01');
+      previewSetupBoard(modeId, nextLevel);
+      return;
+    }
+
+    const chapters = getModeChapters(modeId);
+    const firstChapter = chapters[0];
+    const firstLevels = getModeLevelsByChapter(modeId, firstChapter?.id ?? '');
+    setSelectedPackId(firstChapter?.id ?? '');
+    setSelectedLevelId(firstLevels[0]?.id ?? '');
+    previewSetupBoard(modeId, firstLevels[0]);
+  };
 
   const handlePackSelect = (packId: string) => {
     setSelectedPackId(packId);
-    const levels = getLevelsByPack(packId);
-    if (levels.length > 0) {
+    const levels = selectedModeId === 'adventure' ? getLevelsByPack(packId) : getModeLevelsByChapter(selectedModeId, packId);
+    if (levels.length === 0) return;
+    if (selectedModeId === 'adventure') {
       const firstUnlocked = levels.find((l) => isLevelUnlocked(l.id));
-      setSelectedLevelId(firstUnlocked?.id ?? levels[0].id);
+      const nextLevel = firstUnlocked ?? levels[0];
+      setSelectedLevelId(nextLevel.id);
+      previewSetupBoard(selectedModeId, nextLevel);
+      return;
     }
+    setSelectedLevelId(levels[0].id);
+    previewSetupBoard(selectedModeId, levels[0]);
   };
 
   const handleLevelSelect = (levelId: string) => {
-    if (!isLevelUnlocked(levelId)) return;
+    if (selectedModeId === 'adventure' && !isLevelUnlocked(levelId)) return;
     setSelectedLevelId(levelId);
+    previewSetupBoard(selectedModeId, selectedModeId === 'adventure' ? getLevelById(levelId) : getModeLevelById(levelId));
   };
 
   const handleStartGame = () => {
     if (!selectedLevel) return;
-    const config = convertScriptToConfig(selectedLevel);
+    const config = selectedModeId === 'adventure'
+      ? convertScriptToConfig(selectedLevel as Match3LevelScript)
+      : convertModeLevelToConfig(selectedLevel as Match3ModeLevel);
     const board = createBoardFromConfig(config);
     startGame(board);
     setState(board);
+    setFocusedTile(getDefaultFocusTile(board.rows, board.cols));
     setIsPaused(false);
     setSetupCollapsed(true);
-    recordLevelPlay(selectedLevelId);
+    if (selectedModeId === 'adventure') {
+      recordLevelPlay(selectedLevelId);
+    }
   };
 
-  const handleCellClick = (row: number, col: number) => {
+  const handleCellClick = useCallback((row: number, col: number) => {
     if (state.phase !== 'playing' || isPaused) return;
+    setFocusedTile({ row, col });
 
     setState((current) => {
       const newState = { ...current };
@@ -212,21 +345,26 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
 
       return newState;
     });
-  };
+  }, [state.phase, isPaused, soundEnabled]);
 
-  const handleTogglePause = () => {
+  const handleTogglePause = useCallback(() => {
     setIsPaused((current) => !current);
-  };
+  }, []);
 
-  const handleRestart = () => {
+  const handleRestart = useCallback(() => {
     if (!selectedLevel) return;
-    const config = convertScriptToConfig(selectedLevel);
+    const config = selectedModeId === 'adventure'
+      ? convertScriptToConfig(selectedLevel as Match3LevelScript)
+      : convertModeLevelToConfig(selectedLevel as Match3ModeLevel);
     const board = createBoardFromConfig(config);
     startGame(board);
     setState(board);
+    setFocusedTile(getDefaultFocusTile(board.rows, board.cols));
     setIsPaused(false);
-    recordLevelPlay(selectedLevelId);
-  };
+    if (selectedModeId === 'adventure') {
+      recordLevelPlay(selectedLevelId);
+    }
+  }, [selectedLevel, selectedLevelId, selectedModeId]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -236,19 +374,22 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
             e.preventDefault();
             handleRestart();
           }
+        } else if (e.key === 'Escape') {
+          onExitRef.current?.();
         }
         return;
       }
       if (isPaused) {
-        if (e.key === 'Escape' || e.key === ' ' || e.key === 'p' || e.key === 'P') {
+        if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
           e.preventDefault();
           handleTogglePause();
         }
         return;
       }
+
+      const currentFocus = focusedTile ?? getDefaultFocusTile(state.rows, state.cols);
       switch (e.key) {
         case 'Escape':
-        case ' ':
         case 'p':
         case 'P':
           e.preventDefault();
@@ -259,58 +400,56 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
           e.preventDefault();
           handleRestart();
           break;
-        case 'Tab':
-          e.preventDefault();
-          if (state.selectedTile) {
-            const { row, col } = state.selectedTile;
-            const newCol = (col + 1) % state.cols;
-            handleCellClick(row, newCol);
-          } else {
-            setState((current) => {
-              const newState = { ...current };
-              selectTile(newState, Math.floor(state.rows / 2), Math.floor(state.cols / 2));
-              return newState;
-            });
-          }
-          break;
         case 'Enter':
+        case ' ':
           e.preventDefault();
-          if (state.selectedTile) {
-            const { row, col } = state.selectedTile;
-            if (row < state.rows - 1) {
-              handleCellClick(row + 1, col);
+          setFocusedTile(currentFocus);
+          setState((current) => {
+            const newState = { ...current };
+            const action = resolveConfirmAction(current.selectedTile, currentFocus);
+            if (!current.selectedTile) {
+              selectTile(newState, currentFocus.row, currentFocus.col);
+              return newState;
             }
-          }
+
+            if (action.shouldSwap && action.swapTarget) {
+              selectTile(newState, action.swapTarget.row, action.swapTarget.col);
+              const { row: r1, col: c1 } = current.selectedTile;
+              const { row: r2, col: c2 } = action.swapTarget;
+
+              if (canSwap(newState, r1, c1, r2, c2)) {
+                const result = executeSwap(newState, r1, c1, r2, c2);
+                if (result.valid) {
+                  playMatch3SwapSound(true, soundEnabled);
+                  decrementMoves(newState);
+                  newState.isAnimating = true;
+                  newState.resolvingChain = true;
+                  newState.chainCount = 1;
+                  clearSelection(newState);
+                }
+              } else {
+                playMatch3SwapSound(false, soundEnabled);
+                clearSelection(newState);
+              }
+              return newState;
+            }
+
+            selectTile(newState, action.nextSelectedTile.row, action.nextSelectedTile.col);
+            return newState;
+          });
           break;
         case 'ArrowUp':
         case 'ArrowDown':
         case 'ArrowLeft':
         case 'ArrowRight':
           e.preventDefault();
-          if (state.selectedTile) {
-            const { row, col } = state.selectedTile;
-            let newRow = row;
-            let newCol = col;
-            if (e.key === 'ArrowUp') newRow = Math.max(0, row - 1);
-            else if (e.key === 'ArrowDown') newRow = Math.min(state.rows - 1, row + 1);
-            else if (e.key === 'ArrowLeft') newCol = Math.max(0, col - 1);
-            else if (e.key === 'ArrowRight') newCol = Math.min(state.cols - 1, col + 1);
-            handleCellClick(newRow, newCol);
-          } else {
-            const centerRow = Math.floor(state.rows / 2);
-            const centerCol = Math.floor(state.cols / 2);
-            setState((current) => {
-              const newState = { ...current };
-              selectTile(newState, centerRow, centerCol);
-              return newState;
-            });
-          }
+          setFocusedTile(moveFocusTile(currentFocus, e.key, state.rows, state.cols));
           break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.phase, state.selectedTile, state.rows, state.cols, isPaused, handleTogglePause, handleRestart]);
+  }, [state.phase, state.selectedTile, state.rows, state.cols, isPaused, handleTogglePause, handleRestart, focusedTile, soundEnabled]);
 
   const handleToggleSpeed = () => {
     setGameSpeed((current) => current === 1 ? 2 : 1);
@@ -319,31 +458,30 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
   const handleBackToSetup = () => {
     setSetupCollapsed(false);
     setIsPaused(false);
+    setFocusedTile(null);
     if (selectedLevel) {
-      const config = convertScriptToConfig(selectedLevel);
+      const config = selectedModeId === 'adventure'
+        ? convertScriptToConfig(selectedLevel as Match3LevelScript)
+        : convertModeLevelToConfig(selectedLevel as Match3ModeLevel);
       setState(createBoardFromConfig(config));
     }
   };
 
   const handleContinue = () => {
-    const nextLevel = getLevelById(selectedLevelId);
-    if (!nextLevel) return;
-    const allLevels = getAllLevels();
-    const currentIndex = allLevels.findIndex((l) => l.id === selectedLevelId);
-    if (currentIndex >= 0 && currentIndex < allLevels.length - 1) {
-      const next = allLevels[currentIndex + 1];
-      if (isLevelUnlocked(next.id)) {
-        setSelectedLevelId(next.id);
-        setSelectedPackId(next.packId);
-        const config = convertScriptToConfig(next);
-        const board = createBoardFromConfig(config);
-        startGame(board);
-        setState(board);
-        setIsPaused(false);
-        setSetupCollapsed(true);
-        recordLevelPlay(next.id);
-      }
-    }
+    if (selectedModeId !== 'adventure') return;
+    const next = getNextLevel(selectedLevelId);
+    if (!next || !isLevelUnlocked(next.id)) return;
+
+    setSelectedLevelId(next.id);
+    setSelectedPackId(next.packId);
+    const config = convertScriptToConfig(next);
+    const board = createBoardFromConfig(config);
+    startGame(board);
+    setState(board);
+    setFocusedTile(getDefaultFocusTile(board.rows, board.cols));
+    setIsPaused(false);
+    setSetupCollapsed(true);
+    recordLevelPlay(next.id);
   };
 
   return (
@@ -351,6 +489,8 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
       <Match3Hud
         state={state}
         levelName={selectedLevel?.name}
+        modeId={selectedModeId}
+        modeName={getModeLabel(selectedModeId)}
         packName={selectedPack?.name}
         onTogglePause={handleTogglePause}
         onToggleSpeed={handleToggleSpeed}
@@ -385,7 +525,7 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
                 className="match3-start-btn"
                 aria-label="开始三消游戏"
                 onClick={handleStartGame}
-                disabled={!selectedLevel || !isLevelUnlocked(selectedLevelId)}
+                disabled={!selectedLevel || (selectedModeId === 'adventure' && !isLevelUnlocked(selectedLevelId))}
               >
                 开始游戏
               </button>
@@ -396,18 +536,37 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
             <>
               <div className="match3-setup-copy" id="match3-setup-content">
                 <strong>{selectedLevel?.name ?? '选择关卡'}</strong>
-                <span>当前关卡包：{selectedPack?.name ?? '未知'}</span>
+                <span>当前模式：{getModeLabel(selectedModeId)} · {selectedPack?.name ?? '未知章节'}</span>
                 <span>{selectedLevel?.tutorialHint ?? '点击两个相邻色块进行交换'}</span>
-                <span>目标：{state.goals.map((g) => `${g.type === 'score' ? `分数${g.target}` : g.type === 'collectColor' ? `收集${g.colorTarget ?? ''}色${g.target}个` : `${g.type}${g.target}`}`).join(' / ')}</span>
-                <span>棋盘大小：{state.rows}×{state.cols} · 步数限制：{state.maxMoves ?? '无限'}</span>
+                {selectedModeId !== 'adventure' && selectedLevel && 'description' in selectedLevel && typeof selectedLevel.description === 'string' && (
+                  <span>{selectedLevel.description}</span>
+                )}
+                <span>目标：{getGoalSummary(state)}</span>
+                <span>棋盘大小：{state.rows}×{state.cols} · {state.maxTimeMs !== null ? `时间限制：${Math.floor(state.maxTimeMs / 1000)}秒` : `步数限制：${state.maxMoves ?? '无限'}`}</span>
                 {selectedLevel?.initialObstacles && selectedLevel.initialObstacles.length > 0 && (
                   <span>障碍：{selectedLevel.initialObstacles.map((o) => `${o.type}${o.positions.length}处`).join(' / ')}</span>
                 )}
               </div>
 
               <div className="match3-mode-panel">
-                <div className="match3-mode-tabs" role="tablist" aria-label="关卡包切换">
-                  {MATCH3_LEVEL_PACKS.map((pack) => (
+                <div className="match3-mode-tabs" role="tablist" aria-label="模式切换">
+                  {MATCH3_RUNTIME_MODES.map((mode) => (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={selectedModeId === mode.id}
+                      aria-label={`切换到${mode.name}`}
+                      className={`match3-mode-tab${selectedModeId === mode.id ? ' active' : ''}`}
+                      onClick={() => handleModeSelect(mode.id)}
+                    >
+                      {mode.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="match3-mode-tabs" role="tablist" aria-label="章节切换">
+                  {(selectedModeId === 'adventure' ? MATCH3_LEVEL_PACKS : getModeChapters(selectedModeId)).map((pack) => (
                     <button
                       key={pack.id}
                       type="button"
@@ -424,9 +583,9 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
 
                 <div className="match3-level-grid">
                   {packLevels.map((level) => {
-                    const unlocked = isLevelUnlocked(level.id);
-                    const completed = isLevelCompleted(level.id);
-                    const stars = getLevelStars(level.id);
+                    const unlocked = selectedModeId === 'adventure' ? isLevelUnlocked(level.id) : true;
+                    const completed = selectedModeId === 'adventure' ? isLevelCompleted(level.id) : false;
+                    const stars = selectedModeId === 'adventure' ? getLevelStars(level.id) : 0;
                     return (
                       <button
                         key={level.id}
@@ -439,8 +598,13 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
                         disabled={!unlocked}
                       >
                         <strong>{level.orderInPack}. {level.name}</strong>
-                        <span>{level.tutorialHint ?? '完成目标即可通关'}</span>
-                        <small>难度：{level.difficulty} · {level.maxMoves}步</small>
+                        <span>{level.tutorialHint ?? ('description' in level ? level.description : '完成目标即可通关')}</span>
+                        <small>
+                          难度：{level.difficulty}
+                          {'maxTimeMs' in level && typeof level.maxTimeMs === 'number'
+                            ? ` · ${Math.floor(level.maxTimeMs / 1000)}秒`
+                            : ` · ${level.maxMoves ?? 0}步`}
+                        </small>
                         {completed && <small className="match3-completed-hint">✅ 已通关 {'⭐'.repeat(stars)}</small>}
                         {!unlocked && <small className="match3-lock-hint">🔒 需通过前置关卡</small>}
                       </button>
@@ -456,9 +620,12 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
       <Match3ResultPanel
         state={state}
         levelId={selectedLevelId}
+        levelName={selectedLevel?.name}
+        groupName={selectedPack?.name}
+        modeId={selectedModeId}
         onRetry={handleRestart}
         onBackToSetup={handleBackToSetup}
-        onContinue={handleContinue}
+        onContinue={selectedModeId === 'adventure' ? handleContinue : undefined}
       />
 
       {state.phase !== 'setup' ? (
@@ -466,6 +633,7 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
           <Match3Board
             state={state}
             onCellClick={handleCellClick}
+            focusedTile={focusedTile}
           />
           {isPaused && state.phase === 'playing' && (
             <div className="match3-pause-overlay">
@@ -490,7 +658,7 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
         </div>
       ) : (
         <div className="match3-setup-board-placeholder">
-          选择关卡后点击"开始游戏"开始三消挑战。交换相邻色块，让三个相同颜色的色块连成一线即可消除。
+          先选模式，再选章节与关卡后点击“开始游戏”。方向键移动焦点，Enter 或空格选中并确认交换，让三个相同颜色的色块连成一线即可消除。
         </div>
       )}
     </div>

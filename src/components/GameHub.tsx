@@ -6,6 +6,7 @@ import { HubQuickResumeRow } from './hub/HubQuickResumeRow';
 import { HubGameTable } from './hub/HubGameTable';
 import { HubProgressPanel } from './hub/HubProgressPanel';
 import { HubTasksPanel } from './hub/HubTasksPanel';
+import { getProgressSummary } from '../features/match3/match3ProgressStorage';
 import '../styles/gamehub.css';
 
 export type GameModeType = 'timed' | 'endless' | 'zen' | 'headshot' | 'survival' | 'headshot_only';
@@ -17,6 +18,9 @@ interface GameHubProps {
   onStartSnake?: () => void;
   onStartTetris?: () => void;
   onStartPvZ: () => void;
+  onStartPacman?: () => void;
+  onStartZuma?: () => void;
+  onStartMatch3?: () => void;
   onSwitchSheet: (sheet: AppSheetId) => void;
   trainingDuration?: 30 | 60 | 120;
   difficulty?: DifficultyLevel;
@@ -36,6 +40,9 @@ export const GameHub: React.FC<GameHubProps> = ({
   onStartSnake,
   onStartTetris,
   onStartPvZ,
+  onStartPacman,
+  onStartZuma,
+  onStartMatch3,
   onSwitchSheet,
   trainingDuration = 60,
   difficulty = 'normal',
@@ -44,6 +51,7 @@ export const GameHub: React.FC<GameHubProps> = ({
   perlerProgress,
   onFormulaChange,
 }) => {
+  const match3Progress = useMemo(() => getProgressSummary(), []);
   const snapshot = useMemo(
     () => buildHubSnapshot({ perlerProgress, stats: { totalGames, totalScore } }),
     [perlerProgress, totalGames, totalScore],
@@ -54,8 +62,11 @@ export const GameHub: React.FC<GameHubProps> = ({
     const enabled = new Set<ArcadeGameId>(['aim', 'perler', 'pvz']);
     if (onStartSnake) enabled.add('snake');
     if (onStartTetris) enabled.add('tetris');
+    if (onStartPacman) enabled.add('pacman');
+    if (onStartZuma) enabled.add('zuma');
+    if (onStartMatch3) enabled.add('match3');
     return enabled;
-  }, [onStartSnake, onStartTetris]);
+  }, [onStartSnake, onStartTetris, onStartPacman, onStartZuma, onStartMatch3]);
 
   useEffect(() => {
     onFormulaChange?.(GAME_DESCRIPTIONS[selectedGame]);
@@ -84,6 +95,21 @@ export const GameHub: React.FC<GameHubProps> = ({
 
     if (gameId === 'pvz') {
       onStartPvZ();
+      return;
+    }
+
+    if (gameId === 'match3' && onStartMatch3) {
+      onStartMatch3();
+      return;
+    }
+
+    if (gameId === 'pacman' && onStartPacman) {
+      onStartPacman();
+      return;
+    }
+
+    if (gameId === 'zuma' && onStartZuma) {
+      onStartZuma();
       return;
     }
 
@@ -182,6 +208,13 @@ export const GameHub: React.FC<GameHubProps> = ({
               <button className="excel-nav-btn" onClick={() => onSwitchSheet('config')}>配置</button>
               <button className="excel-nav-btn" onClick={() => onSwitchSheet('perler')}>拼豆</button>
               <button className="excel-nav-btn" onClick={() => onSwitchSheet('pvz')}>PvZ</button>
+              <button className="excel-nav-btn" onClick={() => onSwitchSheet('match3')}>
+                三消
+                {match3Progress.completedLevels > 0 && (
+                  <span className="hub-nav-badge">{match3Progress.completedLevels}/{match3Progress.totalLevels}</span>
+                )}
+              </button>
+              <button className="excel-nav-btn excel-nav-btn--sub" onClick={() => onSwitchSheet('match3_lab')}>图鉴</button>
             </div>
           </div>
         </div>

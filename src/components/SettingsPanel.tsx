@@ -43,7 +43,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   settings,
   onUpdateSettings,
   onApplyPreset,
-  onStartGame: _onStartGame,
+  onStartGame,
   onResetSettings,
   // 临时设置相关
   tempSettings,
@@ -68,6 +68,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const applyPreset = (preset: GamePreset) => {
     onApplyPreset(preset);
   };
+  void onStartGame;
 
   const colLetters = React.useMemo(() => generateSimpleColLetters(15), []);
 
@@ -729,8 +730,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   ].map(mode => (
                     <button
                       key={mode.id}
-                      className={`game-preset-btn ${(settings as any).colorHarmonyMode === mode.id ? 'active' : ''}`}
-                      onClick={() => onUpdateSettings('colorHarmonyMode' as any, mode.id as any)}
+                      className={`game-preset-btn ${displaySettings.colorHarmonyMode === mode.id ? 'active' : ''}`}
+                      onClick={() => updateSetting('colorHarmonyMode', mode.id as NonNullable<GameSettings['colorHarmonyMode']>)}
                       disabled={displaySettings.colorlessMode}
                       style={{ 
                         minWidth: 80, 
@@ -738,12 +739,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         padding: '5px 8px', 
                         background: displaySettings.colorlessMode 
                           ? '#d1d5db' 
-                          : (displaySettings as any).colorHarmonyMode === mode.id 
+                          : displaySettings.colorHarmonyMode === mode.id 
                             ? '#ec4899' 
                             : '#e5e7eb', 
                         color: displaySettings.colorlessMode 
                           ? '#9ca3af' 
-                          : (displaySettings as any).colorHarmonyMode === mode.id 
+                          : displaySettings.colorHarmonyMode === mode.id 
                             ? 'white' 
                             : '#333',
                         cursor: displaySettings.colorlessMode ? 'not-allowed' : 'pointer',
@@ -777,14 +778,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   ].map(anim => (
                     <button
                       key={anim.id}
-                      className={`game-preset-btn ${(settings as any).spawnAnimation === anim.id ? 'active' : ''}`}
-                      onClick={() => onUpdateSettings('spawnAnimation' as any, anim.id as any)}
+                      className={`game-preset-btn ${displaySettings.spawnAnimation === anim.id ? 'active' : ''}`}
+                      onClick={() => updateSetting('spawnAnimation', anim.id as NonNullable<GameSettings['spawnAnimation']>)}
                       style={{ 
                         minWidth: 70, 
                         fontSize: 11, 
                         padding: '5px 8px', 
-                        background: (settings as any).spawnAnimation === anim.id ? '#ec4899' : '#e5e7eb', 
-                        color: (settings as any).spawnAnimation === anim.id ? 'white' : '#333' 
+                        background: displaySettings.spawnAnimation === anim.id ? '#ec4899' : '#e5e7eb', 
+                        color: displaySettings.spawnAnimation === anim.id ? 'white' : '#333' 
                       }}
                     >
                       {anim.icon} {anim.name}
@@ -808,18 +809,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="10"
                   max="24"
                   step="1"
-                  value={(settings as any).enemyFontSize || 14}
-                  onChange={(e) => onUpdateSettings('enemyFontSize' as any, parseInt(e.target.value) as any)}
+                  value={displaySettings.enemyFontSize || 14}
+                  onChange={(e) => updateSetting('enemyFontSize', parseInt(e.target.value, 10))}
                 />
               </td>
               <td className="excel-cell" style={{ textAlign: 'center' }}>
-                <strong style={{ color: '#ec4899' }}>{(settings as any).enemyFontSize || 14}px</strong>
+                <strong style={{ color: '#ec4899' }}>{displaySettings.enemyFontSize || 14}px</strong>
               </td>
               <td className="excel-cell" style={{ fontWeight: 500 }}>敌人字重</td>
               <td className="excel-cell">
                 <select
-                  value={(settings as any).enemyFontWeight || 'bold'}
-                  onChange={(e) => onUpdateSettings('enemyFontWeight' as any, e.target.value as any)}
+                  value={displaySettings.enemyFontWeight || 'bold'}
+                  onChange={(e) => updateSetting('enemyFontWeight', e.target.value as GameSettings['enemyFontWeight'])}
                   style={{ 
                     padding: '4px 8px', 
                     borderRadius: 4, 
@@ -931,7 +932,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                           enableAnimation: displaySettings.cellSettings?.enableAnimation || false,
                           animationSpeed: displaySettings.cellSettings?.animationSpeed || 'normal',
                           colorShift: displaySettings.cellSettings?.colorShift || false,
-                          colorMode: mode.id as any
+                          colorMode: mode.id as NonNullable<GameSettings['cellSettings']>['colorMode']
                         };
                         updateSetting('cellSettings', newSettings);
                       }}

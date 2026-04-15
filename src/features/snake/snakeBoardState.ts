@@ -172,7 +172,7 @@ function applyDynamicPressure(
   }
 
   let obstacles = state.obstacles;
-  let pressureLevel = Math.min(15, state.pressureLevel + 1);
+  const pressureLevel = Math.min(15, state.pressureLevel + 1);
   for (let i = 0; i < 2; i += 1) {
     obstacles = addPressureObstacle(state, random, obstacles, state.foods, state.snake.segments, pressureLevel);
   }
@@ -327,12 +327,12 @@ function stepSnake(state: SnakeBoardState, random: () => number, tickMs: number)
 
   let score = state.score;
   let growBy = state.snake.growBy;
-  let streak = consumedFood ? state.streak + 1 : 0;
-  let lastFoodKind = consumedFood?.kind;
+  const streak = consumedFood ? state.streak + 1 : 0;
+  const lastFoodKind = consumedFood?.kind;
   let speedBoostMs = Math.max(0, state.speedBoostMs - tickMs);
-  let foodsAfterEat = consumedFood ? state.foods.filter((_, index) => index !== consumedIndex) : [...state.foods];
+  const foodsAfterEat = consumedFood ? state.foods.filter((_, index) => index !== consumedIndex) : [...state.foods];
   let obstacles = [...state.obstacles];
-  let chainTokens = [...state.chainTokens];
+  const chainTokens = [...state.chainTokens];
   let targetIndex = state.targetIndex;
   let targetProgress = state.targetProgress;
   let completedTargets = [...state.completedTargets];

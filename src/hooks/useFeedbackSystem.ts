@@ -89,11 +89,12 @@ export function useFeedbackSystem(props: UseFeedbackSystemProps): UseFeedbackSys
       };
       const feedback = getFeedbackMessage(config);
       if (feedback) {
-        showFeedback(feedback);
+        const timer = window.setTimeout(() => showFeedback(feedback), 0);
+        return () => window.clearTimeout(timer);
       }
     }
     prevComboRef.current = combo;
-  }, [combo, headshotStreak, headshotRate, score, bestScore, isPlaying, showFeedback]);
+  }, [combo, headshotStreak, headshotRate, missStreak, score, bestScore, isPlaying, showFeedback]);
 
   useEffect(() => {
     if (missStreak > prevMissStreakRef.current && missStreak > 0) {
@@ -110,7 +111,8 @@ export function useFeedbackSystem(props: UseFeedbackSystemProps): UseFeedbackSys
       };
       const feedback = getFeedbackMessage(config);
       if (feedback) {
-        showFeedback(feedback);
+        const timer = window.setTimeout(() => showFeedback(feedback), 0);
+        return () => window.clearTimeout(timer);
       }
     }
     prevMissStreakRef.current = missStreak;
@@ -131,7 +133,8 @@ export function useFeedbackSystem(props: UseFeedbackSystemProps): UseFeedbackSys
       };
       const feedback = getFeedbackMessage(config);
       if (feedback) {
-        showFeedback(feedback);
+        const timer = window.setTimeout(() => showFeedback(feedback), 0);
+        return () => window.clearTimeout(timer);
       }
     }
     prevHeadshotStreakRef.current = headshotStreak;
@@ -139,9 +142,13 @@ export function useFeedbackSystem(props: UseFeedbackSystemProps): UseFeedbackSys
 
   useEffect(() => {
     if (isPlaying && !prevIsPlayingRef.current) {
-      triggerFeedback('start');
+      const timer = window.setTimeout(() => triggerFeedback('start'), 0);
+      prevIsPlayingRef.current = isPlaying;
+      return () => window.clearTimeout(timer);
     } else if (!isPlaying && prevIsPlayingRef.current) {
-      triggerFeedback('end');
+      const timer = window.setTimeout(() => triggerFeedback('end'), 0);
+      prevIsPlayingRef.current = isPlaying;
+      return () => window.clearTimeout(timer);
     }
     prevIsPlayingRef.current = isPlaying;
   }, [isPlaying, triggerFeedback]);

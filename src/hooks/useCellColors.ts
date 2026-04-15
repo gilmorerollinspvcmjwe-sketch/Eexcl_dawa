@@ -144,6 +144,7 @@ export function useCellColors(
   cellSettings?: CellSettings,
   _timeOffset: number = 0  // 忽略 timeOffset，使用 CSS 动画代替
 ): Map<string, string> {
+  void _timeOffset;
   const cacheRef = useRef<ColorCache>({});
   const staticCacheRef = useRef<ColorCache>({});
   const prevSettingsRef = useRef<string>('');

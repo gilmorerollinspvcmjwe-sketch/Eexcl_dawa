@@ -59,6 +59,13 @@ export interface FPSTrainingScore {
   wrongOrderHits?: number;
 }
 
+type FPSTrainingConfig =
+  | MotionTrackConfig
+  | PeekShotConfig
+  | SwitchTrackConfig
+  | ReactionConfig
+  | PrecisionConfig;
+
 interface UseFPSTrainingProps {
   mode: FPSTrainingMode;
   isPlaying: boolean;
@@ -69,8 +76,8 @@ interface UseFPSTrainingProps {
 
 interface UseFPSTrainingReturn {
   // 配置
-  config: MotionTrackConfig | PeekShotConfig | SwitchTrackConfig | ReactionConfig | PrecisionConfig | null;
-  setConfig: (config: any) => void;
+  config: FPSTrainingConfig | null;
+  setConfig: (config: FPSTrainingConfig) => void;
   
   // 状态
   currentPhase: 'waiting' | 'showing' | 'result';
@@ -104,7 +111,7 @@ export function useFPSTraining(props: UseFPSTrainingProps): UseFPSTrainingReturn
   const { mode, isPlaying, isPaused, enemies, onSpawnEnemy } = props;
 
   // 配置状态
-  const [config, setConfig] = useState<any>(getDefaultConfig(mode));
+  const [config, setConfig] = useState<FPSTrainingConfig>(getDefaultConfig(mode));
   
   // 阶段状态
   const [currentPhase, setCurrentPhase] = useState<'waiting' | 'showing' | 'result'>('waiting');
@@ -180,32 +187,8 @@ export function useFPSTraining(props: UseFPSTrainingProps): UseFPSTrainingReturn
   }, []);
 
   // 更新训练
-  const updateTraining = useCallback((deltaTime: number) => {
-    if (!isPlaying || isPaused) return;
-
-    const now = Date.now();
-
-    switch (mode) {
-      case 'motion_track':
-        updateMotionTrack(deltaTime, now);
-        break;
-      case 'peek_shot':
-        updatePeekShot(deltaTime, now);
-        break;
-      case 'switch_track':
-        updateSwitchTrack(deltaTime, now);
-        break;
-      case 'reaction':
-        updateReaction(deltaTime, now);
-        break;
-      case 'precision':
-        updatePrecision(deltaTime, now);
-        break;
-    }
-  }, [mode, isPlaying, isPaused, config, enemies]);
-
   // Motion Track 模式更新
-  const updateMotionTrack = (_deltaTime: number, now: number) => {
+  function updateMotionTrack(_deltaTime: number, now: number): void {
     const motionConfig = config as MotionTrackConfig;
     const spawnInterval = 3000; // 每 3 秒生成一个敌人
 
@@ -220,10 +203,10 @@ export function useFPSTraining(props: UseFPSTrainingProps): UseFPSTrainingReturn
       });
       lastSpawnTimeRef.current = now;
     }
-  };
+  }
 
   // Peek Shot 模式更新
-  const updatePeekShot = (_deltaTime: number, now: number) => {
+  function updatePeekShot(_deltaTime: number, now: number): void {
     const peekConfig = config as PeekShotConfig;
     
     if (enemies.length < peekConfig.targetCount && now - lastSpawnTimeRef.current > peekConfig.interval) {
@@ -237,10 +220,10 @@ export function useFPSTraining(props: UseFPSTrainingProps): UseFPSTrainingReturn
       });
       lastSpawnTimeRef.current = now;
     }
-  };
+  }
 
   // Switch Track 模式更新
-  const updateSwitchTrack = (_deltaTime: number, now: number) => {
+  function updateSwitchTrack(_deltaTime: number, now: number): void {
     const switchConfig = config as SwitchTrackConfig;
     
     if (enemies.length < switchConfig.targetCount && now - lastSpawnTimeRef.current > 2000) {
@@ -266,10 +249,10 @@ export function useFPSTraining(props: UseFPSTrainingProps): UseFPSTrainingReturn
       }
       lastSpawnTimeRef.current = now;
     }
-  };
+  }
 
   // Reaction 模式更新
-  const updateReaction = (_deltaTime: number, now: number) => {
+  function updateReaction(_deltaTime: number, now: number): void {
     // 反应测试有独立的流程
     if (enemies.length === 0 && currentPhase === 'showing' && now - lastSpawnTimeRef.current > 2000) {
       const row = Math.floor(ROWS / 2);
@@ -282,10 +265,10 @@ export function useFPSTraining(props: UseFPSTrainingProps): UseFPSTrainingReturn
       setReactionStartTime(now);
       lastSpawnTimeRef.current = now;
     }
-  };
+  }
 
   // Precision 模式更新
-  const updatePrecision = (_deltaTime: number, now: number) => {
+  function updatePrecision(_deltaTime: number, now: number): void {
     const precisionConfig = config as PrecisionConfig;
     
     if (enemies.length < precisionConfig.targetCount && now - lastSpawnTimeRef.current > 2500) {
@@ -297,6 +280,31 @@ export function useFPSTraining(props: UseFPSTrainingProps): UseFPSTrainingReturn
         anchorCol: col,
       });
       lastSpawnTimeRef.current = now;
+    }
+  }
+
+  // 更新训练
+  const updateTraining = (deltaTime: number) => {
+    if (!isPlaying || isPaused) return;
+
+    const now = Date.now();
+
+    switch (mode) {
+      case 'motion_track':
+        updateMotionTrack(deltaTime, now);
+        break;
+      case 'peek_shot':
+        updatePeekShot(deltaTime, now);
+        break;
+      case 'switch_track':
+        updateSwitchTrack(deltaTime, now);
+        break;
+      case 'reaction':
+        updateReaction(deltaTime, now);
+        break;
+      case 'precision':
+        updatePrecision(deltaTime, now);
+        break;
     }
   };
 
@@ -325,7 +333,7 @@ export function useFPSTraining(props: UseFPSTrainingProps): UseFPSTrainingReturn
 }
 
 // 获取默认配置
-function getDefaultConfig(mode: FPSTrainingMode): any {
+function getDefaultConfig(mode: FPSTrainingMode): FPSTrainingConfig {
   switch (mode) {
     case 'motion_track':
       return {
@@ -356,7 +364,10 @@ function getDefaultConfig(mode: FPSTrainingMode): any {
         targetCount: 3,
       };
     default:
-      return null;
+      return {
+        rounds: 5,
+        warningTime: 1500,
+      };
   }
 }
 

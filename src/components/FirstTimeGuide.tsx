@@ -41,16 +41,13 @@ const GUIDE_STEPS = [
 
 export const FirstTimeGuide: React.FC<FirstTimeGuideProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(() => localStorage.getItem('excel-aim-first-time-seen') !== 'true');
 
-  // 检查是否首次进入
   useEffect(() => {
-    const hasSeenGuide = localStorage.getItem('excel-aim-first-time-seen');
-    if (hasSeenGuide === 'true') {
-      setIsVisible(false);
+    if (!isVisible) {
       onComplete();
     }
-  }, [onComplete]);
+  }, [isVisible, onComplete]);
 
   const handleNext = () => {
     if (currentStep < GUIDE_STEPS.length - 1) {

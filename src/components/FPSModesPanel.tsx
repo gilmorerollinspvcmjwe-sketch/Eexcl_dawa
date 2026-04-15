@@ -1,13 +1,14 @@
 // FPS 专项训练面板 - GameHub 子组件
 
 import React from 'react';
-import type { FPSTrainingMode } from './TrainingModeSelector';
+import type { MotionTrackConfig, PeekShotConfig, FPSModeConfig, FPSTrainingMode } from './TrainingModeSelector';
+import type { MovePattern } from '../types/enemy';
 
 interface FPSModesPanelProps {
   selectedMode: FPSTrainingMode | null;
   onSelectMode: (mode: FPSTrainingMode) => void;
-  config?: any;
-  onConfigChange?: (config: any) => void;
+  config?: FPSModeConfig;
+  onConfigChange?: (config: FPSModeConfig) => void;
   disabled?: boolean;
 }
 
@@ -59,8 +60,8 @@ export const FPSModesPanel: React.FC<FPSModesPanelProps> = ({
 // FPS 模式配置面板
 const FPSConfigPanel: React.FC<{
   mode: FPSTrainingMode;
-  config: any;
-  onChange: (config: any) => void;
+  config: FPSModeConfig;
+  onChange: (config: FPSModeConfig) => void;
 }> = ({ mode, config, onChange }) => {
   switch (mode) {
     case 'motion_track':
@@ -69,7 +70,7 @@ const FPSConfigPanel: React.FC<{
           <div className="config-row">
             <span className="config-label">速度</span>
             <div className="config-buttons">
-              {['slow', 'normal', 'fast', 'extreme'].map(speed => (
+              {(['slow', 'normal', 'fast', 'extreme'] as MotionTrackConfig['speed'][]).map(speed => (
                 <button
                   key={speed}
                   className={`config-btn ${config.speed === speed ? 'selected' : ''}`}
@@ -83,7 +84,7 @@ const FPSConfigPanel: React.FC<{
           <div className="config-row">
             <span className="config-label">模式</span>
             <div className="config-buttons">
-              {['linear', 'sine', 'bounce'].map(pattern => (
+              {(['linear', 'sine', 'bounce'] as MovePattern[]).map(pattern => (
                 <button
                   key={pattern}
                   className={`config-btn ${config.pattern === pattern ? 'selected' : ''}`}
@@ -103,12 +104,12 @@ const FPSConfigPanel: React.FC<{
           <div className="config-row">
             <span className="config-label">停留时间</span>
             <div className="config-buttons">
-              {[
+              {([
                 { id: 'long', name: '长(2s)' },
                 { id: 'normal', name: '中(1.2s)' },
                 { id: 'short', name: '短(0.6s)' },
                 { id: 'blink', name: '闪(0.3s)' },
-              ].map(d => (
+              ] as Array<{ id: PeekShotConfig['duration']; name: string }>).map(d => (
                 <button
                   key={d.id}
                   className={`config-btn ${config.duration === d.id ? 'selected' : ''}`}

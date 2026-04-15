@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo } from 'react';
 
 interface ComboProgressBarProps {
   combo: number;
@@ -34,18 +34,7 @@ const getCurrentLevel = (combo: number) => {
 };
 
 export const ComboProgressBar: React.FC<ComboProgressBarProps> = memo(({ combo, maxCombo }) => {
-  const [displayCombo, setDisplayCombo] = useState(combo);
-  const [pulseEffect, setPulseEffect] = useState(false);
-
-  useEffect(() => {
-    if (combo !== displayCombo) {
-      setDisplayCombo(combo);
-      setPulseEffect(true);
-      const timer = setTimeout(() => setPulseEffect(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [combo, displayCombo]);
-
+  const displayCombo = combo;
   const currentLevel = getCurrentLevel(displayCombo);
   const nextThreshold = getNextThreshold(displayCombo);
 
@@ -64,7 +53,8 @@ export const ComboProgressBar: React.FC<ComboProgressBarProps> = memo(({ combo, 
       <div className="combo-header">
         <span className="combo-label">连击</span>
         <span 
-          className={`combo-value ${pulseEffect ? 'pulse' : ''}`}
+          key={displayCombo}
+          className={`combo-value ${displayCombo > 0 ? 'pulse' : ''}`}
           style={{ color: currentLevel.color }}
         >
           {displayCombo}

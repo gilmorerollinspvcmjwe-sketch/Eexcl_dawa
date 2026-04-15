@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>奇幻战线 - 兵种预览</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #FFD700;
+      font-size: 28px;
+    }
+    .role-section {
+      margin-bottom: 40px;
+    }
+    .role-title {
+      font-size: 20px;
+      color: #4A90D9;
+      margin-bottom: 15px;
+      padding-left: 10px;
+      border-left: 4px solid #4A90D9;
+    }
+    .unit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+    }
+    .unit-card {
+      background: #16213e;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .unit-card:hover {
+      transform: scale(1.05);
+    }
+    .unit-card canvas {
+      background: #0f3460;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .unit-name {
+      font-size: 14px;
+      color: #eee;
+      margin-bottom: 5px;
+    }
+    .unit-role {
+      font-size: 12px;
+      color: #888;
+    }
+    .role-tank { border-top: 3px solid #808080; }
+    .role-melee { border-top: 3px solid #CD853F; }
+    .role-ranged { border-top: 3px solid #228B22; }
+    .role-magic { border-top: 3px solid #9C27B0; }
+    .role-air { border-top: 3px solid #87CEEB; }
+    .role-boss { border-top: 3px solid #FF4500; }
+  </style>
+</head>
+<body>
+  <h1>奇幻战线对推 - 兵种预览</h1>
+  <div id="container"></div>
+
+  <script>
+    // 兵种配置
+    const UNIT_CONFIGS = {
+      // 前排肉盾
+      goblin_shield: { name: '哥布林盾兵', role: 'tank', bodyColor: '#6B8E23', detailColor: '#556B2F', weaponColor: '#8B7355', size: 28, hasWings: false, hasShield: true, hasWeapon: 'sword', hasHelmet: true, hasCape: false },
+      orc_heavy: { name: '兽人重甲兵', role: 'tank', bodyColor: '#556B2F', detailColor: '#3B4A1F', weaponColor: '#666666', size: 35, hasWings: false, hasShield: true, hasWeapon: 'axe', hasHelmet: true, hasCape: false },
+      stone_guard: { name: '石像卫士', role: 'tank', bodyColor: '#808080', detailColor: '#606060', weaponColor: '#999999', size: 38, hasWings: false, hasShield: true, hasWeapon: 'sword', hasHelmet: true, hasCape: false },
+      dwarf_ironwall: { name: '铁壁矮人', role: 'tank', bodyColor: '#B8860B', detailColor: '#8B6914', weaponColor: '#666666', size: 25, hasWings: false, hasShield: true, hasWeapon: 'axe', hasHelmet: true, hasCape: false },
+      
+      // 近战冲锋
+      wolf_rider: { name: '狼骑兵', role: 'melee', bodyColor: '#696969', detailColor: '#4A4A4A', weaponColor: '#8B7355', size: 30, hasWings: false, hasShield: false, hasWeapon: 'sword', hasHelmet: false, hasCape: false },
+      berserker: { name: '狂战士', role: 'melee', bodyColor: '#CD853F', detailColor: '#A0522D', weaponColor: '#8B7355', size: 32, hasWings: false, hasShield: false, hasWeapon: 'axe', hasHelmet: false, hasCape: false },
+      crypt_crawler: { name: '地穴爬兽', role: 'melee', bodyColor: '#4B0082', detailColor: '#3B0062', weaponColor: '#666666', size: 26, hasWings: false, hasShield: false, hasWeapon: 'claw', hasHelmet: false, hasCape: false },
+      shadow_assassin: { name: '暗影刺客', role: 'melee', bodyColor: '#2F4F4F', detailColor: '#1F3F3F', weaponColor: '#C0C0C0', size: 24, hasWings: false, hasShield: false, hasWeapon: 'sword', hasHelmet: false, hasCape: true },
+      
+      // 远程持续输出
+      archer: { name: '弓箭手', role: 'ranged', bodyColor: '#228B22', detailColor: '#006400', weaponColor: '#8B7355', size: 22, hasWings: false, hasShield: false, hasWeapon: 'bow', hasHelmet: false, hasCape: false },
+      elf_shooter: { name: '精灵射手', role: 'ranged', bodyColor: '#98FB98', detailColor: '#3CB371', weaponColor: '#DAA520', size: 24, hasWings: false, hasShield: false, hasWeapon: 'bow', hasHelmet: false, hasCape: true },
+      musketeer: { name: '火枪佣兵', role: 'ranged', bodyColor: '#8B4513', detailColor: '#654321', weaponColor: '#444444', size: 23, hasWings: false, hasShield: false, hasWeapon: 'bow', hasHelmet: true, hasCape: false },
+      ballista: { name: '弩炮车', role: 'ranged', bodyColor: '#8B7355', detailColor: '#6B5335', weaponColor: '#444444', size: 35, hasWings: false, hasShield: false, hasWeapon: 'bow', hasHelmet: false, hasCape: false },
+      
+      // 法术/范围兵
+      flame_warlock: { name: '火焰术士', role: 'magic', bodyColor: '#FF6347', detailColor: '#CC4F35', weaponColor: '#FFD700', size: 26, hasWings: false, hasShield: false, hasWeapon: 'staff', hasHelmet: false, hasCape: true },
+      ice_witch: { name: '冰霜女巫', role: 'magic', bodyColor: '#87CEEB', detailColor: '#5F9EA0', weaponColor: '#E0FFFF', size: 25, hasWings: false, hasShield: false, hasWeapon: 'staff', hasHelmet: false, hasCape: true },
+      plague_thrower: { name: '瘟疫投手', role: 'magic', bodyColor: '#556B2F', detailColor: '#3B4A1F', weaponColor: '#8B008B', size: 24, hasWings: false, hasShield: false, hasWeapon: 'none', hasHelmet: false, hasCape: false },
+      thunder_mage: { name: '雷电法师', role: 'magic', bodyColor: '#4169E1', detailColor: '#2F4F8F', weaponColor: '#FFD700', size: 26, hasWings: false, hasShield: false, hasWeapon: 'staff', hasHelmet: false, hasCape: true },
+      
+      // 空中/特殊兵
+      griffin_knight: { name: '狮鹫骑士', role: 'air', bodyColor: '#DAA520', detailColor: '#B8860B', weaponColor: '#C0C0C0', size: 32, hasWings: true, hasShield: true, hasWeapon: 'sword', hasHelmet: true, hasCape: false },
+      bat_swarm: { name: '蝙蝠群', role: 'air', bodyColor: '#4B0082', detailColor: '#3B0062', weaponColor: '#666666', size: 20, hasWings: true, hasShield: false, hasWeapon: 'claw', hasHelmet: false, hasCape: false },
+      young_dragon: { name: '幼龙', role: 'air', bodyColor: '#DC143C', detailColor: '#8B0000', weaponColor: '#FFD700', size: 35, hasWings: true, hasShield: false, hasWeapon: 'none', hasHelmet: false, hasCape: false },
+      
+      // 高费终结兵
+      tree_ancient: { name: '树人古卫', role: 'boss', bodyColor: '#8B4513', detailColor: '#654321', weaponColor: '#228B22', size: 45, hasWings: false, hasShield: false, hasWeapon: 'claw', hasHelmet: false, hasCape: false },
+      ogre_lord: { name: '食人魔领主', role: 'boss', bodyColor: '#8B4513', detailColor: '#654321', weaponColor: '#666666', size: 48, hasWings: false, hasShield: true, hasWeapon: 'axe', hasHelmet: true, hasCape: false },
+      fire_dragon: { name: '火龙', role: 'boss', bodyColor: '#FF4500', detailColor: '#CC3700', weaponColor: '#FFD700', size: 55, hasWings: true, hasShield: false, hasWeapon: 'none', hasHelmet: false, hasCape: false },
+    };
+
+    const ROLES = [
+      { key: 'tank', label: '前排肉盾' },
+      { key: 'melee', label: '近战冲锋' },
+      { key: 'ranged', label: '远程持续输出' },
+      { key: 'magic', label: '法术/范围兵' },
+      { key: 'air', label: '空中/特殊兵' },
+      { key: 'boss', label: '高费终结兵' },
+    ];
+
+    // 绘制单位
+    function drawUnit(ctx, config, x, y, hpPercent, isAttacking) {
+      const { size, bodyColor, detailColor, weaponColor, hasWings, hasShield, hasWeapon, hasHelmet, hasCape, role } = config;
+      
+      ctx.save();
+      ctx.translate(x, y);
+      
+      const scale = role === 'boss' ? 1.3 : role === 'tank' ? 1.1 : 1.0;
+      ctx.scale(scale, scale);
+      
+      if (isAttacking) {
+        ctx.translate(Math.sin(Date.now() / 50) * 3, 0);
+      }
+      
+      if (hasWings) drawWings(ctx, size, detailColor);
+      if (hasCape) drawCape(ctx, size, detailColor);
+      drawBody(ctx, size, bodyColor, detailColor);
+      if (hasHelmet) drawHelmet(ctx, size, detailColor);
+      if (hasShield) drawShield(ctx, size, weaponColor);
+      if (hasWeapon !== 'none') drawWeapon(ctx, size, weaponColor, hasWeapon, isAttacking);
+      drawHpBar(ctx, size, hpPercent);
+      
+      ctx.restore();
+    }
+
+    function drawBody(ctx, size, bodyColor, detailColor) {
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 0.3, size * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = detailColor;
+      ctx.beginPath();
+      ctx.ellipse(0, size * 0.1, size * 0.2, size * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.45, size * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(-size * 0.08, -size * 0.48, size * 0.05, 0, Math.PI * 2);
+      ctx.arc(size * 0.08, -size * 0.48, size * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.arc(-size * 0.08, -size * 0.48, size * 0.025, 0, Math.PI * 2);
+      ctx.arc(size * 0.08, -size * 0.48, size * 0.025, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = detailColor;
+      const legOffset = Math.sin(Date.now() / 100) * 3;
+      ctx.fillRect(-size * 0.15, size * 0.4, size * 0.1, size * 0.25);
+      ctx.fillRect(size * 0.05, size * 0.4, size * 0.1, size * 0.25);
+    }
+
+    function drawWings(ctx, size, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.2, -size * 0.2);
+      ctx.quadraticCurveTo(-size * 0.6, -size * 0.5, -size * 0.5, -size * 0.1);
+      ctx.quadraticCurveTo(-size * 0.4, -size * 0.15, -size * 0.2, -size * 0.1);
+      ctx.fill();
+      
+      ctx.beginPath();
+      ctx.moveTo(size * 0.2, -size * 0.2);
+      ctx.quadraticCurveTo(size * 0.6, -size * 0.5, size * 0.5, -size * 0.1);
+      ctx.quadraticCurveTo(size * 0.4, -size * 0.15, size * 0.2, -size * 0.1);
+      ctx.fill();
+    }
+
+    function drawCape(ctx, size, color) {
+      const capeWave = Math.sin(Date.now() / 150) * 3;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.25, -size * 0.1);
+      ctx.quadraticCurveTo(-size * 0.35 + capeWave, size * 0.3, -size * 0.2, size * 0.5);
+      ctx.lineTo(size * 0.2, size * 0.5);
+      ctx.quadraticCurveTo(size * 0.35 + capeWave, size * 0.3, size * 0.25, -size * 0.1);
+      ctx.fill();
+    }
+
+    function drawHelmet(ctx, size, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.5, size * 0.22, Math.PI, 0);
+      ctx.fill();
+      
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.55, size * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawShield(ctx, size, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.35, -size * 0.2);
+      ctx.lineTo(-size * 0.45, size * 0.1);
+      ctx.lineTo(-size * 0.35, size * 0.3);
+      ctx.lineTo(-size * 0.25, size * 0.1);
+      ctx.lineTo(-size * 0.25, -size * 0.2);
+      ctx.fill();
+      
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.35, -size * 0.1);
+      ctx.lineTo(-size * 0.35, size * 0.2);
+      ctx.stroke();
+    }
+
+    function drawWeapon(ctx, size, color, type, isAttacking) {
+      const attackOffset = isAttacking ? 10 : 0;
+      
+      switch (type) {
+        case 'sword':
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(size * 0.3, -size * 0.1);
+          ctx.lineTo(size * 0.3 + attackOffset, -size * 0.5);
+          ctx.stroke();
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(size * 0.25, -size * 0.1);
+          ctx.lineTo(size * 0.35, -size * 0.1);
+          ctx.stroke();
+          break;
+        case 'bow':
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(size * 0.35, -size * 0.2, size * 0.25, -Math.PI / 2, Math.PI / 2);
+          ctx.stroke();
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(size * 0.35, -size * 0.45);
+          ctx.lineTo(size * 0.35, size * 0.05);
+          ctx.stroke();
+          break;
+        case 'staff':
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(size * 0.3, size * 0.3);
+          ctx.lineTo(size * 0.3, -size * 0.6);
+          ctx.stroke();
+          ctx.fillStyle = '#FFD700';
+          ctx.beginPath();
+          ctx.arc(size * 0.3, -size * 0.65, size * 0.08, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        case 'axe':
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(size * 0.3, size * 0.2);
+          ctx.lineTo(size * 0.3, -size * 0.4);
+          ctx.stroke();
+          ctx.fillStyle = '#888888';
+          ctx.beginPath();
+          ctx.moveTo(size * 0.3, -size * 0.4);
+          ctx.lineTo(size * 0.5, -size * 0.3);
+          ctx.lineTo(size * 0.3, -size * 0.2);
+          ctx.fill();
+          break;
+        case 'claw':
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3;
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.moveTo(size * 0.3, -size * 0.1 + i * 5);
+            ctx.lineTo(size * 0.45 + attackOffset, -size * 0.15 + i * 5);
+            ctx.stroke();
+          }
+          break;
+      }
+    }
+
+    function drawHpBar(ctx, size, hpPercent) {
+      const barWidth = size * 0.6;
+      const barHeight = 4;
+      const barY = -size * 0.7;
+      
+      ctx.fillStyle = '#333333';
+      ctx.fillRect(-barWidth / 2, barY, barWidth, barHeight);
+      
+      const hpColor = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FF9800' : '#F44336';
+      ctx.fillStyle = hpColor;
+      ctx.fillRect(-barWidth / 2, barY, barWidth * hpPercent, barHeight);
+      
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(-barWidth / 2, barY, barWidth, barHeight);
+    }
+
+    // 创建页面
+    const container = document.getElementById('container');
+    
+    ROLES.forEach(role => {
+      const units = Object.entries(UNIT_CONFIGS).filter(([id, config]) => config.role === role.key);
+      if (units.length === 0) return;
+
+      const section = document.createElement('div');
+      section.className = 'role-section';
+      section.innerHTML = `<div class="role-title">${role.label} (${units.length}个)</div>`;
+
+      const grid = document.createElement('div');
+      grid.className = 'unit-grid';
+
+      units.forEach(([unitId, config]) => {
+        const card = document.createElement('div');
+        card.className = `unit-card role-${role.key}`;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 120;
+        canvas.height = 120;
+        canvas.id = `canvas-${unitId}`;
+
+        const name = document.createElement('div');
+        name.className = 'unit-name';
+        name.textContent = config.name;
+
+        const roleLabel = document.createElement('div');
+        roleLabel.className = 'unit-role';
+        roleLabel.textContent = role.label;
+
+        card.appendChild(canvas);
+        card.appendChild(name);
+        card.appendChild(roleLabel);
+        grid.appendChild(card);
+      });
+
+      section.appendChild(grid);
+      container.appendChild(section);
+    });
+
+    // 动画循环
+    function renderAll() {
+      Object.entries(UNIT_CONFIGS).forEach(([unitId, config]) => {
+        const canvas = document.getElementById(`canvas-${unitId}`);
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawUnit(ctx, config, 60, 60, 1.0, false);
+          }
+        }
+      });
+      requestAnimationFrame(renderAll);
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>

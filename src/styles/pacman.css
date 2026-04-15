@@ -1,0 +1,1509 @@
+.pacman-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 10px;
+  background: #f3f3f3;
+}
+
+.pacman-settings-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.pacman-settings-shell.collapsed .pacman-config-panel,
+.pacman-settings-shell.collapsed .pacman-toolbar {
+  display: none;
+}
+
+.pacman-settings-summary {
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.pacman-settings-summary strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-settings-summary p {
+  margin: 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.pacman-settings-actions {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pacman-settings-toggle {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.pacman-config-panel {
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.pacman-config-header {
+  display: grid;
+  gap: 10px;
+}
+
+.pacman-config-header strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-config-header p {
+  margin: 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.pacman-pack-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pacman-pack-tab {
+  border: 1px solid #dbe4f0;
+  background: linear-gradient(180deg, #fcfdff 0%, #f8fafc 100%);
+  padding: 10px;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+  border-top: 3px solid transparent;
+}
+
+.pacman-pack-tab.active {
+  border-color: var(--pacman-pack-accent, #107c41);
+  border-top-color: var(--pacman-pack-accent, #107c41);
+  background: #f8fffb;
+}
+
+.pacman-pack-tab span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pacman-pack-tab small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.pacman-level-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pacman-level-card {
+  border: 1px solid #dbe4f0;
+  background: #f8fafc;
+  padding: 8px;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+  min-height: 80px;
+}
+
+.pacman-level-card.active {
+  border-color: #107c41;
+  background: #edf7f0;
+  box-shadow: inset 0 0 0 1px rgba(16, 124, 65, 0.15);
+}
+
+.pacman-level-card.completed {
+  border-color: #22c55e;
+  background: #dcfce7;
+}
+
+.pacman-level-card.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pacman-level-card p,
+.pacman-level-card small {
+  margin: 0;
+}
+
+.pacman-level-card p {
+  font-size: 11px;
+  color: #334155;
+}
+
+.pacman-level-card small {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.pacman-level-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.pacman-level-top strong {
+  font-size: 11px;
+  color: #0f172a;
+}
+
+.pacman-level-top span {
+  font-size: 10px;
+  color: #107c41;
+  font-weight: 700;
+}
+
+.pacman-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 8px 10px;
+}
+
+.pacman-session-brief {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pacman-session-card {
+  border: 1px solid #d0d7de;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.pacman-session-card strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #0f172a;
+}
+
+.pacman-session-card p {
+  margin: 0;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pacman-toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.pacman-toolbar select {
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+.pacman-key-hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: #64748b;
+  min-width: min(100%, 320px);
+}
+
+.pacman-main {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 10px;
+  min-height: 0;
+  flex: 1;
+}
+
+.pacman-board-shell {
+  border: 1px solid #d4d4d4;
+  background: #000;
+  padding: 8px;
+  overflow: auto;
+  position: relative;
+}
+
+.pacman-board-grid {
+  display: grid;
+  gap: 0;
+  background: #000;
+}
+
+.pacman-board-cell {
+  position: relative;
+    display: grid;
+  place-items: center;
+  min-height: 12px;
+  min-width: 12px;
+  font-size: 8px;
+  color: #fff;
+}
+
+.pacman-board-cell.wall {
+  background: #1a1a2e;
+  border: 1px solid #2d2d44;
+}
+
+.pacman-board-cell.path {
+  background: #000;
+}
+
+.pacman-board-cell.pellet {
+  background: #000;
+}
+
+.pacman-board-cell.pellet::after {
+  content: '·';
+  font-size: 6px;
+  color: #fbbf24;
+}
+
+.pacman-board-cell.energizer {
+  background: #000;
+}
+
+.pacman-board-cell.energizer::after {
+  content: '○';
+  font-size: 10px;
+  color: #fbbf24;
+}
+
+.pacman-board-cell.ghostHouse {
+  background: #000;
+}
+
+.pacman-board-cell.ghostDoor {
+  background: #fbbf24;
+  height: 2px;
+}
+
+.pacman-board-cell.tunnel {
+  background: #000;
+}
+
+.pacman-board-cell.fruitSpawn {
+  background: #000;
+}
+
+.pacman-board-cell.pacmanSpawn {
+  background: #000;
+}
+
+.pacman-board-cell.empty {
+  background: #000;
+}
+
+.pacman-board-cell.pacman {
+  background: transparent;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pacman-board-cell.ghost {
+  background: transparent;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pacman-board-cell.ghost.multi {
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.45);
+}
+
+.pacman-ghost-stack-count {
+  position: absolute;
+  right: 0;
+  bottom: -2px;
+  font-size: 7px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 999px;
+  padding: 1px 2px;
+}
+
+.pacman-board-cell.ghost.blinky {
+  color: #ff0000;
+}
+
+.pacman-board-cell.ghost.pinky {
+  color: #ffb8ff;
+}
+
+.pacman-board-cell.ghost.inky {
+  color: #00ffff;
+}
+
+.pacman-board-cell.ghost.clyde {
+  color: #ffb852;
+}
+
+.pacman-board-cell.ghost.frightened {
+  color: #2121de;
+}
+
+.pacman-board-cell.ghost.frightened-blink {
+  color: #fff;
+}
+
+.pacman-board-cell.ghost.eaten {
+  color: transparent;
+}
+
+.pacman-board-cell.ghost.eaten::after {
+  content: '👀';
+  font-size: 6px;
+  color: #fff;
+}
+
+.pacman-board-cell.fruit {
+  background: transparent;
+  font-size: 10px;
+}
+
+.pacman-board-cell.fruit.cherry {
+  color: #ff0000;
+}
+
+.pacman-board-cell.fruit.strawberry {
+  color: #ff6b6b;
+}
+
+.pacman-board-cell.fruit.orange {
+  color: #ffa500;
+}
+
+.pacman-board-cell.fruit.apple {
+  color: #00ff00;
+}
+
+.pacman-board-cell.fruit.melon {
+  color: #00ff7f;
+}
+
+.pacman-board-cell.fruit.galaxian {
+  color: #0000ff;
+}
+
+.pacman-board-cell.fruit.bell {
+  color: #ffd700;
+}
+
+.pacman-board-cell.fruit.key {
+  color: #00ffff;
+}
+
+.pacman-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pacman-hud {
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.pacman-hud-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pacman-hud-item {
+  border: 1px dotted #cbd5e1;
+  padding: 6px;
+  display: grid;
+  gap: 3px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.pacman-hud-item.wide {
+  grid-column: 1 / -1;
+}
+
+.pacman-hud-item strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-hud-item.warning strong {
+  color: #dc2626;
+}
+
+.pacman-hud-item.success strong {
+  color: #16a34a;
+}
+
+.pacman-hud-event {
+  border: 1px solid #cbd5e1;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.pacman-hud-note {
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 6px;
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.pacman-hud-note strong {
+  color: #0f766e;
+}
+
+.pacman-hud-event.success {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.pacman-hud-event.warning {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.pacman-hud-event.info {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.pacman-hud-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pacman-btn {
+  border: 1px solid #0c5a2f;
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.pacman-btn:disabled {
+  opacity: 0.45;
+}
+
+.pacman-btn.ghost {
+  border-color: #64748b;
+  background: #fff;
+  color: #334155;
+}
+
+.pacman-pack-tab:focus-visible,
+.pacman-level-card:focus-visible,
+.pacman-btn:focus-visible,
+.pacman-toolbar select:focus-visible,
+.pacman-settings-toggle:focus-visible {
+  outline: 2px solid #107c41;
+  outline-offset: 2px;
+}
+
+.pacman-legend {
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 10px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.pacman-legend h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.pacman-legend p {
+  margin: 0 0 4px;
+}
+
+.pacman-legend-additional {
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 6px;
+  margin-top: 6px;
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.pacman-legend-additional strong {
+  color: #0f766e;
+}
+
+.pacman-overlay {
+  position: absolute;
+  inset: 44px 10px 10px 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.pacman-overlay-card {
+  width: min(420px, calc(100% - 20px));
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.pacman-overlay-card h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.pacman-overlay-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #334155;
+}
+
+.pacman-overlay-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  border: 1px dotted #cbd5e1;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.pacman-overlay-stat {
+  display: grid;
+  gap: 3px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.pacman-overlay-stat strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.pacman-overlay-stat.success strong {
+  color: #16a34a;
+}
+
+.pacman-overlay-stat.warning strong {
+  color: #dc2626;
+}
+
+.pacman-overlay-analysis {
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 10px;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.pacman-overlay-analysis li {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.pacman-overlay-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ===== 视觉动画系统 ===== */
+
+/* Pac-Man 张嘴动画（带方向） */
+.pacman-board-cell.pacman {
+  animation: pacman-chomp 0.3s steps(3) infinite;
+}
+
+.pacman-board-cell.pacman.dir-up {
+  transform: rotate(-90deg);
+}
+
+.pacman-board-cell.pacman.dir-down {
+  transform: rotate(90deg);
+}
+
+.pacman-board-cell.pacman.dir-left {
+  transform: rotate(180deg);
+}
+
+.pacman-board-cell.pacman.dir-right {
+  transform: rotate(0deg);
+}
+
+@keyframes pacman-chomp {
+  0% { clip-path: polygon(100% 50%, 100% 0%, 50% 0%, 0% 50%, 50% 100%, 100% 100%); }
+  50% { clip-path: polygon(100% 50%, 100% 35%, 50% 35%, 15% 50%, 50% 65%, 100% 65%); }
+  100% { clip-path: polygon(100% 50%, 100% 50%, 50% 50%, 50% 50%, 50% 50%, 100% 50%); }
+}
+
+/* 鬼魂移动动画 */
+.pacman-board-cell.ghost {
+  animation: ghost-wobble 0.4s steps(2) infinite;
+}
+
+@keyframes ghost-wobble {
+  0% { transform: scaleX(1); }
+  50% { transform: scaleX(0.9); }
+  100% { transform: scaleX(1); }
+}
+
+/* Frightened 状态鬼魂闪烁预警动画 */
+.pacman-board-cell.ghost.frightened-blink {
+  animation: frightened-blink 0.25s steps(2) infinite;
+}
+
+@keyframes frightened-blink {
+  0% { color: #2121de; }
+  50% { color: #fff; }
+  100% { color: #2121de; }
+}
+
+/* 吃豆动画（豆子消失） */
+.pacman-board-cell.pellet.eaten {
+  animation: pellet-eaten 0.15s ease-out forwards;
+}
+
+@keyframes pellet-eaten {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.5); }
+  100% { opacity: 0; transform: scale(0); }
+}
+
+/* 能量豆脉冲动画 */
+.pacman-board-cell.energizer {
+  animation: energizer-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes energizer-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 吃鬼动画（鬼被吃） */
+.pacman-board-cell.ghost.eaten {
+  animation: ghost-eaten 0.3s ease-out forwards;
+}
+
+@keyframes ghost-eaten {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.5); opacity: 0.5; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* 得分飘字动画 */
+.pacman-score-popup {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  animation: score-float 1s ease-out forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.pacman-score-popup.score-200 { color: #fbbf24; }
+.pacman-score-popup.score-400 { color: #fbbf24; }
+.pacman-score-popup.score-800 { color: #fbbf24; }
+.pacman-score-popup.score-1600 { color: #fbbf24; }
+
+@keyframes score-float {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  50% { opacity: 0.8; transform: translateY(-10px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-20px) scale(0.8); }
+}
+
+/* 水果出现动画 */
+.pacman-board-cell.fruit.appearing {
+  animation: fruit-appear 0.5s ease-out forwards;
+}
+
+@keyframes fruit-appear {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 水果消失动画 */
+.pacman-board-cell.fruit.disappearing {
+  animation: fruit-disappear 0.3s ease-out forwards;
+}
+
+@keyframes fruit-disappear {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* 传送门穿越动画 */
+.pacman-board-cell.tunnel-enter {
+  animation: tunnel-enter 0.2s ease-out forwards;
+}
+
+.pacman-board-cell.tunnel-exit {
+  animation: tunnel-exit 0.2s ease-out forwards;
+}
+
+@keyframes tunnel-enter {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.5) translateX(-5px); opacity: 0.5; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes tunnel-exit {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(0.5) translateX(5px); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 死亡动画（Pac-Man被吃） */
+.pacman-board-cell.pacman.dying {
+  animation: pacman-death 1s ease-out forwards;
+}
+
+@keyframes pacman-death {
+  0% { transform: scale(1); opacity: 1; }
+  20% { transform: scale(1.2); opacity: 0.8; }
+  40% { transform: scale(0.8); opacity: 0.6; }
+  60% { transform: scale(0.5); opacity: 0.4; clip-path: circle(30% at 50% 50%); }
+  80% { transform: scale(0.2); opacity: 0.2; clip-path: circle(10% at 50% 50%); }
+  100% { transform: scale(0); opacity: 0; clip-path: circle(0% at 50% 50%); }
+}
+
+/* 重生动画 */
+.pacman-board-cell.pacman.respawning {
+  animation: pacman-respawn 1.5s ease-out forwards;
+}
+
+@keyframes pacman-respawn {
+  0% { transform: scale(0); opacity: 0; }
+  30% { transform: scale(0.5); opacity: 0.3; }
+  50% { transform: scale(0.8); opacity: 0.5; }
+  70% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 惊吓模式指示器 */
+.pacman-frightened-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(33, 33, 222, 0.8);
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pacman-blink-warning {
+  color: #fbbf24;
+  animation: warning-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes warning-pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* 胜利/失败结算特效 */
+.pacman-board-shell.victory {
+  animation: victory-flash 0.5s ease-out;
+}
+
+.pacman-board-shell.defeat {
+  animation: defeat-flash 0.5s ease-out;
+}
+
+@keyframes victory-flash {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  50% { box-shadow: 0 0 20px 10px rgba(34, 197, 94, 0.5); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes defeat-flash {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0.5); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* 鬼魂眼睛动画（被吃后只剩眼睛） */
+.pacman-board-cell.ghost.eaten::after {
+  animation: ghost-eyes-move 0.5s ease-in-out infinite;
+}
+
+@keyframes ghost-eyes-move {
+  0% { transform: translateX(-1px); }
+  50% { transform: translateX(1px); }
+  100% { transform: translateX(-1px); }
+}
+
+/* ===== 图鉴与练习组件样式 ===== */
+
+.pacman-guide-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 10px;
+  background: #f3f3f3;
+}
+
+.pacman-guide-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #d4d4d4;
+  padding-bottom: 8px;
+}
+
+.pacman-guide-tab {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #334155;
+  border-radius: 4px 4px 0 0;
+}
+
+.pacman-guide-tab.active {
+  border-color: #107c41;
+  border-bottom-color: #fff;
+  background: #edf7f0;
+  color: #107c41;
+  font-weight: 600;
+}
+
+.pacman-guide-tab:focus-visible {
+  outline: 2px solid #107c41;
+  outline-offset: 2px;
+}
+
+.pacman-guide-content {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 12px;
+}
+
+/* 四鬼图鉴 */
+.pacman-guide-ghosts {
+  display: grid;
+  gap: 12px;
+}
+
+.pacman-ghost-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pacman-ghost-btn {
+  border: 2px solid #d4d4d4;
+  background: #fff;
+  padding: 8px 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: #334155;
+  border-radius: 4px;
+}
+
+.pacman-ghost-btn.active {
+  background: #f8fafc;
+}
+
+.pacman-ghost-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.pacman-ghost-icon {
+  font-size: 16px;
+}
+
+.pacman-ghost-detail {
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  background: #f8fafc;
+  display: grid;
+  gap: 10px;
+}
+
+.pacman-guide-level-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pacman-guide-level-picker select {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.pacman-ghost-detail h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.pacman-ghost-section {
+  display: grid;
+  gap: 4px;
+}
+
+.pacman-ghost-section h4 {
+  margin: 0;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-ghost-section p {
+  margin: 0;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.pacman-ghost-section small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.pacman-ghost-stats {
+  display: flex;
+  gap: 16px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 10px;
+}
+
+.pacman-ghost-summary {
+  border: 1px dotted #cbd5e1;
+  padding: 10px;
+  background: #fff;
+}
+
+.pacman-ghost-summary h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-ghost-summary p {
+  margin: 0;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+/* 水果价值 */
+.pacman-guide-fruits {
+  display: grid;
+  gap: 12px;
+}
+
+.pacman-fruit-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pacman-fruit-btn {
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 8px 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: #334155;
+  border-radius: 4px;
+}
+
+.pacman-fruit-btn.active {
+  border-color: #fbbf24;
+  background: #fef3c7;
+}
+
+.pacman-fruit-btn:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+.pacman-fruit-icon {
+  font-size: 16px;
+}
+
+.pacman-fruit-score {
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+.pacman-fruit-detail {
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.pacman-fruit-detail h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: #fbbf24;
+}
+
+.pacman-fruit-detail p {
+  margin: 0;
+  font-size: 12px;
+  color: #334155;
+}
+
+.pacman-fruit-trigger-table {
+  border: 1px solid #d4d4d4;
+  padding: 10px;
+}
+
+.pacman-fruit-trigger-table h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-fruit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.pacman-fruit-table th,
+.pacman-fruit-table td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.pacman-fruit-table th {
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.pacman-fruit-table td {
+  color: #334155;
+}
+
+.pacman-fruit-stats {
+  display: flex;
+  gap: 16px;
+}
+
+/* 迷宫标签 */
+.pacman-guide-maze {
+  display: grid;
+  gap: 12px;
+}
+
+.pacman-maze-tags {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pacman-maze-tag-card {
+  border: 1px solid #e2e8f0;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.pacman-maze-tag-card h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-maze-tag-card p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.pacman-maze-tip {
+  display: block;
+  font-size: 11px;
+  color: #0f766e;
+  font-weight: 500;
+}
+
+.pacman-maze-stats {
+  border: 1px solid #d4d4d4;
+  padding: 10px;
+}
+
+.pacman-maze-stats h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-maze-stat-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pacman-route-recommend {
+  border: 1px dotted #cbd5e1;
+  padding: 10px;
+  background: #fff;
+}
+
+.pacman-route-recommend h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-route-recommend ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.pacman-route-recommend li {
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+/* 输入判定 */
+.pacman-guide-input {
+  display: grid;
+  gap: 12px;
+}
+
+.pacman-input-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pacman-input-card {
+  border: 1px solid #e2e8f0;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.pacman-input-card h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-input-card p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.pacman-input-example {
+  font-size: 11px;
+  color: #64748b;
+  background: #fff;
+  padding: 6px;
+  border: 1px dotted #cbd5e1;
+}
+
+.pacman-input-keys {
+  border: 1px solid #d4d4d4;
+  padding: 10px;
+}
+
+.pacman-input-keys h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-key-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pacman-key-item {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 11px;
+  color: #334155;
+}
+
+.pacman-key-item kbd {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.pacman-score-table {
+  border: 1px solid #d4d4d4;
+  padding: 10px;
+}
+
+.pacman-score-table h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-score-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pacman-score-item {
+  display: grid;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.pacman-score-label {
+  color: #64748b;
+}
+
+.pacman-score-value {
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+/* 练习模式 */
+.pacman-guide-practice {
+  display: grid;
+  gap: 12px;
+}
+
+.pacman-practice-modules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pacman-practice-card {
+  border: 1px solid #e2e8f0;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.pacman-practice-card h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-practice-difficulty {
+  font-size: 11px;
+  color: #64748b;
+  background: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
+.pacman-practice-card p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.pacman-practice-meta {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.pacman-practice-return {
+  color: #0f766e;
+}
+
+.pacman-practice-records {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.pacman-practice-btn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #64748b;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.pacman-practice-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pacman-practice-progress {
+  border: 1px solid #d4d4d4;
+  padding: 10px;
+}
+
+.pacman-guide-launch-note {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+}
+
+.pacman-practice-progress h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-practice-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pacman-practice-pack-select {
+  border: 1px solid #d4d4d4;
+  padding: 10px;
+}
+
+.pacman-practice-pack-select h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pacman-play-btn {
+  border: 1px solid #0c5a2f;
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.pacman-play-btn:focus-visible {
+  outline: 2px solid #107c41;
+  outline-offset: 2px;
+}
+
+/* 统计项通用样式 */
+.pacman-stat-item {
+  display: grid;
+  gap: 2px;
+}
+
+.pacman-stat-label {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.pacman-stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* 响应式布局 */
+@media (max-width: 1100px) {
+  .pacman-pack-tabs,
+  .pacman-level-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pacman-settings-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pacman-settings-actions {
+    justify-items: start;
+  }
+
+  .pacman-main {
+    grid-template-columns: 1fr;
+  }
+
+  .pacman-key-hint {
+    margin-left: 0;
+    min-width: 0;
+  }
+
+  .pacman-maze-tags,
+  .pacman-input-items,
+  .pacman-practice-modules,
+  .pacman-key-grid,
+  .pacman-score-grid {
+    grid-template-columns: 1fr;
+  }
+}

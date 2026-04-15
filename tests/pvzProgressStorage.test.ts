@@ -13,8 +13,6 @@ import {
   getZombieUnlockInfo,
 } from '../src/features/pvz/pvzProgressStorage.ts';
 
-const STORAGE_KEY = 'pvz-progress-v1';
-
 const mockStorage: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => mockStorage[key] ?? null,

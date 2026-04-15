@@ -1,35 +1,18 @@
 /* 吃豆人主玩法组件。负责选关、模式设置入口、游戏状态管理、键盘输入处理、音效触发。 */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  createPacmanBoardState,
   getMazeDefinition,
+  createPacmanBoardState,
 } from '../../features/pacman/pacmanBoardState';
 import {
   handleKeyboardEvent,
   startGame,
   pauseGame,
   resumeGame,
-  updatePacmanPosition,
 } from '../../features/pacman/pacmanMovement';
+import { isFrightenedBlinking } from '../../features/pacman/pacmanLevelTuning';
 import {
-  updateGlobalModeState,
-  isFrightenedBlinking,
-} from '../../features/pacman/pacmanLevelTuning';
-import {
-  updateAllGhosts,
-} from '../../features/pacman/pacmanAi';
-import {
-  updateFruitState,
-  triggerFruitSpawn,
-  collectFruit,
-} from '../../features/pacman/pacmanFruit';
-import {
-  handleCollision,
-  handleWin,
-  handleLose,
-  handleDeathAnimation,
-  handleRespawnAnimation,
   restartLevel,
   proceedToNextLevel,
 } from '../../features/pacman/pacmanGameLogic';
@@ -38,15 +21,28 @@ import {
   getLevelMeta,
   getLevelDisplayName,
   getDifficultyLabel,
-  type PacmanPackType,
+  isLevelValid,
+  type PacmanPackId,
 } from '../../features/pacman/pacmanMapRegistry';
 import {
   loadStorage,
   saveStorage,
   recordRunResult,
+  recordPracticeResult,
   getPackLevelStatuses,
   getHubSummary,
 } from '../../features/pacman/pacmanStorage';
+import { getLevelTuningByPack } from '../../features/pacman/pacmanContent';
+import { getPacmanPracticeModule } from '../../features/pacman/pacmanPracticeCatalog';
+import {
+  clearPendingPacmanLaunchIntent,
+  consumePendingPacmanLaunchIntent,
+  getPacmanLaunchGuideTab,
+  getPacmanLaunchReturnTarget,
+  setPendingPacmanGuideTab,
+  type PacmanGuideTab,
+  type PacmanLaunchIntent,
+} from '../../features/pacman/pacmanLaunchIntent';
 import {
   playPelletSound,
   playEnergizerSound,
@@ -58,7 +54,8 @@ import {
   playDefeatSound,
   playStartSound,
 } from '../../features/pacman/pacmanSound';
-import type { PacmanBoardState } from '../../features/pacman/pacmanTypes';
+import type { PacmanBoardState, PacmanMode, PacmanPracticeId } from '../../features/pacman/pacmanTypes';
+import { applyPacmanEscapeKey, tickPacmanState } from '../../features/pacman/pacmanSession';
 import type { WorkbookStatusSummary } from '../../types';
 import { PacmanBoard } from './PacmanBoard';
 import { PacmanHud } from './PacmanHud';
@@ -69,54 +66,12 @@ interface PacmanSheetProps {
   onFormulaChange?: (text: string) => void;
   onStatusChange?: (summary: WorkbookStatusSummary) => void;
   onExit?: () => void;
+  onReturnToGuide?: (tab: PacmanGuideTab) => void;
   initialSnapshot?: Record<string, unknown> | null;
   onSnapshotChange?: (snapshot: Record<string, unknown>) => void;
 }
 
 const TICK_MS = 1000 / 60;
-
-function tickGame(state: PacmanBoardState, deltaMs: number): PacmanBoardState {
-  if (state.status !== 'playing' || state.isPaused) {
-    return {
-      ...state,
-      elapsedMs: state.elapsedMs + deltaMs,
-    };
-  }
-
-  if (state.deathAnimationMs > 0) {
-    return handleDeathAnimation(state, deltaMs);
-  }
-
-  if (state.respawnAnimationMs > 0) {
-    return handleRespawnAnimation(state, deltaMs);
-  }
-
-  let newState = { ...state };
-  newState.elapsedMs += deltaMs;
-
-  newState = updatePacmanPosition(newState, deltaMs);
-  newState = updateGlobalModeState(newState, deltaMs);
-  newState = updateAllGhosts(newState, deltaMs);
-  newState = triggerFruitSpawn(newState);
-  newState = updateFruitState(newState, deltaMs);
-  newState = collectFruit(newState);
-
-  const collisionResult = handleCollision(newState);
-  if (collisionResult.status !== newState.status) {
-    return collisionResult;
-  }
-  newState = collisionResult;
-
-  if (newState.pelletsRemaining <= 0) {
-    return handleWin(newState);
-  }
-
-  if (newState.lives <= 0) {
-    return handleLose(newState);
-  }
-
-  return newState;
-}
 
 function getFormulaText(state: PacmanBoardState): string {
   const maze = getMazeDefinition(state.mazeId);
@@ -139,23 +94,73 @@ function getPrimaryStatusText(state: PacmanBoardState): string {
   return statusNames[state.status] || '未知';
 }
 
-export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onStatusChange, onExit, initialSnapshot, onSnapshotChange }) => {
+/* 创建与关卡包绑定的初始状态。 */
+function createPackLevelState(packId: PacmanPackId, levelNumber: number, mode: PacmanMode = 'classic'): PacmanBoardState {
+  const meta = getLevelMeta(packId, levelNumber);
+  return createPacmanBoardState({
+    packId,
+    mazeId: meta?.mazeId || 'classic',
+    level: levelNumber,
+    mode,
+  });
+}
+
+/* 兼容旧快照，补齐新增字段与关卡包调优参数。 */
+function hydrateSnapshotState(
+  rawState: PacmanBoardState | undefined,
+  packId: PacmanPackId,
+  levelNumber: number,
+): PacmanBoardState {
+  if (!rawState) {
+    return createPackLevelState(packId, levelNumber);
+  }
+
+  const meta = getLevelMeta(packId, rawState.level || levelNumber);
+  const mazeId = rawState.mazeId || meta?.mazeId || 'classic';
+  const maze = getMazeDefinition(mazeId);
+
+  return {
+    ...rawState,
+    packId,
+    mazeId,
+    rows: maze.rows,
+    cols: maze.cols,
+    levelTuning: getLevelTuningByPack(packId, rawState.level || levelNumber),
+    fruitSpawnsTriggered: rawState.fruitSpawnsTriggered ?? (((rawState.fruit?.spawnTimeMs ?? 0) > 0 ? 1 : 0) + rawState.fruitsCollected),
+    tunnelUses: rawState.tunnelUses ?? 0,
+    extraLifeAwarded: rawState.extraLifeAwarded ?? false,
+  };
+}
+
+export const PacmanSheet: React.FC<PacmanSheetProps> = ({
+  onFormulaChange,
+  onStatusChange,
+  onExit,
+  onReturnToGuide,
+  initialSnapshot,
+  onSnapshotChange,
+}) => {
   const snapshot = initialSnapshot as {
-    selectedPackId?: PacmanPackType;
+    selectedPackId?: PacmanPackId;
     selectedLevel?: number;
     state?: PacmanBoardState;
     settingsCollapsed?: boolean;
     soundEnabled?: boolean;
+    launchIntent?: PacmanLaunchIntent | null;
   } | null;
-  const [initialStorageSnapshot] = useState(() => loadStorage());
-  const [selectedPackId, setSelectedPackId] = useState<PacmanPackType>(snapshot?.selectedPackId ?? 'arcade');
-  const [selectedLevel, setSelectedLevel] = useState(snapshot?.selectedLevel ?? 1);
+  const initialSelectedPackId = snapshot?.selectedPackId ?? 'arcade';
+  const initialSelectedLevel = snapshot?.selectedLevel ?? 1;
+  const [storageSnapshot, setStorageSnapshot] = useState(() => loadStorage());
+  const [selectedPackId, setSelectedPackId] = useState<PacmanPackId>(initialSelectedPackId);
+  const [selectedLevel, setSelectedLevel] = useState(initialSelectedLevel);
   const [state, setState] = useState<PacmanBoardState>(() =>
-    snapshot?.state ?? createPacmanBoardState({ mazeId: 'classic', level: 1, mode: 'classic' })
+    hydrateSnapshotState(snapshot?.state, initialSelectedPackId, initialSelectedLevel)
   );
   const [settingsCollapsed, setSettingsCollapsed] = useState(snapshot?.settingsCollapsed ?? false);
   const [soundEnabled, setSoundEnabled] = useState(snapshot?.soundEnabled ?? true);
+  const [launchIntent, setLaunchIntent] = useState<PacmanLaunchIntent | null>(snapshot?.launchIntent ?? null);
 
+  const stateRef = useRef(state);
   const prevStatusRef = useRef(state.status);
   const prevPelletsRef = useRef(state.pelletsRemaining);
   const prevEnergizersRef = useRef(state.energizersRemaining);
@@ -166,28 +171,47 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
 
   const packs = getAllPacks();
   const currentPack = packs.find(p => p.packId === selectedPackId) || packs[0];
-  const levelStatuses = getPackLevelStatuses(initialStorageSnapshot, selectedPackId, currentPack.totalLevels);
-  const hubSummary = getHubSummary(initialStorageSnapshot);
+  const currentLevelMeta = getLevelMeta(selectedPackId, selectedLevel);
+  const activePractice = launchIntent?.practiceId ? getPacmanPracticeModule(launchIntent.practiceId) : null;
+  const practiceReturnTarget = getPacmanLaunchReturnTarget(launchIntent);
+  const levelStatuses = getPackLevelStatuses(storageSnapshot, selectedPackId, currentPack.totalLevels);
+  const hubSummary = getHubSummary(storageSnapshot);
+  const formulaText = useMemo(() => getFormulaText(state), [state]);
+
+  useEffect(() => {
+    const pendingIntent = consumePendingPacmanLaunchIntent();
+    if (!pendingIntent) {
+      return;
+    }
+
+    setLaunchIntent(pendingIntent);
+    setSelectedPackId(pendingIntent.packId);
+    setSelectedLevel(pendingIntent.levelNumber);
+    setState(createPackLevelState(pendingIntent.packId, pendingIntent.levelNumber, pendingIntent.mode));
+    setSettingsCollapsed(false);
+  }, []);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setState((current) => tickGame(current, TICK_MS));
+      setState((current) => tickPacmanState(current, TICK_MS));
     }, TICK_MS);
     return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    if (state.status !== prevStatusRef.current) {
-      onFormulaChange?.(getFormulaText(state));
-    }
-  }, [onFormulaChange, state.status]);
+    onFormulaChange?.(formulaText);
+  }, [formulaText, onFormulaChange]);
 
   useEffect(() => {
     const previousStatus = prevStatusRef.current;
     const hasEnded = state.status === 'won' || state.status === 'lost';
     const wasEnded = previousStatus === 'won' || previousStatus === 'lost';
 
-    if (hasEnded && !wasEnded) {
+    if (hasEnded && !wasEnded && state.mode !== 'practice') {
       const storage = loadStorage();
       const result = {
         score: state.score,
@@ -208,22 +232,73 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
         state.lives
       );
       saveStorage(newStorage);
+      const timer = window.setTimeout(() => setStorageSnapshot(newStorage), 0);
 
       if (state.status === 'won') {
         playVictorySound(soundEnabled);
       } else {
         playDefeatSound(soundEnabled);
       }
+      return () => window.clearTimeout(timer);
     }
 
-    if (state.status === 'won' && previousStatus !== 'won') {
-      setTimeout(() => {
-        setState((current) => proceedToNextLevel(current));
+    if (hasEnded && !wasEnded && state.mode === 'practice' && launchIntent?.practiceId) {
+      const storage = loadStorage();
+      const result = {
+        score: state.score,
+        level: state.level,
+        ghostsEaten: state.totalGhostsEaten,
+        fruitsCollected: state.fruitsCollected,
+        clearTimeMs: state.elapsedMs,
+        pelletsCollected: state.pelletsCollectedTotal,
+        isNewBestScore: false,
+        isNewHighestLevel: false,
+      };
+      const newStorage = recordPracticeResult(
+        storage,
+        launchIntent.practiceId,
+        result,
+        state.status === 'won',
+      );
+      saveStorage(newStorage);
+      const timer = window.setTimeout(() => setStorageSnapshot(newStorage), 0);
+
+      if (state.status === 'won') {
+        playVictorySound(soundEnabled);
+      } else {
+        playDefeatSound(soundEnabled);
+      }
+      return () => window.clearTimeout(timer);
+    }
+
+    if (state.status === 'won' && previousStatus !== 'won' && state.mode !== 'practice') {
+      window.setTimeout(() => {
+        const current = stateRef.current;
+        const nextLevel = current.level + 1;
+        if (!isLevelValid(current.packId, nextLevel)) {
+          return;
+        }
+        setSelectedLevel(nextLevel);
+        setState((value) => proceedToNextLevel(value));
       }, 2000);
     }
 
     prevStatusRef.current = state.status;
-  }, [state.status, state.score, selectedPackId, selectedLevel, soundEnabled]);
+  }, [
+    launchIntent?.practiceId,
+    selectedLevel,
+    selectedPackId,
+    soundEnabled,
+    state.elapsedMs,
+    state.fruitsCollected,
+    state.level,
+    state.lives,
+    state.mode,
+    state.pelletsCollectedTotal,
+    state.score,
+    state.status,
+    state.totalGhostsEaten,
+  ]);
 
   useEffect(() => {
     if (state.pelletsRemaining < prevPelletsRef.current) {
@@ -283,7 +358,7 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
       score: state.score,
       secondaryMetric: `剩余 ${state.lives} 条命`,
       tertiaryMetric: `豆子 ${state.pelletsRemaining}`,
-      mode: `${currentPack.name} / 第${state.level}关 / ${modeText}`,
+      mode: `${state.mode === 'practice' ? '专项练习' : currentPack.name} / 第${state.level}关 / ${modeText}`,
       alertTone: state.status === 'lost' ? 'danger' : state.status === 'won' ? 'success' : state.globalMode.currentMode === 'frightened' ? 'success' : 'neutral',
     });
   }, [currentPack, onStatusChange, state]);
@@ -295,37 +370,57 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
       state,
       settingsCollapsed,
       soundEnabled,
+      launchIntent,
     });
-  }, [selectedPackId, selectedLevel, state, settingsCollapsed, soundEnabled, onSnapshotChange]);
+  }, [launchIntent, selectedPackId, selectedLevel, state, settingsCollapsed, soundEnabled, onSnapshotChange]);
 
   const applyLevel = (levelNumber: number) => {
+    setLaunchIntent(null);
     setSelectedLevel(levelNumber);
-    setState(createPacmanBoardState({ mazeId: 'classic', level: levelNumber, mode: 'classic' }));
+    setState(createPackLevelState(selectedPackId, levelNumber));
   };
 
-  const applyPack = (packId: PacmanPackType) => {
+  const applyPack = (packId: PacmanPackId) => {
+    setLaunchIntent(null);
     setSelectedPackId(packId);
     setSelectedLevel(1);
-    setState(createPacmanBoardState({ mazeId: 'classic', level: 1, mode: 'classic' }));
+    setState(createPackLevelState(packId, 1));
   };
+
+  const handleReturnToSetup = useCallback(() => {
+    clearPendingPacmanLaunchIntent();
+    setLaunchIntent(null);
+    setSettingsCollapsed(false);
+    setState(createPackLevelState(selectedPackId, selectedLevel));
+  }, [selectedLevel, selectedPackId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const key = event.key;
 
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 's', 'S', 'a', 'A', 'd', 'D', 'p', 'P', 'r', 'R', 'Escape', 'Enter', ' '].includes(key)) {
+      if (key === 'Escape') {
         event.preventDefault();
-        setState((current) => handleKeyboardEvent(current, key));
+        const result = applyPacmanEscapeKey(stateRef.current);
+        if (result.shouldReturnToSetup) {
+          handleReturnToSetup();
+          return;
+        }
+        setState(result.nextState);
+        if (result.shouldExit) {
+          onExit?.();
+        }
+        return;
       }
 
-      if (key === 'Escape' && onExit && state.status !== 'playing') {
-        onExit();
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 's', 'S', 'a', 'A', 'd', 'D', 'p', 'P', 'r', 'R', 'Enter', ' '].includes(key)) {
+        event.preventDefault();
+        setState((current) => handleKeyboardEvent(current, key));
       }
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onExit]);
+  }, [handleReturnToSetup, onExit, selectedLevel, selectedPackId]);
 
   const handleStart = () => {
     setState((current) => {
@@ -338,14 +433,69 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
   };
   const handlePauseToggle = () => {
     setState((current) => {
-      if (current.isPaused) {
+      if (current.status === 'paused' || current.isPaused) {
         return resumeGame(current);
       }
       return pauseGame(current);
     });
   };
   const handleRestart = () => setState((current) => restartLevel(current));
-  const handleNextLevel = () => setState((current) => proceedToNextLevel(current));
+  const handleNextLevel = () => {
+    const current = stateRef.current;
+    const nextLevel = current.level + 1;
+    if (!isLevelValid(current.packId, nextLevel)) {
+      return;
+    }
+    setSelectedLevel(nextLevel);
+    setState((value) => proceedToNextLevel(value));
+  };
+  const handleOpenPractice = (practiceId: PacmanPracticeId) => {
+    const practice = getPacmanPracticeModule(practiceId);
+    if (!practice) {
+      return;
+    }
+
+    const nextIntent: PacmanLaunchIntent = {
+      packId: practice.packId,
+      levelNumber: practice.levelNumber,
+      mode: 'practice',
+      practiceId,
+      returnTarget: 'source_level',
+      sourcePackId: selectedPackId,
+      sourceLevel: selectedLevel,
+    };
+
+    setLaunchIntent(nextIntent);
+    setSelectedPackId(practice.packId);
+    setSelectedLevel(practice.levelNumber);
+    setSettingsCollapsed(false);
+    setState(createPackLevelState(practice.packId, practice.levelNumber, 'practice'));
+  };
+  const handleReturnFromPractice = () => {
+    if (practiceReturnTarget === 'guide') {
+      clearPendingPacmanLaunchIntent();
+      setPendingPacmanGuideTab(getPacmanLaunchGuideTab(launchIntent));
+      setLaunchIntent(null);
+      setSettingsCollapsed(false);
+      if (onReturnToGuide) {
+        onReturnToGuide(getPacmanLaunchGuideTab(launchIntent));
+        return;
+      }
+      handleReturnToSetup();
+      return;
+    }
+
+    if (launchIntent?.sourcePackId && launchIntent.sourceLevel) {
+      setLaunchIntent(null);
+      setSelectedPackId(launchIntent.sourcePackId);
+      setSelectedLevel(launchIntent.sourceLevel);
+      setSettingsCollapsed(false);
+      setState(createPackLevelState(launchIntent.sourcePackId, launchIntent.sourceLevel));
+      return;
+    }
+
+    handleReturnToSetup();
+  };
   const handleSoundToggle = () => setSoundEnabled((current) => !current);
 
   return (
@@ -384,14 +534,14 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
               <div className="pacman-config-header">
                 <div>
                   <strong>关卡包选择</strong>
-                  <p>选择关卡包，然后选择具体关卡开始游戏。</p>
+                  <p>{state.mode === 'practice' && activePractice ? `当前为练习：${activePractice.name}` : '选择关卡包，然后选择具体关卡开始游戏。'}</p>
                 </div>
                 <div className="pacman-pack-tabs">
                   {packs.map((pack) => (
                     <button
                       key={pack.packId}
                       className={`pacman-pack-tab${selectedPackId === pack.packId ? ' active' : ''}`}
-                      onClick={() => applyPack(pack.packId as PacmanPackType)}
+                      onClick={() => applyPack(pack.packId)}
                     >
                       <span>{pack.name}</span>
                       <small>{pack.description}</small>
@@ -424,6 +574,17 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
               </div>
             </div>
 
+            <div className="pacman-session-brief">
+              <div className="pacman-session-card">
+                <strong>{activePractice?.name || currentLevelMeta?.focusMechanic || '本关目标'}</strong>
+                <p>{activePractice?.objective || currentLevelMeta?.objective || currentLevelMeta?.description || '按开始进入本局。'}</p>
+              </div>
+              <div className="pacman-session-card">
+                <strong>开局提示</strong>
+                <p>{activePractice?.startHint || currentLevelMeta?.startHint || '先看鬼位，再决定从哪条线起手。'}</p>
+              </div>
+            </div>
+
             <div className="pacman-toolbar">
               <label>
                 <input
@@ -439,8 +600,14 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
               <div className="pacman-progress-summary">
                 <span>最佳分数: {hubSummary.bestScore}</span>
                 <span>最高关卡: {hubSummary.highestLevel}</span>
+                <span>最佳通关: {hubSummary.bestClearTime}</span>
                 <span>总局数: {hubSummary.totalRuns}</span>
               </div>
+              {onExit && (
+                <button className="pacman-btn ghost" onClick={onExit}>
+                  退出模块
+                </button>
+              )}
             </div>
           </>
         ) : null}
@@ -454,7 +621,9 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
             onStart={handleStart}
             onPauseToggle={handlePauseToggle}
             onRestart={handleRestart}
-            onExit={onExit}
+            onExit={handleReturnToSetup}
+            objective={activePractice?.objective || currentLevelMeta?.objective}
+            startHint={activePractice?.startHint || currentLevelMeta?.startHint}
           />
           <div className="pacman-legend">
             <h4>图例</h4>
@@ -476,8 +645,13 @@ export const PacmanSheet: React.FC<PacmanSheetProps> = ({ onFormulaChange, onSta
         onPauseToggle={handlePauseToggle}
         onRestart={handleRestart}
         onNextLevel={handleNextLevel}
-        onExit={onExit}
+        onExit={handleReturnToSetup}
         selectedPackId={selectedPackId}
+        levelMeta={currentLevelMeta}
+        activePractice={activePractice}
+        onOpenPractice={handleOpenPractice}
+        onReturnFromPractice={handleReturnFromPractice}
+        practiceReturnLabel={practiceReturnTarget === 'guide' ? '返回图鉴' : '回到来源关卡'}
       />
     </div>
   );

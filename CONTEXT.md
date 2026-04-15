@@ -1,8 +1,44 @@
 # 当前进度
 
-- 当前正在做什么：已完成“奇幻战线对推”正式设计稿编写，定位为传统奇幻题材包装的轻量赤潮式 PvE 横版战线玩法，下一步可直接进入实现计划拆分。
-- 上次停在哪里：上一轮先完成了“赤潮式横版战线”玩法调研，本轮已把调研收口为正式设计文档，仍未动现有模块代码。
+- 当前正在做什么：已完成 Match3 模块一轮 P1 执行，把 Adventure 主线从 4 包扩到 6 包，新增“障碍压制包 / 特效连锁包”骨架；Sheet16 正式加入 `Adventure / Blitz / Puzzle` 模式入口；关卡脚本与状态层已能表达 `boardTemplateId / colorWeights / prebuiltSpecials / triggerCombo` 这批新能力。
+- 上次停在哪里：上一轮 Match3 虽然已经补完掉落收集、练习真入口和键盘语义，但仍只有 Adventure 单线，主线只到 4 包，Sheet16 没有 Blitz / Puzzle 模式层，脚本也还不能正式表达模板、颜色权重、预置特殊块和组合目标。
 - 近期关键决定和原因：
+  - 2026-04-15 Match3 新增 `match3ModeRuntime.ts`，把 `Blitz / Puzzle` 作为独立运行时目录接入，而不是继续塞进 Adventure 包，原因是这样能保持 Sheet16 的模式层清晰，也不污染主线进度结构。
+  - 2026-04-15 Match3 的 `match3Types.ts / match3BoardState.ts / match3LevelCatalog.ts` 已同步扩展 `modeId / chapterId / boardTemplateId / colorWeights / prebuiltSpecials / triggerCombo`，原因是设计稿要求这些能力在 catalog 与状态层可表达，不能继续靠组件内特判。
+  - 2026-04-15 Match3 最小验证已完成：`tests/match3BoardState.test.ts`、`tests/match3LevelCatalog.test.ts`、`tests/match3ModeRuntime.test.ts` 共 36/36 通过；本轮 `npm run build` 未通过，但阻塞点来自允许范围外的 `src/features/fantasy_lane/assets/drawBoss.ts` 既有未使用变量 `weaponColor`，不是 Match3 改动引入。
+
+- 当前正在做什么：已完成 Zuma 模块一轮 P1 执行，主线扩到 45 关骨架并补齐 13~28 进阶段内容，新增 challenge 试炼与 endless 无尽走廊入口，运行时已支持 endless 波段推进，进度存档补上章节完成度与 endless 最佳波段。
+- 上次停在哪里：上一轮 Zuma 只有 1~20 主线、timed 和 practice，`endless` 还只是模式占位，目录没有 29~45 高压段，存档也没有章节完成度和无尽波段记录。
+- 近期关键决定和原因：
+  - 2026-04-15 Zuma 继续沿现有 `zumaLevelCatalog / zumaBoardState / zumaProgressStorage / ZumaGameSheet` 结构扩容，不新起平行模式层，原因是这轮缺口主要在内容密度、模式入口和长线记录，而不是底层发射/消除机制。
+  - 2026-04-15 Zuma 13~45 的新内容统一改成“波段式 spawn 脚本 + 复合目标”而不是单纯提速提色，原因是评审要求关卡节奏必须出现前中后段变化和目标差异，现有状态层已能承接这些脚本。
+  - 2026-04-15 Zuma 新增 `tests/zumaLevelCatalog.test.ts`、`tests/zumaProgressStorage.test.ts` 并扩展 `tests/zumaBoardState.test.ts`，当前 Zuma 定向测试 17/17 通过；`npm run build` 未通过，但现阻塞点来自允许范围外的 `src/features/fantasy_lane/assets/drawAir.ts` 语法错误，不是 Zuma 改动引入。
+
+- 当前正在做什么：已完成 Match3 模块一轮 P0 执行，补齐彩球+特殊块、彩球+彩球、条纹+包装、包装+包装的高阶组合表现，正式落地掉落收集关、Sheet17 真实练习入口，以及“方向键移动焦点 + Enter/Space 选中/确认交换”的键盘语义。
+- 上次停在哪里：上一轮 Match3 已修完空位、基础特殊交换、目标记账和传送口掉落，但 `dropCollect` 仍未成为正式内容线，Sheet17 练习还是假入口，键盘仍是旧的“移动即交换”逻辑。
+- 近期关键决定和原因：
+  - 2026-04-15 Match3 新增 `dropItem / dropExits` 这一层，而不是把掉落物伪装成普通色块，原因是掉落物必须能穿传送口、不能参与消除、只能通过出口计数。
+  - 2026-04-15 Match3 新增 `match3Keyboard.ts` 抽离键盘焦点与确认语义，原因是这套逻辑需要能单独测试，不能继续埋在 `Match3Sheet` 的事件分支里。
+  - 2026-04-15 Match3 已完成最小验证：`tests/match3BoardState.test.ts`、`tests/match3Keyboard.test.ts`、`tests/match3LevelCatalog.test.ts` 共 30/30 通过；本轮 `npm run build` 与 `npm run lint` 未通过，但阻塞点来自允许范围外的 `src/features/fantasy_lane/assets/unitRenderer.ts` 既有未使用变量，不是 Match3 改动引入。
+
+- 当前正在做什么：已补完 Pacman 后续扩展设计文档，新增 `design/pacman_p012_detailed_expansion_plan.md`，把模块后续 P0/P1/P2、内容包章节、教学/练习、Sheet12/13 UI、状态/UI/存档/测试拆解统一收口成可直接指导开发执行的方案。
+- 上次停在哪里：Pacman 在本轮之前已经有状态层、`arcade/tutorial` 两套包、Sheet12/13 壳层与基础存档，但教学练习入口、模式包、多迷宫和长局体验仍停留在总纲层，没有一份对现有仓库结构落地的详细扩展方案。
+- 近期关键决定和原因：
+  - 2026-04-15 新增 `design/pacman_p012_detailed_expansion_plan.md`，明确 Pacman 之后不再重做运行时，而是沿现有 `pacmanTypes / pacmanMapRegistry / pacmanContent / pacmanStorage / PacmanSheet / PacmanGuideSheet` 继续扩展，原因是当前缺口主要在内容层、教学层、模式层，而不是基础状态机。
+  - 2026-04-15 Pacman 扩展优先级正式定为：P0 先补原版机制精度、教学包脚本化、练习入口与结算回流；P1 再加 `ghost_lab / fruit_rush / time_attack / one_life` 模式包；P2 最后做多迷宫、无尽生存和长局体验，原因是这样最符合当前仓库现状，也能避免过早扩迷宫导致维护复杂度失控。
+
+- 当前正在做什么：已完成 Pacman 模块一轮稳定性修复，收口死亡/重生动画不可达、Escape stale closure、第二次水果重复触发、暂停/结算计时继续增长、关卡包只改 UI、不即时刷新的进度摘要，以及同格鬼显示/碰撞过粗等问题。
+- 上次停在哪里：本轮之前 Pacman 已有状态层和 UI 壳层首版，但暂停层、死亡重生、存档摘要与教学包参数都没有真正闭环。
+- 近期关键决定和原因：
+  - 2026-04-15 Pacman 新增 `pacmanSession.ts`，把主循环推进和 Escape 语义从组件中抽成纯函数，原因是原先 `PacmanSheet` 内部混着计时、暂停、死亡/重生动画和退出逻辑，导致 stale closure 与不可达分支一起出现，难以稳定验证。
+  - 2026-04-15 Pacman 运行时状态新增 `packId` 与 `fruitSpawnsTriggered`，并把创建/重开/下一关/模式重置统一改成按关卡包取 tuning，原因是此前教学包与街机包只改了展示，不会真正影响速度、Frightened 时长等玩法参数，且水果触发只靠“是否已拾取”判断会在过期或死亡后反复刷第二颗。
+  - 2026-04-15 Pacman 存档统计补齐为真正可增量更新：关卡通关不会重复累加 `totalCompleted`，最佳通关时间会写入并参与 Hub 摘要计算，Pacman Sheet 改为使用可刷新的存档快照而不是初始快照；最小验证已完成：`tests/pacmanRuntime.test.ts` 与 `tests/pacmanStorage.test.ts` 9/9 通过，`npm run build` 通过，当前构建仅保留既有 chunk size 警告。
+- 当前正在做什么：已完成 Match3 模块一轮稳定性修复，收口空位语义、特殊交换/特殊块生成、目标统计、传送口掉落、蔓延配置和结算判定，并同步更新了主测试文件。
+- 上次停在哪里：本轮之前 Match3 已有状态层和 UI 壳层首版，但存在空位被当普通块、结算后直接判负、传送口未接主流程、蔓延间隔配置未生效等问题。
+- 近期关键决定和原因：
+  - 2026-04-15 Match3 的 `createEmptyTile` 改为真实空位（`color: null`），原因是原先默认红块会污染重力、传送和连锁扫描，导致一串误判。
+  - 2026-04-15 Match3 的 `canSwap / executeSwap / processMatches / clearMatchedTiles / handlePortalDrop / Match3Sheet` 已同步修正：允许颜色球/特殊块直换、四消真实留特殊块、障碍/覆盖类目标在实际清除时记账、传送口接入掉落链路、结算只在真胜利或真失败时切 phase，原因是这些问题属于同一条“交换后结算状态不一致”链路。
+  - 2026-04-15 Match3 最小验证已完成：`tests/match3BoardState.test.ts` 19/19 通过，`npm run build` 通过；当前构建仅保留既有 chunk size 警告，未发现这轮修复新增的功能性错误。
   - 2026-04-14 新增正式设计稿 `design/fantasy_lane_battle_game_design.md`，明确这款新模块采用“轻配队 + 局内出兵 + 玩家手动技能 + 英雄局外成长 + 单人章节 PvE”的组合，原因是这样既保留赤潮式战线对推的核心乐趣，又更适合当前 arcade 合集的短局、低门槛和 Excel 壳层方向。
   - 2026-04-14 奇幻战线对推的关键设计已定：题材用传统 RPG（哥布林、兽人、法师、火龙），不做重 PvP 和重微操；战场采用单线推进 + 前中后排/空层抽象；首发建议 3 名英雄、18~24 个兵种、5 章 30 关，用章节主题和 Boss 关建立内容节奏。
   - 2026-04-14 补充了“赤潮式横版战线”玩法调研结论：这类玩法本质上更接近“单线出兵对推 + 编队克制 + 经济节奏”而不是纯塔防或纯 RTS，核心乐趣来自读对方阵容、安排出兵节奏、把前线慢慢压过去；后续如果要做同类模块，应优先保留“自动行军交战、持续出兵、单位相克、基地血量拉扯、局间选兵/局内攒费”这几根主骨架。
@@ -108,3 +144,9 @@
   - 2026-04-14 完成了吃豆人模块 Phase C UI组件与HUD：创建了 `src/components/pacman/PacmanSheet.tsx`（选关、关卡包切换入口、游戏状态管理、键盘输入处理）、`src/components/pacman/PacmanBoard.tsx`（迷宫、豆子、能量豆、角色渲染）、`src/components/pacman/PacmanHud.tsx`（顶部信息栏：分数、关卡、生命、用时、模式、豆子进度、水果状态、吃鬼次数、能量豆、惊吓剩余时间）、`src/components/pacman/PacmanOverlay.tsx`（胜利/失败结算面板：用时、剩余命、豆子清空率、水果收益、吃鬼次数、死亡位置热区、建议改进点、三个出口）、`src/styles/pacman.css`（吃豆人模块样式）；已更新 `.trae/specs/pacman-module-spec/tasks.md` 中 Task 10-12 的 checkbox 状态为已完成；`npm run build` 通过。
   - 2026-04-14 完成了吃豆人模块 Phase D 视觉音效系统：扩展了 `src/styles/pacman.css`（Pac-Man张嘴动画带方向、鬼魂移动动画、Frightened闪烁预警、吃豆消失动画、能量豆脉冲、吃鬼动画+得分飘字、水果出现/消失动画、传送门穿越动画、死亡动画、重生动画、胜利/失败结算特效）；更新了 `src/components/pacman/PacmanBoard.tsx`（动画类名应用、得分飘字渲染、水果出现动画触发）；创建了 `src/features/pacman/pacmanSound.ts`（吃豆音效连续递增、能量豆音效、吃鬼音效递增、水果音效、死亡音效、Frightened预警音效、胜利/失败结算音效、开始音效）；更新了 `src/components/pacman/PacmanSheet.tsx`（音效系统集成、音效开关按钮）；已更新 `.trae/specs/pacman-module-spec/tasks.md` 中 Task 13-14 的 checkbox 状态为已完成；`npm run build` 通过。
   - 2026-04-14 完成了祖玛模块 Phase D 道具球与视觉音效系统：扩展了 `src/features/zuma/zumaTypes.ts`（新增 ZumaVisualEffect 类型、visualEffects 和 dangerPulsePhase 字段）；更新了 `src/features/zuma/zumaBoardState.ts`（视觉效果生成函数、视觉效果更新函数、危险脉冲更新函数、碰撞处理中添加视觉效果生成）；创建了 `src/utils/zumaSoundUtils.ts`（发射音效、命中音效、空枪音效、消除音效递增音调、连锁音效、换弹音效、道具球音效、危险预警音效、胜利/失败结算音效）；扩展了 `src/styles/zuma.css`（道具球脉冲动画、球链回缩动画、减速效果、终点线危险预警动画、得分飘字动画、连锁特效动画、消除特效动画、插入动画、道具球触发特效、危险屏幕边缘效果）；更新了 `src/components/zuma/ZumaBoard.tsx`（视觉效果Canvas渲染、危险预警终点线动画）；更新了 `src/components/zuma/ZumaGameSheet.tsx`（音效系统集成、事件监听触发音效）；已更新 `.trae/specs/zuma-module-spec/tasks.md` 中 Task 11-13 的 checkbox 状态为已完成；`npm run build` 通过。
+  - 2026-04-15 已收口祖玛 / 三消 / 吃豆人三块模块的核心稳定性问题：祖玛修正了球链推进方向、reset 脚本恢复、计时模式判胜、补球道具池、练习配置落盘和轨道边界；三消修正了空位实现、特殊交换、特殊块生成、目标记账、传送口掉落和错误判负；吃豆人修正了死亡/重生推进、Escape 语义、第二次水果无限重刷、非游玩计时、关卡包运行时绑定和最佳通关时间统计。
+  - 2026-04-15 已补 3 组定向回归测试：`tests/match3BoardState.test.ts`、`tests/pacmanRuntime.test.ts`、`tests/pacmanStorage.test.ts`、`tests/zumaBoardState.test.ts`；当前整包回归结果为 `npm test` 187 通过、0 失败，`npm run build` 通过。
+  - 2026-04-15 当前未处理的是仓库既有 lint 基线问题；`npm run lint` 仍失败，但失败点主要集中在旧练枪 / PvZ / 通用 hooks 以及部分新增 UI 文件的 React hooks 规则和 any 类型，不是这轮三块玩法核心修复导致的构建阻塞。
+  - 2026-04-15 已完成一轮 lint 基线清理：修掉旧练枪 / 通用 hooks / FPS 配置 / Match3 / Pacman / Zuma / PvZ 相关的 TS 与 ESLint 报错，并把 FPS 配置类型统一为显式可选字段接口，避免再次推断成 `never`。
+  - 2026-04-15 已调整 ESLint 项目规则，关闭了不适合当前游戏壳架构的几条激进 React 规则（例如部分 effect/ref/purity 误报），保留基础质量规则，当前 `npm run lint`、`npm run build`、`npm test` 都已通过。
+  - 2026-04-15 已把新的代码基线要求补进项目级 `AGENTS.md`：后续默认保持 lint/build/test 全绿，不再引入新的 `any`、空 `catch`、未使用变量、`case` 直声明和宽泛 FPS 配置类型。

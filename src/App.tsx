@@ -214,10 +214,11 @@ function AppContent() {
   const handleStartFPSTrainingFromHub = (mode: FPSTrainingMode, config?: FPSConfigMap) => {
     setActiveArcadeGame('aim');
     setWorkspaceGameId('aim');
+    const finalDuration = typeof config?.duration === 'number' ? config.duration : (settings.trainingDuration || 60);
+    const finalConfig = { ...config, duration: finalDuration };
     const tutorialKey = `tutorial-shown-${mode}`;
     if (!localStorage.getItem(tutorialKey)) {
       setCurrentMode(mode);
-      const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
       setModeConfig(finalConfig);
       setPendingGameStart({ mode, isFPSMode: true, fpsConfig: finalConfig });
       setShowModeTutorial(mode);
@@ -225,7 +226,6 @@ function AppContent() {
     }
 
     setCurrentMode(mode);
-    const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
     setModeConfig(finalConfig);
     startGameWithMode(mode, finalConfig);
   };
@@ -709,12 +709,14 @@ function AppContent() {
               key={`pacman-${currentSaveSlot?.id ?? 'live'}`}
               onFormulaChange={setPacmanFormulaText}
               onExit={handleExitCurrentGame}
+              onReturnToGuide={() => switchSheet('pacman_guide')}
               initialSnapshot={(gameSnapshots.pacman as Record<string, unknown> | null) ?? null}
               onSnapshotChange={(snapshot) => updateGameSnapshot('pacman', snapshot)}
             />
           ) : currentSheet === 'pacman_guide' ? (
             <PacmanGuideSheet
               onFormulaChange={setPacmanGuideFormulaText}
+              onSwitchToPlay={() => switchSheet('pacman')}
             />
           ) : currentSheet === 'zuma' ? (
             <ZumaGameSheet

@@ -85,8 +85,12 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange, ini
   }, []);
 
   useEffect(() => {
-    if (state.mode === 'adventure' && state.levelNumber) {
-      setAdventurePackIndex(Math.max(1, Math.ceil(state.levelNumber / 10)));
+    if (state.mode === 'adventure' && typeof state.levelNumber === 'number') {
+      const levelNumber = state.levelNumber;
+      const timer = window.setTimeout(() => {
+        setAdventurePackIndex(Math.max(1, Math.ceil(levelNumber / 10)));
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [state.levelNumber, state.mode]);
 

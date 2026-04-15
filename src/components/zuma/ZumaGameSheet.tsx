@@ -4,6 +4,8 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import '../../styles/zuma.css';
 import {
   createZumaBoardState,
+  createZumaBoardStateFromLevel,
+  createZumaSetupBoardState,
   startZumaGame,
   resetZumaGame,
   toggleZumaPause,
@@ -17,10 +19,13 @@ import {
 import {
   getAdventureLevels,
   getChainRewindLevels,
+  getChallengeLevels,
+  getEndlessLevels,
   getTimedLevelsByDuration,
   getTimedLevelDurations,
   getLevelDefinition,
   getLevelPackSummary,
+  getPressureLevels,
   isLevelUnlocked,
 } from '../../features/zuma/zumaLevelCatalog';
 import { getClearedLevelIds } from '../../features/zuma/zumaProgressStorage';
@@ -28,6 +33,7 @@ import type { ZumaBoardState, ZumaLevelMode, ZumaClearEvent } from '../../featur
 import { ZumaBoard } from './ZumaBoard';
 import { ZumaHud } from './ZumaHud';
 import { ZumaResultPanel } from './ZumaResultPanel';
+import { ZumaPracticeSheet } from './ZumaPracticeSheet';
 import {
   playZumaShootSound,
   playZumaMissSound,
@@ -43,6 +49,7 @@ import {
 const MODE_LABELS: Record<ZumaLevelMode, string> = {
   adventure: '神庙征途',
   timed: '计时冲分',
+  challenge: '挑战试炼',
   endless: '无尽模式',
   practice: '练习模式',
 };
@@ -58,17 +65,19 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
   const snapshot = initialSnapshot as {
     state?: ZumaBoardState;
     selectedMode?: ZumaLevelMode;
-    selectedPack?: 'temple' | 'chain' | 'timed';
+    selectedPack?: 'temple' | 'chain' | 'pressure' | 'timed';
     selectedTimedDuration?: number;
     selectedLevelId?: string | null;
     setupCollapsed?: boolean;
+    activePracticeId?: string | null;
   } | null;
   const [state, setState] = useState<ZumaBoardState>(() => snapshot?.state ?? createZumaBoardState());
   const [selectedMode, setSelectedMode] = useState<ZumaLevelMode>(snapshot?.selectedMode ?? 'adventure');
-  const [selectedPack, setSelectedPack] = useState<'temple' | 'chain' | 'timed'>(snapshot?.selectedPack ?? 'temple');
+  const [selectedPack, setSelectedPack] = useState<'temple' | 'chain' | 'pressure' | 'timed'>(snapshot?.selectedPack ?? 'temple');
   const [selectedTimedDuration, setSelectedTimedDuration] = useState(snapshot?.selectedTimedDuration ?? 3);
   const [selectedLevelId, setSelectedLevelId] = useState<string | null>(snapshot?.selectedLevelId ?? null);
   const [setupCollapsed, setSetupCollapsed] = useState(snapshot?.setupCollapsed ?? false);
+  const [activePracticeId, setActivePracticeId] = useState<string | null>(snapshot?.activePracticeId ?? null);
 
   const prevEventsLengthRef = useRef(0);
   const prevDangerLevelRef = useRef(state.dangerLevel);
@@ -80,8 +89,12 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
   const adventureLevels = useMemo(() => {
     if (selectedPack === 'temple') return getAdventureLevels();
     if (selectedPack === 'chain') return getChainRewindLevels();
+    if (selectedPack === 'pressure') return getPressureLevels();
     return [];
   }, [selectedPack]);
+
+  const challengeLevels = useMemo(() => getChallengeLevels(), []);
+  const endlessLevels = useMemo(() => getEndlessLevels(), []);
 
   const timedLevels = useMemo(() => {
     return getTimedLevelsByDuration(selectedTimedDuration);
@@ -90,6 +103,9 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
   const timedDurations = useMemo(() => getTimedLevelDurations(), []);
 
   useEffect(() => {
+    if (activePracticeId) {
+      return undefined;
+    }
     const timer = window.setInterval(() => {
       setState((current) => {
         const newState = tickZumaBoard(current, 16);
@@ -143,11 +159,14 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
       });
     }, 16);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [activePracticeId]);
 
   useEffect(() => {
+    if (activePracticeId) {
+      return;
+    }
     onFormulaChange?.(getZumaFormulaBarText(state));
-  }, [onFormulaChange, state]);
+  }, [onFormulaChange, state, activePracticeId]);
 
   useEffect(() => {
     onSnapshotChange?.({
@@ -157,24 +176,41 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
       selectedTimedDuration,
       selectedLevelId,
       setupCollapsed,
+      activePracticeId,
     });
-  }, [state, selectedMode, selectedPack, selectedTimedDuration, selectedLevelId, setupCollapsed, onSnapshotChange]);
+  }, [state, selectedMode, selectedPack, selectedTimedDuration, selectedLevelId, setupCollapsed, activePracticeId, onSnapshotChange]);
 
   const handleModeSwitch = useCallback((mode: ZumaLevelMode) => {
     setSelectedMode(mode);
     if (mode === 'adventure') {
       setSelectedPack('temple');
+    } else if (mode === 'challenge') {
+      setSelectedPack('chain');
+    } else if (mode === 'endless') {
+      setSelectedPack('timed');
     } else if (mode === 'timed') {
       setSelectedPack('timed');
     }
+    setActivePracticeId(null);
+    setSelectedLevelId(null);
+    setSetupCollapsed(false);
+    setState(() => createZumaSetupBoardState(mode));
   }, []);
 
-  const handlePackSwitch = useCallback((pack: 'temple' | 'chain') => {
+  const handlePackSwitch = useCallback((pack: 'temple' | 'chain' | 'pressure') => {
     setSelectedPack(pack);
+    setActivePracticeId(null);
+    setSelectedLevelId(null);
+    setSetupCollapsed(false);
+    setState(() => createZumaSetupBoardState('adventure'));
   }, []);
 
   const handleTimedDurationSwitch = useCallback((duration: number) => {
     setSelectedTimedDuration(duration);
+    setActivePracticeId(null);
+    setSelectedLevelId(null);
+    setSetupCollapsed(false);
+    setState(() => createZumaSetupBoardState('timed'));
   }, []);
 
   const handleLevelSelect = useCallback((levelId: string) => {
@@ -182,19 +218,8 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
     if (!level) return;
 
     setSelectedLevelId(levelId);
-    setState(() => createZumaBoardState({
-      levelId,
-      mode: level.mode,
-      trackId: level.trackId,
-      colorPool: level.colorPool,
-      powerupPool: level.powerupPool,
-      baseSpeed: level.baseSpeed,
-      timeLimitMs: level.timeLimitMs,
-      shotLimit: level.shotLimit,
-      levelNumber: level.levelNumber,
-      levelTitle: level.title,
-      spawnScript: level.spawnScript,
-    }));
+    setActivePracticeId(null);
+    setState(() => createZumaBoardStateFromLevel(level));
   }, []);
 
   const handleStartGame = useCallback(() => {
@@ -241,6 +266,9 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
   }, []);
 
   useEffect(() => {
+    if (activePracticeId) {
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (state.phase === 'setup') {
         if (e.key === 'Escape' && onExit) {
@@ -273,7 +301,7 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.phase, state.isPaused, handleSwapBalls, handleTogglePause, onExit]);
+  }, [state.phase, state.isPaused, handleSwapBalls, handleTogglePause, onExit, activePracticeId]);
 
   const handleBackToSetup = useCallback(() => {
     prevEventsLengthRef.current = 0;
@@ -286,7 +314,31 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
     }));
   }, []);
 
-  const packSummary = useMemo(() => getLevelPackSummary(selectedPack === 'timed' ? 'timed' : selectedPack), [selectedPack]);
+  const handleExitPractice = useCallback(() => {
+    setActivePracticeId(null);
+    setSetupCollapsed(false);
+    setState((current) => ({
+      ...resetZumaGame(current),
+      phase: 'setup',
+    }));
+  }, []);
+
+  const packSummary = useMemo(() => {
+    if (selectedMode === 'challenge') return getLevelPackSummary('challenge');
+    if (selectedMode === 'endless') return getLevelPackSummary('endless');
+    return getLevelPackSummary(selectedPack === 'timed' ? 'timed' : selectedPack);
+  }, [selectedMode, selectedPack]);
+
+  if (activePracticeId) {
+    return (
+      <ZumaPracticeSheet
+        practiceId={activePracticeId}
+        onFormulaChange={onFormulaChange}
+        onExit={handleExitPractice}
+        exitLabel="返回主玩法"
+      />
+    );
+  }
 
   return (
     <div className="zuma-sheet">
@@ -295,6 +347,7 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
         onTogglePause={handleTogglePause}
         onToggleSpeed={handleToggleSpeed}
         onRestart={handleRestart}
+        onBackToSetup={handleBackToSetup}
       />
 
       {state.phase === 'setup' && (
@@ -328,7 +381,7 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
           {!setupCollapsed && (
             <div className="zuma-setup-content">
               <div className="zuma-mode-tabs" role="tablist">
-                {(['adventure', 'timed'] as const).map((mode) => (
+                {(['adventure', 'challenge', 'endless', 'timed'] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
@@ -344,7 +397,7 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
 
               {selectedMode === 'adventure' && (
                 <div className="zuma-pack-tabs" role="tablist">
-                  {(['temple', 'chain'] as const).map((pack) => {
+                  {(['temple', 'chain', 'pressure'] as const).map((pack) => {
                     const summary = getLevelPackSummary(pack);
                     return (
                       <button
@@ -380,7 +433,7 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
               )}
 
               <div className="zuma-level-grid">
-                {selectedMode === 'adventure' &&
+                {(selectedMode === 'adventure') &&
                   adventureLevels.map((level) => {
                     const unlocked = isLevelUnlocked(level.levelId, clearedLevelIds);
                     const isSelected = selectedLevelId === level.levelId;
@@ -398,6 +451,42 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
                         <small>{level.summary}</small>
                         <small>强度 {level.intensity}</small>
                         {!unlocked && <small className="zuma-lock-hint">需通过前置关卡</small>}
+                      </button>
+                    );
+                  })}
+
+                {selectedMode === 'challenge' &&
+                  challengeLevels.map((level) => {
+                    const isSelected = selectedLevelId === level.levelId;
+                    return (
+                      <button
+                        key={level.levelId}
+                        type="button"
+                        className={`zuma-level-card${isSelected ? ' active' : ''}`}
+                        onClick={() => handleLevelSelect(level.levelId)}
+                        aria-pressed={isSelected}
+                      >
+                        <strong>{level.title}</strong>
+                        <span>{level.summary}</span>
+                        <small>强度 {level.intensity}</small>
+                      </button>
+                    );
+                  })}
+
+                {selectedMode === 'endless' &&
+                  endlessLevels.map((level) => {
+                    const isSelected = selectedLevelId === level.levelId;
+                    return (
+                      <button
+                        key={level.levelId}
+                        type="button"
+                        className={`zuma-level-card${isSelected ? ' active' : ''}`}
+                        onClick={() => handleLevelSelect(level.levelId)}
+                        aria-pressed={isSelected}
+                      >
+                        <strong>{level.title}</strong>
+                        <span>{level.summary}</span>
+                        <small>强度 {level.intensity}</small>
                       </button>
                     );
                   })}
@@ -459,8 +548,9 @@ export const ZumaGameSheet: React.FC<ZumaGameSheetProps> = ({ onFormulaChange, o
         state={state}
         onRetry={handleRestart}
         onBackToSetup={handleBackToSetup}
-        onEnterPractice={() => {
+        onEnterPractice={(practiceId) => {
           setSetupCollapsed(false);
+          setActivePracticeId(practiceId);
         }}
       />
     </div>

@@ -61,7 +61,7 @@ interface SpawnOptions {
 interface FPSModeConfig {
   speed?: 'slow' | 'normal' | 'fast' | 'extreme';
   pattern?: MovePattern;
-  duration?: number;
+  duration?: number | 'long' | 'normal' | 'short' | 'blink';
   interval?: number;
   targetCount?: number;
   showPriority?: boolean;
@@ -117,6 +117,13 @@ const SPEED_MAP = {
   fast: 1.5,
   extreme: 2.5,
 };
+
+const PEEK_DURATION_MAP = {
+  long: 2000,
+  normal: 1200,
+  short: 600,
+  blink: 300,
+} as const;
 
 export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEnemyReturn {
   const { isPlaying, isPaused, mode, moveSpeed = 1.0, movePattern = 'linear', fpsMode, headshotLineRow = 10, targetDuration = 5 } = props;
@@ -201,7 +208,11 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
       enemy.peekState = 'hidden';
       enemy.peekProgress = 0;
       enemy.peekTimer = 0;
-      enemy.peekDuration = config.duration ?? 1200;
+      enemy.peekDuration = typeof config.duration === 'number'
+        ? config.duration
+        : config.duration
+          ? PEEK_DURATION_MAP[config.duration]
+          : 1200;
       enemy.peekDirection = options?.peekDirection ?? (Math.random() > 0.5 ? 'left' : 'right');
     }
 
@@ -225,7 +236,7 @@ export function useMultiGridEnemy(props: UseMultiGridEnemyProps): UseMultiGridEn
     }
 
     setEnemies(prev => [...prev, enemy]);
-  }, [isPlaying, isPaused, mode, movePattern, moveSpeed, fpsMode, headshotLineRow]);
+  }, [isPlaying, isPaused, mode, movePattern, moveSpeed, fpsMode, headshotLineRow, targetDuration]);
 
   const hitPart = useCallback((enemyId: string, partType: PartType, combo: number): PartHitResult | null => {
     let result: PartHitResult | null = null;
@@ -490,7 +501,7 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
       }
       break;
 
-    case 'sine':
+    case 'sine': {
       const sineOffset = Math.sin(progress * 2) * 2;
       newCol = enemy.anchorCol + (direction === 'left' ? -deltaTime : deltaTime) * enemy.moveSpeed;
       newRow = enemy.anchorRow + sineOffset * deltaTime;
@@ -501,8 +512,9 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
         moveProgress: progress,
         moveDirection: direction,
       };
+    }
 
-    case 'bounce':
+    case 'bounce': {
       const bounceY = Math.abs(Math.sin(progress * 3)) * 3;
       newCol = enemy.anchorCol + (direction === 'left' ? -deltaTime : deltaTime) * enemy.moveSpeed;
       newRow = enemy.anchorRow + bounceY * deltaTime;
@@ -513,6 +525,7 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
         moveProgress: progress,
         moveDirection: direction,
       };
+    }
 
     default:
       return enemy;
@@ -530,11 +543,11 @@ function updateMovingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridE
 function updatePeekingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGridEnemy {
   const PEEK_ANIM_DURATION = 200;
 
-  let newState = { ...enemy };
+  const newState = { ...enemy };
   const timer = (enemy.peekTimer ?? 0) + deltaTime * 1000;
 
   switch (enemy.peekState) {
-    case 'hidden':
+    case 'hidden': {
       if (timer >= 2000) {
         return {
           ...newState,
@@ -544,8 +557,9 @@ function updatePeekingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGrid
         };
       }
       return { ...newState, peekTimer: timer };
+    }
 
-    case 'peeking':
+    case 'peeking': {
       const peekProgress = Math.min(1, timer / PEEK_ANIM_DURATION);
       if (peekProgress >= 1) {
         return {
@@ -556,6 +570,7 @@ function updatePeekingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGrid
         };
       }
       return { ...newState, peekTimer: timer, peekProgress };
+    }
 
     case 'visible':
       if (timer >= (enemy.peekDuration ?? 1200)) {
@@ -567,7 +582,7 @@ function updatePeekingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGrid
       }
       return { ...newState, peekTimer: timer };
 
-    case 'returning':
+    case 'returning': {
       const returnProgress = Math.max(0, 1 - timer / PEEK_ANIM_DURATION);
       if (returnProgress <= 0) {
         return {
@@ -579,6 +594,7 @@ function updatePeekingEnemy(enemy: MultiGridEnemy, deltaTime: number): MultiGrid
         };
       }
       return { ...newState, peekTimer: timer, peekProgress: returnProgress };
+    }
 
     default:
       return newState;
