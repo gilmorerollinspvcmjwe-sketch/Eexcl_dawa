@@ -24,7 +24,6 @@ import { FancyFeedback } from './components/FancyFeedback';
 import { FirstTimeGuide } from './components/FirstTimeGuide';
 import { ModeTutorialModal } from './components/ModeTutorialModal';
 import { SaveManager } from './components/SaveManager';
-import { GameSelector } from './components/GameSelector';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useFeedbackSystem } from './hooks/useFeedbackSystem';
 import { useTutorial } from './hooks/useTutorial';
@@ -86,7 +85,6 @@ function AppContent() {
   const [currentSaveSlot, setCurrentSaveSlot] = useState<SaveSlot | null>(null);
   const [perlerEntryMode, setPerlerEntryMode] = useState<PerlerEntryMode>('library');
   const [showSaveManager, setShowSaveManager] = useState(false);
-  const [showGameSelector, setShowGameSelector] = useState(false);
   const [hubFormulaText, setHubFormulaText] = useState('=今日建议：先热手，再摸鱼，再伪装');
   const [configFormulaText, setConfigFormulaText] = useState('=配置中心：独立管理练枪启动工作台，首页不再挤配置内容');
   const [perlerFormulaText, setPerlerFormulaText] = useState('=拼豆模板库已就绪');
@@ -304,6 +302,25 @@ function AppContent() {
   };
 
   const handleSave = () => {
+    if (!workspaceGameId) {
+      setShowSaveManager(true);
+      return;
+    }
+
+    if (currentSaveSlot) {
+      saveToStorage({
+        ...currentSaveSlot,
+        timestamp: Date.now(),
+        data: {
+          gameType: workspaceGameId,
+          workspaceId: workspaceGameId,
+          currentSheet,
+          payload: currentSaveSlot.data.payload || {},
+        },
+      });
+      return;
+    }
+
     setShowSaveManager(true);
   };
 
@@ -315,12 +332,7 @@ function AppContent() {
     setShowSaveManager(true);
   };
 
-  const handleGameSelect = () => {
-    setShowGameSelector(true);
-  };
-
-  const handleSelectGame = (gameType: string) => {
-    const gameId = gameType as ArcadeGameId;
+  const handleSelectGame = (gameId: ArcadeGameId) => {
     enterGameWorkspace(gameId);
   };
 
@@ -570,7 +582,7 @@ function AppContent() {
         onSave={handleSave}
         onLoad={handleLoad}
         onDelete={handleDelete}
-        onGameSelect={handleGameSelect}
+        onGameSelect={handleSelectGame}
       />
 
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -727,14 +739,8 @@ function AppContent() {
         onClose={() => setShowSaveManager(false)}
         currentGame={activeArcadeGame || undefined}
         currentSlotId={currentSaveSlot?.id ?? null}
-        onSave={() => {}}
+        onSave={(slot) => setCurrentSaveSlot(slot)}
         onLoad={handleLoadSave}
-      />
-
-      <GameSelector
-        isOpen={showGameSelector}
-        onClose={() => setShowGameSelector(false)}
-        onSelectGame={handleSelectGame}
       />
 
       {showModeTutorial && (

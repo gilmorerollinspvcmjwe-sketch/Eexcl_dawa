@@ -13,16 +13,16 @@ export const WORKSPACE_REGISTRY: Record<ArcadeGameId, WorkbookWorkspaceDefinitio
   aim: {
     gameId: 'aim',
     mainSheetId: 'game',
-    configSheetId: 'config',
-    extraSheetIds: [],
-    visibleSheetIds: ['hub', 'game', 'config'],
+    configSheetId: 'settings',
+    extraSheetIds: ['stats'],
+    visibleSheetIds: ['hub', 'game', 'stats', 'settings'],
   },
   perler: {
     gameId: 'perler',
     mainSheetId: 'perler',
-    configSheetId: 'perler',
+    configSheetId: 'settings',
     extraSheetIds: [],
-    visibleSheetIds: ['hub', 'perler'],
+    visibleSheetIds: ['hub', 'perler', 'settings'],
   },
   pvz: {
     gameId: 'pvz',
@@ -34,16 +34,16 @@ export const WORKSPACE_REGISTRY: Record<ArcadeGameId, WorkbookWorkspaceDefinitio
   snake: {
     gameId: 'snake',
     mainSheetId: 'snake',
-    configSheetId: 'snake',
+    configSheetId: 'settings',
     extraSheetIds: [],
-    visibleSheetIds: ['hub', 'snake'],
+    visibleSheetIds: ['hub', 'snake', 'settings'],
   },
   tetris: {
     gameId: 'tetris',
     mainSheetId: 'tetris',
-    configSheetId: 'tetris',
+    configSheetId: 'settings',
     extraSheetIds: [],
-    visibleSheetIds: ['hub', 'tetris'],
+    visibleSheetIds: ['hub', 'tetris', 'settings'],
   },
   pacman: {
     gameId: 'pacman',
@@ -67,4 +67,3 @@ export const WORKSPACE_REGISTRY: Record<ArcadeGameId, WorkbookWorkspaceDefinitio
     visibleSheetIds: ['hub', 'match3', 'match3_lab'],
   },
 };
-

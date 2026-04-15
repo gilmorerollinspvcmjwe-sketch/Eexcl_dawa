@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { FeedbackMessage } from '../utils/feedbackMessages';
+import { ARCADE_MODULE_REGISTRY, type ArcadeGameId } from '../features/workbook/workbookRegistry';
 
 interface ExcelHeaderProps {
   isHidden: boolean;
@@ -18,7 +19,7 @@ interface ExcelHeaderProps {
   onSave?: () => void;
   onLoad?: () => void;
   onDelete?: () => void;
-  onStartGame?: () => void;
+  onGameSelect?: (gameId: ArcadeGameId) => void;
 }
 
 export const ExcelHeader: React.FC<ExcelHeaderProps> = ({ 
@@ -38,22 +39,10 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
   onSave,
   onLoad,
   onDelete,
-  onStartGame,
+  onGameSelect,
 }) => {
-  const [showFileMenu, setShowFileMenu] = useState(false);
-  const fileMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) {
-        setShowFileMenu(false);
-      }
-    };
-    if (showFileMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showFileMenu]);
+  const [fileMenuOpen, setFileMenuOpen] = useState(false);
+  const [startMenuOpen, setStartMenuOpen] = useState(false);
 
   if (isHidden) return null;
 
@@ -111,128 +100,46 @@ export const ExcelHeader: React.FC<ExcelHeaderProps> = ({
 
       <div className="excel-menubar">
         <div 
-          className="excel-menu-item" 
-          style={{ position: 'relative' }}
-          ref={fileMenuRef}
+          className={`excel-menu-item ${fileMenuOpen ? 'active' : ''}`}
+          onClick={() => { setFileMenuOpen(!fileMenuOpen); setStartMenuOpen(false); }}
         >
-          <div 
-            className="excel-menu-item"
-            style={{ 
-              background: showFileMenu ? '#217346' : 'transparent',
-              color: showFileMenu ? 'white' : 'inherit',
-              cursor: 'pointer',
-            }}
-            onClick={() => setShowFileMenu(!showFileMenu)}
-          >
-            文件(F)
-          </div>
-          {showFileMenu && (
-            <div 
-              className="excel-file-dropdown"
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                background: 'white',
-                border: '1px solid #d4d4d4',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                zIndex: 1000,
-                minWidth: 200,
-                padding: '4px 0',
-              }}
-            >
-              <div 
-                className="excel-dropdown-item"
-                style={{
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#e8f5e9')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => { onNewSave?.(); setShowFileMenu(false); }}
-              >
-                <span>📄</span>
-                <span>新建存档</span>
+          文件(F)
+          {fileMenuOpen && (
+            <div className="excel-dropdown-menu" onClick={e => e.stopPropagation()}>
+              <div className="excel-dropdown-item" onClick={() => { onNewSave?.(); setFileMenuOpen(false); }}>
+                新建存档
               </div>
-              <div 
-                className="excel-dropdown-item"
-                style={{
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#e8f5e9')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => { onSave?.(); setShowFileMenu(false); }}
-              >
-                <span>💾</span>
-                <span>保存</span>
+              <div className="excel-dropdown-item" onClick={() => { onSave?.(); setFileMenuOpen(false); }}>
+                保存
               </div>
-              <div 
-                className="excel-dropdown-item"
-                style={{
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#e8f5e9')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => { onLoad?.(); setShowFileMenu(false); }}
-              >
-                <span>📂</span>
-                <span>加载存档</span>
+              <div className="excel-dropdown-item" onClick={() => { onLoad?.(); setFileMenuOpen(false); }}>
+                加载存档
               </div>
-              <div 
-                className="excel-dropdown-item"
-                style={{
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#e8f5e9')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => { onDelete?.(); setShowFileMenu(false); }}
-              >
-                <span>🗑️</span>
-                <span>删除存档</span>
-              </div>
-              <div style={{ height: 1, background: '#d4d4d4', margin: '4px 0' }} />
-              <div 
-                className="excel-dropdown-item"
-                style={{
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  color: '#217346',
-                  fontWeight: 500,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#e8f5e9')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => { onStartGame?.(); setShowFileMenu(false); }}
-              >
-                <span>🎮</span>
-                <span>开始游戏</span>
+              <div className="excel-dropdown-item" onClick={() => { onDelete?.(); setFileMenuOpen(false); }}>
+                删除存档
               </div>
             </div>
           )}
         </div>
-        <div className="excel-menu-item active">开始</div>
+        <div 
+          className={`excel-menu-item ${startMenuOpen ? 'active' : ''}`}
+          onClick={() => { setStartMenuOpen(!startMenuOpen); setFileMenuOpen(false); }}
+        >
+          开始
+          {startMenuOpen && (
+            <div className="excel-dropdown-menu" onClick={e => e.stopPropagation()}>
+              {ARCADE_MODULE_REGISTRY.map((module) => (
+                <div
+                  key={module.id}
+                  className="excel-dropdown-item"
+                  onClick={() => { onGameSelect?.(module.id); setStartMenuOpen(false); }}
+                >
+                  {module.title}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="excel-menu-item">插入</div>
         <div className="excel-menu-item">页面布局</div>
         <div className="excel-menu-item">公式</div>

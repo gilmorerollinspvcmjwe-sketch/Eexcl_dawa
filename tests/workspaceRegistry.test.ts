@@ -9,6 +9,9 @@ test('pvz workspace resolves from registry', () => {
 });
 
 test('perler workspace visibility is registry-driven', () => {
-  assert.deepEqual(getVisibleSheetsForWorkspace('perler'), ['hub', 'perler']);
+  assert.deepEqual(getVisibleSheetsForWorkspace('perler'), ['hub', 'perler', 'settings']);
 });
 
+test('aim workspace keeps sheet1 to sheet4 visible', () => {
+  assert.deepEqual(getVisibleSheetsForWorkspace('aim'), ['hub', 'game', 'stats', 'settings']);
+});
