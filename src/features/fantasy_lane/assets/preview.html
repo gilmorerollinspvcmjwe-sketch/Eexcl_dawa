@@ -118,148 +118,6 @@
       { key: 'boss', label: '高费终结兵' },
     ];
 
-    // 简化的绘制函数（仅用于预览）
-    function drawUnitPreview(ctx, config, x, y) {
-      const { size, bodyColor, detailColor, weaponColor, role } = config;
-      const now = Date.now();
-      const bob = Math.sin(now / 200) * 2;
-
-      ctx.save();
-      ctx.translate(x, y + bob);
-
-      // 根据角色绘制不同轮廓
-      switch (role) {
-        case 'tank':
-          // 肉盾：方块/桶形
-          ctx.fillStyle = bodyColor;
-          if (config.id === 'stone_guard') {
-            ctx.fillRect(-size * 0.3, -size * 0.3, size * 0.6, size * 0.6);
-          } else if (config.id === 'dwarf_ironwall') {
-            ctx.beginPath();
-            ctx.ellipse(0, 0, size * 0.3, size * 0.35, 0, 0, Math.PI * 2);
-            ctx.fill();
-          } else {
-            ctx.beginPath();
-            ctx.ellipse(0, 0, size * 0.25, size * 0.35, 0, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          break;
-        case 'melee':
-          // 近战：倒三角/菱形
-          ctx.fillStyle = bodyColor;
-          if (config.id === 'shadow_assassin') {
-            ctx.globalAlpha = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(0, -size * 0.4);
-            ctx.lineTo(size * 0.15, 0);
-            ctx.lineTo(0, size * 0.35);
-            ctx.lineTo(-size * 0.15, 0);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-          } else if (config.id === 'crypt_crawler') {
-            ctx.beginPath();
-            ctx.ellipse(0, size * 0.1, size * 0.35, size * 0.2, 0, 0, Math.PI * 2);
-            ctx.fill();
-          } else {
-            ctx.beginPath();
-            ctx.moveTo(-size * 0.3, size * 0.3);
-            ctx.lineTo(size * 0.3, size * 0.3);
-            ctx.lineTo(size * 0.2, -size * 0.1);
-            ctx.lineTo(-size * 0.2, -size * 0.1);
-            ctx.fill();
-          }
-          break;
-        case 'ranged':
-          // 远程：标准体型
-          ctx.fillStyle = bodyColor;
-          if (config.id === 'ballista') {
-            ctx.fillRect(-size * 0.35, -size * 0.1, size * 0.7, size * 0.3);
-            ctx.fillStyle = '#654321';
-            ctx.beginPath();
-            ctx.arc(-size * 0.25, size * 0.25, size * 0.12, 0, Math.PI * 2);
-            ctx.arc(size * 0.25, size * 0.25, size * 0.12, 0, Math.PI * 2);
-            ctx.fill();
-          } else {
-            ctx.beginPath();
-            ctx.ellipse(0, 0, size * 0.2, size * 0.3, 0, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          break;
-        case 'magic':
-          // 法师：长袍三角形
-          ctx.fillStyle = bodyColor;
-          ctx.beginPath();
-          ctx.moveTo(-size * 0.2, size * 0.35);
-          ctx.lineTo(size * 0.2, size * 0.35);
-          ctx.lineTo(size * 0.12, -size * 0.1);
-          ctx.lineTo(-size * 0.12, -size * 0.1);
-          ctx.fill();
-          break;
-        case 'air':
-          // 空中：带翅膀
-          ctx.fillStyle = bodyColor;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, size * 0.25, size * 0.18, 0, 0, Math.PI * 2);
-          ctx.fill();
-          // 翅膀
-          const wingFlap = Math.sin(now / 100) * 0.3;
-          ctx.save();
-          ctx.rotate(wingFlap);
-          ctx.fillStyle = detailColor;
-          ctx.beginPath();
-          ctx.moveTo(-size * 0.1, 0);
-          ctx.quadraticCurveTo(-size * 0.4, -size * 0.2, -size * 0.5, -size * 0.05);
-          ctx.quadraticCurveTo(-size * 0.3, 0, -size * 0.1, size * 0.05);
-          ctx.fill();
-          ctx.restore();
-          ctx.save();
-          ctx.rotate(-wingFlap);
-          ctx.fillStyle = detailColor;
-          ctx.beginPath();
-          ctx.moveTo(size * 0.1, 0);
-          ctx.quadraticCurveTo(size * 0.4, -size * 0.2, size * 0.5, -size * 0.05);
-          ctx.quadraticCurveTo(size * 0.3, 0, size * 0.1, size * 0.05);
-          ctx.fill();
-          ctx.restore();
-          break;
-        case 'boss':
-          // Boss：超大体型
-          ctx.fillStyle = bodyColor;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, size * 0.3, size * 0.25, 0, 0, Math.PI * 2);
-          ctx.fill();
-          break;
-      }
-
-      // 头部
-      ctx.fillStyle = '#DEB887';
-      ctx.beginPath();
-      ctx.arc(0, -size * 0.35, size * 0.15, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 眼睛
-      ctx.fillStyle = '#000000';
-      ctx.beginPath();
-      ctx.arc(-size * 0.05, -size * 0.37, size * 0.03, 0, Math.PI * 2);
-      ctx.arc(size * 0.05, -size * 0.37, size * 0.03, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 武器
-      ctx.strokeStyle = weaponColor;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(size * 0.2, 0);
-      ctx.lineTo(size * 0.2, -size * 0.3);
-      ctx.stroke();
-
-      // 血条
-      ctx.fillStyle = '#333333';
-      ctx.fillRect(-size * 0.3, -size * 0.55, size * 0.6, 4);
-      ctx.fillStyle = '#4CAF50';
-      ctx.fillRect(-size * 0.3, -size * 0.55, size * 0.6, 4);
-
-      ctx.restore();
-    }
 
     // 创建页面
     const container = document.getElementById('container');
@@ -310,7 +168,7 @@
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawUnitPreview(ctx, config, 60, 60);
+            drawUnitByConfig(ctx, config, 60, 60);
           }
         }
       });
@@ -318,6 +176,2530 @@
     }
 
     renderAll();
+  function drawGoblinShield(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const now = Date.now();
+  const walkBob = Math.sin(now / 150) * 2;
+  const attackSwing = isAttacking ? Math.sin(now / 50) * 15 : 0;
+
+  // 佝偻身体（梨形）
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, walkBob, size * 0.25, size * 0.35, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 破旧皮甲
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.1 + walkBob, size * 0.2, size * 0.2, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 头部（歪斜）
+  ctx.fillStyle = bodyColor;
+  ctx.save();
+  ctx.rotate(0.15);
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.35 + walkBob, size * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 破旧头盔（带裂缝）
+  ctx.fillStyle = '#666666';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.4 + walkBob, size * 0.2, Math.PI, 0);
+  ctx.fill();
+  ctx.strokeStyle = '#333333';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.05, -size * 0.45 + walkBob);
+  ctx.lineTo(size * 0.05, -size * 0.35 + walkBob);
+  ctx.stroke();
+
+  // 眼睛（一大一小）
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.37 + walkBob, size * 0.04, 0, Math.PI * 2);
+  ctx.arc(size * 0.08, -size * 0.37 + walkBob, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 大圆盾（遮住左半身）
+  ctx.fillStyle = '#8B4513';
+  ctx.beginPath();
+  ctx.arc(-size * 0.3, size * 0.05 + walkBob, size * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#DAA520';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.3, -size * 0.15 + walkBob);
+  ctx.lineTo(-size * 0.3, size * 0.25 + walkBob);
+  ctx.moveTo(-size * 0.5, size * 0.05 + walkBob);
+  ctx.lineTo(-size * 0.1, size * 0.05 + walkBob);
+  ctx.stroke();
+
+  // 短剑
+  ctx.save();
+  ctx.translate(size * 0.2, size * 0.1 + walkBob);
+  ctx.rotate((attackSwing * Math.PI / 180));
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size * 0.15, -size * 0.25);
+  ctx.stroke();
+  ctx.restore();
+
+  // 短腿
+  ctx.fillStyle = detailColor;
+  ctx.fillRect(-size * 0.12, size * 0.25 + walkBob, size * 0.08, size * 0.15);
+  ctx.fillRect(size * 0.04, size * 0.25 + walkBob, size * 0.08, size * 0.15);
+
+  // 血条
+  drawHpBar(ctx, size * 0.5, hpPercent, -size * 0.55 + walkBob);
+}
+function drawOrcHeavy(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  void weaponColor;
+  const now = Date.now();
+  const walkBob = Math.sin(now / 200) * 3;
+  const attackSwing = isAttacking ? Math.sin(now / 60) * 20 : 0;
+  void attackSwing;
+
+  // 倒梯形板甲身体
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.35, size * 0.3 + walkBob);
+  ctx.lineTo(size * 0.35, size * 0.3 + walkBob);
+  ctx.lineTo(size * 0.25, -size * 0.1 + walkBob);
+  ctx.lineTo(-size * 0.25, -size * 0.1 + walkBob);
+  ctx.fill();
+
+  // 板甲纹理
+  ctx.strokeStyle = '#888888';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.2, (-size * 0.05 + i * size * 0.12) + walkBob);
+    ctx.lineTo(size * 0.2, (-size * 0.05 + i * size * 0.12) + walkBob);
+    ctx.stroke();
+  }
+
+  // 肩甲带尖刺
+  ctx.fillStyle = '#555555';
+  ctx.beginPath();
+  ctx.arc(-size * 0.3, -size * 0.15 + walkBob, size * 0.12, 0, Math.PI * 2);
+  ctx.arc(size * 0.3, -size * 0.15 + walkBob, size * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#888888';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.35 + i * size * 0.05, -size * 0.25 + walkBob);
+    ctx.lineTo(-size * 0.3 + i * size * 0.05, -size * 0.35 + walkBob);
+    ctx.lineTo(-size * 0.25 + i * size * 0.05, -size * 0.25 + walkBob);
+    ctx.fill();
+  }
+
+  // 兽人头部（方形）
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect(-size * 0.15, -size * 0.4 + walkBob, size * 0.3, size * 0.25);
+
+  // 带角头盔
+  ctx.fillStyle = '#444444';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.42 + walkBob, size * 0.18, Math.PI, 0);
+  ctx.fill();
+  ctx.fillStyle = '#666666';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, -size * 0.45 + walkBob);
+  ctx.lineTo(-size * 0.2, -size * 0.6 + walkBob);
+  ctx.lineTo(-size * 0.1, -size * 0.45 + walkBob);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.15, -size * 0.45 + walkBob);
+  ctx.lineTo(size * 0.2, -size * 0.6 + walkBob);
+  ctx.lineTo(size * 0.1, -size * 0.45 + walkBob);
+  ctx.fill();
+
+  // 凶恶眼睛
+  ctx.fillStyle = '#FF0000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.35 + walkBob, size * 0.04, 0, Math.PI * 2);
+  ctx.arc(size * 0.06, -size * 0.35 + walkBob, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 獠牙
+  ctx.fillStyle = '#FFFFCC';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, -size * 0.25 + walkBob);
+  ctx.lineTo(-size * 0.06, -size * 0.18 + walkBob);
+  ctx.lineTo(-size * 0.04, -size * 0.25 + walkBob);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.04, -size * 0.25 + walkBob);
+  ctx.lineTo(size * 0.06, -size * 0.18 + walkBob);
+  ctx.lineTo(size * 0.08, -size * 0.25 + walkBob);
+  ctx.fill();
+
+  // 双手巨斧
+  ctx.save();
+  ctx.translate(size * 0.25, -size * 0.1 + walkBob);
+  ctx.rotate((attackSwing * Math.PI / 180));
+  ctx.strokeStyle = '#8B7355';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size * 0.1, -size * 0.5);
+  ctx.stroke();
+  ctx.fillStyle = '#888888';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.1, -size * 0.5);
+  ctx.quadraticCurveTo(size * 0.3, -size * 0.55, size * 0.1, -size * 0.6);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.1, -size * 0.5);
+  ctx.quadraticCurveTo(-size * 0.1, -size * 0.55, size * 0.1, -size * 0.6);
+  ctx.fill();
+  ctx.restore();
+
+  // 铁靴
+  ctx.fillStyle = '#555555';
+  ctx.fillRect(-size * 0.2, size * 0.25 + walkBob, size * 0.15, size * 0.15);
+  ctx.fillRect(size * 0.05, size * 0.25 + walkBob, size * 0.15, size * 0.15);
+
+  drawHpBar(ctx, size * 0.6, hpPercent, -size * 0.65 + walkBob);
+}
+function drawStoneGuard(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const now = Date.now();
+  const walkBob = Math.sin(now / 300) * 1;
+  const attackSwing = isAttacking ? Math.sin(now / 80) * 10 : 0;
+
+  // 方块身体
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect(-size * 0.3, -size * 0.1 + walkBob, size * 0.6, size * 0.45);
+
+  // 石头裂纹
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.2, 0 + walkBob);
+  ctx.lineTo(size * 0.1, size * 0.1 + walkBob);
+  ctx.lineTo(size * 0.25, -size * 0.05 + walkBob);
+  ctx.stroke();
+
+  // 石像鬼头部
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect(-size * 0.2, -size * 0.4 + walkBob, size * 0.4, size * 0.3);
+
+  // 角
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, -size * 0.4 + walkBob);
+  ctx.lineTo(-size * 0.2, -size * 0.55 + walkBob);
+  ctx.lineTo(-size * 0.05, -size * 0.4 + walkBob);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.15, -size * 0.4 + walkBob);
+  ctx.lineTo(size * 0.2, -size * 0.55 + walkBob);
+  ctx.lineTo(size * 0.05, -size * 0.4 + walkBob);
+  ctx.fill();
+
+  // 发光眼睛（脉冲）
+  const glow = 0.5 + Math.sin(now / 500) * 0.5;
+  ctx.fillStyle = `rgba(255, 255, 0, ${glow})`;
+  ctx.beginPath();
+  ctx.arc(-size * 0.08, -size * 0.3 + walkBob, size * 0.05, 0, Math.PI * 2);
+  ctx.arc(size * 0.08, -size * 0.3 + walkBob, size * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 石柱腿
+  ctx.fillStyle = detailColor;
+  ctx.fillRect(-size * 0.2, size * 0.3 + walkBob, size * 0.15, size * 0.2);
+  ctx.fillRect(size * 0.05, size * 0.3 + walkBob, size * 0.15, size * 0.2);
+
+  // 石剑
+  ctx.save();
+  ctx.translate(size * 0.35, size * 0.1 + walkBob);
+  ctx.rotate((attackSwing * Math.PI / 180));
+  ctx.fillStyle = weaponColor;
+  ctx.fillRect(-size * 0.05, -size * 0.4, size * 0.1, size * 0.5);
+  ctx.restore();
+
+  // 石盾
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect(-size * 0.45, -size * 0.15 + walkBob, size * 0.15, size * 0.35);
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-size * 0.45, -size * 0.15 + walkBob, size * 0.15, size * 0.35);
+
+  drawHpBar(ctx, size * 0.6, hpPercent, -size * 0.6 + walkBob);
+}
+function drawDwarfIronwall(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  void weaponColor;
+  const now = Date.now();
+  const walkBob = Math.sin(now / 120) * 2;
+  const attackSwing = isAttacking ? Math.sin(now / 50) * 18 : 0;
+  void attackSwing;
+
+  // 桶形身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.05 + walkBob, size * 0.3, size * 0.35, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 锁子甲纹理
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 1;
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 5; c++) {
+      ctx.beginPath();
+      ctx.arc(-size * 0.2 + c * size * 0.1, -size * 0.1 + r * size * 0.1 + walkBob, size * 0.04, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  // 圆脸
+  ctx.fillStyle = '#DEB887';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.3 + walkBob, size * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 头盔带护鼻
+  ctx.fillStyle = '#888888';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.35 + walkBob, size * 0.2, Math.PI, 0);
+  ctx.fill();
+  ctx.fillRect(-size * 0.03, -size * 0.35 + walkBob, size * 0.06, size * 0.15);
+
+  // 大胡子
+  ctx.fillStyle = '#8B4513';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, -size * 0.25 + walkBob);
+  ctx.quadraticCurveTo(-size * 0.2, size * 0.05 + walkBob, -size * 0.1, size * 0.1 + walkBob);
+  ctx.lineTo(size * 0.1, size * 0.1 + walkBob);
+  ctx.quadraticCurveTo(size * 0.2, size * 0.05 + walkBob, size * 0.15, -size * 0.25 + walkBob);
+  ctx.fill();
+
+  // 眼睛
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.32 + walkBob, size * 0.03, 0, Math.PI * 2);
+  ctx.arc(size * 0.06, -size * 0.32 + walkBob, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 塔盾
+  ctx.fillStyle = '#666666';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.45, -size * 0.3 + walkBob);
+  ctx.lineTo(-size * 0.35, -size * 0.3 + walkBob);
+  ctx.lineTo(-size * 0.3, size * 0.2 + walkBob);
+  ctx.lineTo(-size * 0.5, size * 0.2 + walkBob);
+  ctx.fill();
+  ctx.fillStyle = '#DAA520';
+  ctx.fillRect(-size * 0.42, -size * 0.1 + walkBob, size * 0.1, size * 0.1);
+
+  // 战锤
+  ctx.save();
+  ctx.translate(size * 0.3, size * 0.1 + walkBob);
+  ctx.rotate((attackSwing * Math.PI / 180));
+  ctx.strokeStyle = '#8B7355';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size * 0.05, -size * 0.35);
+  ctx.stroke();
+  ctx.fillStyle = '#888888';
+  ctx.fillRect(-size * 0.08, -size * 0.4, size * 0.16, size * 0.1);
+  ctx.restore();
+
+  // 短粗腿
+  ctx.fillStyle = detailColor;
+  ctx.fillRect(-size * 0.15, size * 0.3 + walkBob, size * 0.1, size * 0.12);
+  ctx.fillRect(size * 0.05, size * 0.3 + walkBob, size * 0.1, size * 0.12);
+
+  drawHpBar(ctx, size * 0.5, hpPercent, -size * 0.55 + walkBob);
+}
+function drawWolfRider(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  void weaponColor;
+  const now = Date.now();
+  const runBob = Math.sin(now / 100) * 3;
+  const attackThrust = isAttacking ? Math.sin(now / 50) * 12 : 0;
+
+  // 狼身体（流线型）
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.15 + runBob, size * 0.4, size * 0.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 狼毛纹理
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.3 + i * size * 0.15, size * 0.1 + runBob);
+    ctx.lineTo(-size * 0.25 + i * size * 0.15, size * 0.2 + runBob);
+    ctx.stroke();
+  }
+
+  // 狼头
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(size * 0.35, size * 0.05 + runBob, size * 0.15, size * 0.1, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 狼耳朵
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.3, -size * 0.05 + runBob);
+  ctx.lineTo(size * 0.35, -size * 0.15 + runBob);
+  ctx.lineTo(size * 0.4, -size * 0.05 + runBob);
+  ctx.fill();
+
+  // 狼眼睛
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.arc(size * 0.4, size * 0.03 + runBob, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 狼尾巴
+  const tailWag = Math.sin(now / 150) * 0.3;
+  ctx.save();
+  ctx.translate(-size * 0.35, size * 0.1 + runBob);
+  ctx.rotate(tailWag);
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-size * 0.15, -size * 0.1, -size * 0.2, 0);
+  ctx.fill();
+  ctx.restore();
+
+  // 狼腿（奔跑动画）
+  ctx.fillStyle = detailColor;
+  const legPhase = Math.sin(now / 80);
+  ctx.fillRect(-size * 0.2, size * 0.3 + runBob, size * 0.08, size * 0.15 + legPhase * 5);
+  ctx.fillRect(-size * 0.05, size * 0.3 + runBob, size * 0.08, size * 0.15 - legPhase * 5);
+  ctx.fillRect(size * 0.1, size * 0.3 + runBob, size * 0.08, size * 0.15 - legPhase * 5);
+  ctx.fillRect(size * 0.25, size * 0.3 + runBob, size * 0.08, size * 0.15 + legPhase * 5);
+
+  // 骑手
+  ctx.fillStyle = '#8B7355';
+  ctx.beginPath();
+  ctx.ellipse(size * 0.05, -size * 0.15 + runBob, size * 0.15, size * 0.2, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 兽皮披肩
+  ctx.fillStyle = '#A0522D';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.05, -size * 0.25 + runBob);
+  ctx.quadraticCurveTo(size * 0.1, -size * 0.1 + runBob, size * 0.15, size * 0.05 + runBob);
+  ctx.lineTo(size * 0.05, size * 0.05 + runBob);
+  ctx.quadraticCurveTo(0, -size * 0.1 + runBob, -size * 0.1, -size * 0.25 + runBob);
+  ctx.fill();
+
+  // 兽皮帽带羽毛
+  ctx.fillStyle = '#654321';
+  ctx.beginPath();
+  ctx.arc(size * 0.05, -size * 0.35 + runBob, size * 0.1, Math.PI, 0);
+  ctx.fill();
+  ctx.fillStyle = '#FF0000';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.1, -size * 0.4 + runBob);
+  ctx.quadraticCurveTo(size * 0.2, -size * 0.5 + runBob, size * 0.15, -size * 0.35 + runBob);
+  ctx.fill();
+
+  // 长矛
+  ctx.save();
+  ctx.translate(size * 0.2, -size * 0.1 + runBob);
+  ctx.rotate((attackThrust * Math.PI / 180));
+  ctx.strokeStyle = '#8B7355';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, size * 0.2);
+  ctx.lineTo(size * 0.1, -size * 0.5);
+  ctx.stroke();
+  ctx.fillStyle = '#C0C0C0';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.1, -size * 0.5);
+  ctx.lineTo(size * 0.13, -size * 0.6);
+  ctx.lineTo(size * 0.07, -size * 0.6);
+  ctx.fill();
+  ctx.restore();
+
+  drawHpBar(ctx, size * 0.6, hpPercent, -size * 0.5 + runBob);
+}
+function drawBerserker(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  void weaponColor;
+  const now = Date.now();
+  const walkBob = Math.sin(now / 100) * 3;
+  const rageShake = Math.sin(now / 50) * 1;
+  const attackSwing = isAttacking ? Math.sin(now / 40) * 25 : 0;
+
+  // 倒三角肌肉身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.3, size * 0.3 + walkBob);
+  ctx.lineTo(size * 0.3, size * 0.3 + walkBob);
+  ctx.lineTo(size * 0.2, -size * 0.1 + walkBob);
+  ctx.lineTo(-size * 0.2, -size * 0.1 + walkBob);
+  ctx.fill();
+
+  // 胸肌腹肌线条
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, -size * 0.05 + walkBob);
+  ctx.lineTo(0, size * 0.2 + walkBob);
+  ctx.stroke();
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.15, (size * 0.05 + i * size * 0.08) + walkBob);
+    ctx.quadraticCurveTo(0, (size * 0.08 + i * size * 0.08) + walkBob, size * 0.15, (size * 0.05 + i * size * 0.08) + walkBob);
+    ctx.stroke();
+  }
+
+  // 伤疤
+  ctx.strokeStyle = '#CC8888';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.1, size * 0.05 + walkBob);
+  ctx.lineTo(size * 0.05, size * 0.15 + walkBob);
+  ctx.stroke();
+
+  // 狂野乱发
+  ctx.fillStyle = '#8B4513';
+  for (let i = 0; i < 7; i++) {
+    const angle = -Math.PI + (i / 6) * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * size * 0.15, -size * 0.35 + walkBob + Math.sin(angle) * size * 0.1);
+    ctx.lineTo(Math.cos(angle) * size * 0.25, -size * 0.45 + walkBob + Math.sin(angle) * size * 0.15);
+    ctx.lineTo(Math.cos(angle + 0.2) * size * 0.15, -size * 0.35 + walkBob + Math.sin(angle + 0.2) * size * 0.1);
+    ctx.fill();
+  }
+
+  // 头部
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.arc(rageShake, -size * 0.35 + walkBob, size * 0.15, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 愤怒眼睛
+  ctx.fillStyle = '#FF0000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.05 + rageShake, -size * 0.37 + walkBob, size * 0.04, 0, Math.PI * 2);
+  ctx.arc(size * 0.05 + rageShake, -size * 0.37 + walkBob, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 怒吼嘴
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(rageShake, -size * 0.28 + walkBob, size * 0.06, 0, Math.PI);
+  ctx.fill();
+
+  // 双持弯刀
+  ctx.save();
+  ctx.translate(-size * 0.25, -size * 0.05 + walkBob);
+  ctx.rotate((-attackSwing * Math.PI / 180));
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-size * 0.1, -size * 0.2, -size * 0.05, -size * 0.35);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(size * 0.25, -size * 0.05 + walkBob);
+  ctx.rotate((attackSwing * Math.PI / 180));
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(size * 0.1, -size * 0.2, size * 0.05, -size * 0.35);
+  ctx.stroke();
+  ctx.restore();
+
+  // 愤怒气场
+  ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 3; i++) {
+    const angle = (now / 200 + i * 2) % (Math.PI * 2);
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.4 + Math.sin(angle) * 5, angle - 0.3, angle + 0.3);
+    ctx.stroke();
+  }
+
+  // 腿
+  ctx.fillStyle = detailColor;
+  ctx.fillRect(-size * 0.15, size * 0.25 + walkBob, size * 0.1, size * 0.2);
+  ctx.fillRect(size * 0.05, size * 0.25 + walkBob, size * 0.1, size * 0.2);
+
+  drawHpBar(ctx, size * 0.5, hpPercent, -size * 0.55 + walkBob);
+}
+function drawCryptCrawler(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const now = Date.now();
+  const crawlBob = Math.sin(now / 150) * 1;
+  const attackLunge = isAttacking ? Math.sin(now / 60) * 8 : 0;
+
+  // 椭圆形甲壳身体（贴地）
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(attackLunge, size * 0.1 + crawlBob, size * 0.35, size * 0.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 甲壳节肢纹理
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.arc(attackLunge, size * 0.1 + crawlBob, size * 0.1 + i * size * 0.06, -0.5, 0.5);
+    ctx.stroke();
+  }
+
+  // 头部
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(size * 0.3 + attackLunge, size * 0.05 + crawlBob, size * 0.12, size * 0.1, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 多眼设计（3对）
+  ctx.fillStyle = '#FF0000';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(size * 0.35 + attackLunge, (-size * 0.02 + i * size * 0.04) + crawlBob, size * 0.025, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 前肢利爪
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 3; i++) {
+    ctx.save();
+    ctx.translate(size * 0.35 + attackLunge, (size * 0.15 + i * size * 0.05) + crawlBob);
+    ctx.rotate(0.3 + (isAttacking ? Math.sin(now / 50 + i) * 0.3 : 0));
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(size * 0.15, size * 0.05);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 6条腿
+  ctx.fillStyle = detailColor;
+  for (let i = 0; i < 6; i++) {
+    const legPhase = Math.sin(now / 100 + i * Math.PI / 3) * 5;
+    ctx.fillRect(-size * 0.2 + i * size * 0.1 + attackLunge, size * 0.25 + crawlBob, size * 0.06, size * 0.12 + legPhase);
+  }
+
+  drawHpBar(ctx, size * 0.5, hpPercent, -size * 0.15 + crawlBob);
+}
+function drawShadowAssassin(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const now = Date.now();
+  const floatBob = Math.sin(now / 200) * 2;
+  const attackSlash = isAttacking ? Math.sin(now / 40) * 20 : 0;
+
+  // 半透明
+  ctx.globalAlpha = 0.7;
+
+  // 瘦长菱形身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(0, -size * 0.4 + floatBob);
+  ctx.lineTo(size * 0.15, size * 0.1 + floatBob);
+  ctx.lineTo(0, size * 0.35 + floatBob);
+  ctx.lineTo(-size * 0.15, size * 0.1 + floatBob);
+  ctx.fill();
+
+  // 黑色飘动披风
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, -size * 0.2 + floatBob);
+  for (let i = 0; i < 5; i++) {
+    const wave = Math.sin(now / 150 + i * 0.5) * 5;
+    ctx.quadraticCurveTo(-size * 0.25 + wave, (-size * 0.1 + i * size * 0.1) + floatBob, -size * 0.15, (-size * 0.05 + i * size * 0.1) + floatBob);
+  }
+  ctx.lineTo(0, size * 0.35 + floatBob);
+  ctx.fill();
+
+  // 兜帽
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.12, -size * 0.3 + floatBob);
+  ctx.quadraticCurveTo(0, -size * 0.5 + floatBob, size * 0.12, -size * 0.3 + floatBob);
+  ctx.lineTo(size * 0.08, -size * 0.2 + floatBob);
+  ctx.lineTo(-size * 0.08, -size * 0.2 + floatBob);
+  ctx.fill();
+
+  // 发光眼睛
+  ctx.fillStyle = '#00FF00';
+  ctx.shadowColor = '#00FF00';
+  ctx.shadowBlur = 5;
+  ctx.beginPath();
+  ctx.arc(-size * 0.04, -size * 0.32 + floatBob, size * 0.025, 0, Math.PI * 2);
+  ctx.arc(size * 0.04, -size * 0.32 + floatBob, size * 0.025, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // 双匕首
+  ctx.save();
+  ctx.translate(-size * 0.15, size * 0.05 + floatBob);
+  ctx.rotate((-attackSlash * Math.PI / 180) - 0.5);
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-size * 0.05, -size * 0.25);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(size * 0.15, size * 0.05 + floatBob);
+  ctx.rotate((attackSlash * Math.PI / 180) + 0.5);
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size * 0.05, -size * 0.25);
+  ctx.stroke();
+  ctx.restore();
+
+  // 拖影
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.1, -size * 0.35 + floatBob);
+  ctx.lineTo(size * 0.1, -size * 0.35 + floatBob);
+  ctx.lineTo(size * 0.05, size * 0.3 + floatBob);
+  ctx.lineTo(-size * 0.05, size * 0.3 + floatBob);
+  ctx.fill();
+
+  ctx.globalAlpha = 1.0;
+
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.5 + floatBob);
+}
+function drawArcher(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const walk = Math.sin(Date.now() / 120) * 2;
+
+  // 皮甲身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, walk * 0.3, size * 0.25, size * 0.45, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 皮甲交叉绑带
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, -size * 0.15);
+  ctx.lineTo(size * 0.15, size * 0.1);
+  ctx.moveTo(size * 0.15, -size * 0.15);
+  ctx.lineTo(-size * 0.15, size * 0.1);
+  ctx.stroke();
+
+  // 头
+  ctx.fillStyle = '#D2B48C';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.5, size * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 简易兜帽
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.55, size * 0.2, Math.PI, 0);
+  ctx.fill();
+
+  // 眼睛
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.5, size * 0.03, 0, Math.PI * 2);
+  ctx.arc(size * 0.06, -size * 0.5, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 背后箭袋
+  ctx.fillStyle = '#654321';
+  ctx.fillRect(-size * 0.08, -size * 0.35, size * 0.16, size * 0.35);
+  ctx.fillStyle = '#FFFFFF';
+  for (let i = 0; i < 3; i++) {
+    ctx.fillRect(-size * 0.06 + i * size * 0.06, -size * 0.42, size * 0.02, size * 0.08);
+  }
+  ctx.strokeStyle = '#8B7355';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.05 + i * size * 0.06, -size * 0.35);
+    ctx.lineTo(-size * 0.05 + i * size * 0.06, -size * 0.15);
+    ctx.stroke();
+  }
+
+  // 长弓
+  const bowX = size * 0.35, bowY = -size * 0.15, bowLen = size * 0.5;
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(bowX, bowY, bowLen, -Math.PI * 0.4, Math.PI * 0.4);
+  ctx.stroke();
+  ctx.strokeStyle = '#CCCCCC';
+  ctx.lineWidth = 1;
+  const topX = bowX + bowLen * Math.cos(-Math.PI * 0.4);
+  const topY = bowY + bowLen * Math.sin(-Math.PI * 0.4);
+  const botX = bowX + bowLen * Math.cos(Math.PI * 0.4);
+  const botY = bowY + bowLen * Math.sin(Math.PI * 0.4);
+  ctx.beginPath();
+  ctx.moveTo(topX, topY);
+  ctx.lineTo(botX, botY);
+  ctx.stroke();
+
+  // 攻击时拉弓
+  if (isAttacking) {
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.15, bowY);
+    ctx.lineTo(topX, topY);
+    ctx.moveTo(size * 0.15, bowY);
+    ctx.lineTo(botX, botY);
+    ctx.stroke();
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.15, bowY);
+    ctx.lineTo(size * 0.6, bowY);
+    ctx.stroke();
+  }
+
+  // 腿和靴子
+  ctx.fillStyle = detailColor;
+  ctx.fillRect(-size * 0.12, size * 0.35 + walk, size * 0.08, size * 0.2);
+  ctx.fillRect(size * 0.04, size * 0.35 - walk, size * 0.08, size * 0.2);
+  ctx.fillStyle = '#5C4033';
+  ctx.fillRect(-size * 0.14, size * 0.52 + walk, size * 0.12, size * 0.06);
+  ctx.fillRect(size * 0.02, size * 0.52 - walk, size * 0.12, size * 0.06);
+
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.75 + walk);
+}
+function drawElfShooter(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const walk = Math.sin(Date.now() / 120) * 1.5;
+
+  // 修长身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, walk * 0.2, size * 0.2, size * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 金色镶边
+  ctx.strokeStyle = '#DAA520';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, -size * 0.3);
+  ctx.lineTo(0, size * 0.2);
+  ctx.stroke();
+
+  // 头
+  ctx.fillStyle = '#F5DEB3';
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.55, size * 0.16, size * 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 长耳朵
+  ctx.fillStyle = '#F5DEB3';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.16, -size * 0.55);
+  ctx.lineTo(-size * 0.35, -size * 0.7);
+  ctx.lineTo(-size * 0.14, -size * 0.48);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.16, -size * 0.55);
+  ctx.lineTo(size * 0.35, -size * 0.7);
+  ctx.lineTo(size * 0.14, -size * 0.48);
+  ctx.fill();
+
+  // 精灵眼
+  ctx.fillStyle = '#00CED1';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.06, -size * 0.55, size * 0.04, size * 0.05, 0, 0, Math.PI * 2);
+  ctx.ellipse(size * 0.06, -size * 0.55, size * 0.04, size * 0.05, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.55, size * 0.02, 0, Math.PI * 2);
+  ctx.arc(size * 0.06, -size * 0.55, size * 0.02, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 金色长发
+  ctx.fillStyle = '#DAA520';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.6, size * 0.18, Math.PI * 0.8, Math.PI * 0.2, true);
+  ctx.fill();
+  ctx.fillRect(-size * 0.18, -size * 0.55, size * 0.06, size * 0.3);
+  ctx.fillRect(size * 0.12, -size * 0.55, size * 0.06, size * 0.3);
+
+  // 绿色斗篷
+  const capeWave = Math.sin(Date.now() / 150) * 3;
+  ctx.fillStyle = detailColor;
+  ctx.globalAlpha = 0.7;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.2, -size * 0.2);
+  ctx.quadraticCurveTo(-size * 0.3 + capeWave, size * 0.2, -size * 0.15, size * 0.55);
+  ctx.lineTo(size * 0.15, size * 0.55);
+  ctx.quadraticCurveTo(size * 0.3 + capeWave, size * 0.2, size * 0.2, -size * 0.2);
+  ctx.fill();
+  ctx.globalAlpha = 1.0;
+
+  // 精致短弓
+  const bowX = size * 0.3, bowY = -size * 0.1, bowLen = size * 0.35;
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(bowX, bowY, bowLen, -Math.PI * 0.35, Math.PI * 0.35);
+  ctx.stroke();
+  ctx.strokeStyle = '#E8E8E8';
+  ctx.lineWidth = 1;
+  const tX = bowX + bowLen * Math.cos(-Math.PI * 0.35);
+  const tY = bowY + bowLen * Math.sin(-Math.PI * 0.35);
+  const bX = bowX + bowLen * Math.cos(Math.PI * 0.35);
+  const bY = bowY + bowLen * Math.sin(Math.PI * 0.35);
+  ctx.beginPath();
+  ctx.moveTo(tX, tY);
+  ctx.lineTo(bX, bY);
+  ctx.stroke();
+
+  // 弓上精灵装饰
+  ctx.fillStyle = '#00FF7F';
+  ctx.beginPath();
+  ctx.arc(bowX, bowY - bowLen, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 攻击时精灵箭
+  if (isAttacking) {
+    ctx.strokeStyle = '#00FF7F';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.1, bowY);
+    ctx.lineTo(tX, tY);
+    ctx.moveTo(size * 0.1, bowY);
+    ctx.lineTo(bX, bY);
+    ctx.stroke();
+    ctx.strokeStyle = '#00FF7F';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.1, bowY);
+    ctx.lineTo(size * 0.55, bowY);
+    ctx.stroke();
+  }
+
+  // 修长腿和尖头靴
+  ctx.fillStyle = detailColor;
+  ctx.fillRect(-size * 0.1, size * 0.4 + walk, size * 0.06, size * 0.22);
+  ctx.fillRect(size * 0.04, size * 0.4 - walk, size * 0.06, size * 0.22);
+  ctx.fillStyle = '#2E8B57';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.12, size * 0.58 + walk);
+  ctx.lineTo(-size * 0.02, size * 0.58 + walk);
+  ctx.lineTo(-size * 0.16, size * 0.62 + walk);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.02, size * 0.58 - walk);
+  ctx.lineTo(size * 0.12, size * 0.58 - walk);
+  ctx.lineTo(size * 0.16, size * 0.62 - walk);
+  ctx.fill();
+
+  drawHpBar(ctx, size * 0.35, hpPercent, -size * 0.8 + walk);
+}
+function drawMusketeer(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const walk = Math.sin(Date.now() / 120) * 2;
+
+  // 大衣身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.28, -size * 0.2);
+  ctx.lineTo(-size * 0.25, size * 0.45);
+  ctx.lineTo(size * 0.25, size * 0.45);
+  ctx.lineTo(size * 0.28, -size * 0.2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 大衣翻领
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, -size * 0.2);
+  ctx.lineTo(0, size * 0.05);
+  ctx.lineTo(size * 0.15, -size * 0.2);
+  ctx.fill();
+
+  // 腰带和扣
+  ctx.fillStyle = '#4A3728';
+  ctx.fillRect(-size * 0.22, size * 0.05, size * 0.44, size * 0.06);
+  ctx.fillStyle = '#DAA520';
+  ctx.fillRect(-size * 0.04, size * 0.04, size * 0.08, size * 0.08);
+
+  // 头
+  ctx.fillStyle = '#D2B48C';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.35, size * 0.17, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 宽檐帽
+  ctx.fillStyle = '#3B2F2F';
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.45, size * 0.32, size * 0.06, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, -size * 0.45);
+  ctx.lineTo(-size * 0.12, -size * 0.65);
+  ctx.quadraticCurveTo(0, -size * 0.72, size * 0.12, -size * 0.65);
+  ctx.lineTo(size * 0.15, -size * 0.45);
+  ctx.fill();
+  ctx.fillStyle = '#8B0000';
+  ctx.fillRect(-size * 0.14, -size * 0.5, size * 0.28, size * 0.04);
+
+  // 眼睛和胡子
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.05, -size * 0.35, size * 0.025, 0, Math.PI * 2);
+  ctx.arc(size * 0.05, -size * 0.35, size * 0.025, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#4A3728';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, -size * 0.28);
+  ctx.quadraticCurveTo(0, -size * 0.22, size * 0.08, -size * 0.28);
+  ctx.fill();
+
+  // 火枪扛肩
+  const gunAngle = isAttacking ? -0.3 : 0.15;
+  ctx.save();
+  ctx.translate(size * 0.15, -size * 0.25);
+  ctx.rotate(gunAngle);
+  ctx.fillStyle = weaponColor;
+  ctx.fillRect(-size * 0.04, -size * 0.6, size * 0.08, size * 0.5);
+  ctx.fillStyle = '#8B4513';
+  ctx.fillRect(-size * 0.06, -size * 0.12, size * 0.12, size * 0.2);
+  ctx.fillStyle = '#333333';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.62, size * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 攻击时枪口火焰
+  if (isAttacking) {
+    ctx.save();
+    ctx.translate(size * 0.15, -size * 0.25);
+    ctx.rotate(gunAngle);
+    const grad = ctx.createRadialGradient(0, -size * 0.65, 0, 0, -size * 0.65, size * 0.15);
+    grad.addColorStop(0, 'rgba(255, 200, 50, 0.9)');
+    grad.addColorStop(0.5, 'rgba(255, 100, 20, 0.6)');
+    grad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, -size * 0.65, size * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 靴子
+  ctx.fillStyle = '#3B2F2F';
+  ctx.fillRect(-size * 0.18, size * 0.4 + walk, size * 0.14, size * 0.15);
+  ctx.fillRect(size * 0.04, size * 0.4 - walk, size * 0.14, size * 0.15);
+  ctx.fillStyle = '#2F1F1F';
+  ctx.fillRect(-size * 0.2, size * 0.35 + walk, size * 0.18, size * 0.08);
+  ctx.fillRect(size * 0.02, size * 0.35 - walk, size * 0.18, size * 0.08);
+
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.75 + walk);
+}
+function drawBallista(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const bounce = Math.abs(Math.sin(Date.now() / 100)) * 2;
+
+  // 底盘框架
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect(-size * 0.4, -size * 0.1, size * 0.8, size * 0.25);
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-size * 0.38, -size * 0.08, size * 0.76, size * 0.21);
+
+  // 金属铆钉
+  ctx.fillStyle = '#AAAAAA';
+  [[-size * 0.35, -size * 0.05], [size * 0.35, -size * 0.05], [-size * 0.35, size * 0.12], [size * 0.35, size * 0.12]].forEach(([rx, ry]) => {
+    ctx.beginPath();
+    ctx.arc(rx, ry, size * 0.03, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 轮子
+  const wheelY = size * 0.2 + bounce;
+  [-size * 0.25, size * 0.25].forEach(wx => {
+    ctx.fillStyle = '#5C4033';
+    ctx.beginPath();
+    ctx.arc(wx, wheelY, size * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(wx, wheelY, size * 0.15, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2 + Date.now() / 500;
+      ctx.beginPath();
+      ctx.moveTo(wx, wheelY);
+      ctx.lineTo(wx + Math.cos(angle) * size * 0.13, wheelY + Math.sin(angle) * size * 0.13);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#888888';
+    ctx.beginPath();
+    ctx.arc(wx, wheelY, size * 0.04, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 弩臂支架
+  ctx.fillStyle = detailColor;
+  ctx.fillRect(-size * 0.06, -size * 0.5, size * 0.12, size * 0.45);
+
+  // 弩臂横梁
+  ctx.fillStyle = weaponColor;
+  ctx.fillRect(-size * 0.35, -size * 0.45, size * 0.7, size * 0.08);
+
+  // 弩弦
+  ctx.strokeStyle = '#CCCCCC';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.35, -size * 0.41);
+  ctx.lineTo(size * 0.35, -size * 0.41);
+  ctx.stroke();
+
+  // 大型弩箭
+  ctx.fillStyle = '#8B7355';
+  ctx.fillRect(-size * 0.02, -size * 0.48, size * 0.04, size * 0.35);
+  ctx.fillStyle = '#666666';
+  ctx.beginPath();
+  ctx.moveTo(0, -size * 0.55);
+  ctx.lineTo(-size * 0.06, -size * 0.42);
+  ctx.lineTo(size * 0.06, -size * 0.42);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#CC0000';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.02, -size * 0.18);
+  ctx.lineTo(-size * 0.08, -size * 0.13);
+  ctx.lineTo(-size * 0.02, -size * 0.13);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.02, -size * 0.18);
+  ctx.lineTo(size * 0.08, -size * 0.13);
+  ctx.lineTo(size * 0.02, -size * 0.13);
+  ctx.fill();
+
+  // 攻击时弩箭发射
+  if (isAttacking) {
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.35, -size * 0.41);
+    ctx.quadraticCurveTo(0, -size * 0.2, size * 0.35, -size * 0.41);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255, 200, 50, 0.6)';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(size * 0.35, -size * 0.41);
+    ctx.lineTo(size * 0.7, -size * 0.41);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // 绞盘装置
+  ctx.fillStyle = '#666666';
+  ctx.beginPath();
+  ctx.arc(-size * 0.3, -size * 0.02, size * 0.06, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#888888';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(-size * 0.3, -size * 0.02, size * 0.06, 0, Math.PI * 2);
+  ctx.stroke();
+
+  drawHpBar(ctx, size * 0.5, hpPercent, -size * 0.6 + bounce);
+}
+function drawFlameWarlock(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 200;
+
+  // 红色长袍
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.25, -size * 0.2);
+  ctx.lineTo(-size * 0.3, size * 0.5);
+  ctx.quadraticCurveTo(0, size * 0.55, size * 0.3, size * 0.5);
+  ctx.lineTo(size * 0.25, -size * 0.2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 火焰纹饰
+  ctx.strokeStyle = '#FF4500';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 3; i++) {
+    const yy = size * 0.05 + i * size * 0.12;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.15, yy);
+    ctx.quadraticCurveTo(0, yy - 5, size * 0.15, yy);
+    ctx.stroke();
+  }
+
+  // 兜帽
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.22, -size * 0.2);
+  ctx.quadraticCurveTo(-size * 0.25, -size * 0.55, 0, -size * 0.65);
+  ctx.quadraticCurveTo(size * 0.25, -size * 0.55, size * 0.22, -size * 0.2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 兜帽内阴影
+  ctx.fillStyle = '#1A0A00';
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.35, size * 0.12, size * 0.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 发光眼睛
+  ctx.fillStyle = '#FF4500';
+  ctx.beginPath();
+  ctx.arc(-size * 0.05, -size * 0.35, size * 0.03, 0, Math.PI * 2);
+  ctx.arc(size * 0.05, -size * 0.35, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 火焰法杖
+  ctx.strokeStyle = '#8B4513';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.3, -size * 0.5);
+  ctx.lineTo(size * 0.3, size * 0.4);
+  ctx.stroke();
+
+  // 法杖顶部火焰
+  const fireIntensity = isAttacking ? 1.0 : Math.max(0, Math.sin(t * 0.8) * 0.4 + 0.5);
+  ctx.save();
+  ctx.translate(size * 0.3, -size * 0.55);
+  ctx.fillStyle = `rgba(255, 69, 0, ${fireIntensity * 0.8})`;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, 0);
+  ctx.quadraticCurveTo(-size * 0.12, -size * 0.12 * fireIntensity, -size * 0.04, -size * 0.2 * fireIntensity);
+  ctx.quadraticCurveTo(0, -size * 0.25 * fireIntensity, size * 0.04, -size * 0.2 * fireIntensity);
+  ctx.quadraticCurveTo(size * 0.12, -size * 0.12 * fireIntensity, size * 0.08, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = `rgba(255, 200, 50, ${fireIntensity})`;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.04, 0);
+  ctx.quadraticCurveTo(-size * 0.05, -size * 0.06 * fireIntensity, 0, -size * 0.12 * fireIntensity);
+  ctx.quadraticCurveTo(size * 0.05, -size * 0.06 * fireIntensity, size * 0.04, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // 火焰粒子
+  for (let i = 0; i < 5; i++) {
+    const px = Math.sin(t * 2 + i * 1.5) * size * 0.2;
+    const py = Math.cos(t * 1.5 + i * 2) * size * 0.15 - size * 0.1;
+    const pAlpha = Math.max(0, Math.sin(t * 3 + i * 2.5) * 0.5 + 0.3);
+    ctx.fillStyle = `rgba(255, 100, 0, ${pAlpha})`;
+    ctx.beginPath();
+    ctx.arc(px, py, size * 0.02, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.7);
+}
+function drawIceWitch(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 200;
+
+  // 冰蓝色长裙
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.2, -size * 0.2);
+  ctx.quadraticCurveTo(-size * 0.25, size * 0.2, -size * 0.35, size * 0.5);
+  ctx.lineTo(size * 0.35, size * 0.5);
+  ctx.quadraticCurveTo(size * 0.25, size * 0.2, size * 0.2, -size * 0.2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 裙摆冰晶纹
+  ctx.strokeStyle = '#E0FFFF';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const xx = -size * 0.2 + i * size * 0.13;
+    ctx.beginPath();
+    ctx.moveTo(xx, size * 0.35);
+    ctx.lineTo(xx + size * 0.05, size * 0.45);
+    ctx.lineTo(xx - size * 0.05, size * 0.45);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  // 头
+  ctx.fillStyle = '#F0F8FF';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.35, size * 0.16, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 冰蓝色长发
+  ctx.fillStyle = '#87CEEB';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.4, size * 0.18, Math.PI * 0.9, Math.PI * 0.1, true);
+  ctx.fill();
+  ctx.fillRect(-size * 0.18, -size * 0.35, size * 0.06, size * 0.35);
+  ctx.fillRect(size * 0.12, -size * 0.35, size * 0.06, size * 0.35);
+
+  // 冰冠
+  ctx.fillStyle = '#E0FFFF';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.12, -size * 0.5);
+  ctx.lineTo(-size * 0.08, -size * 0.65);
+  ctx.lineTo(-size * 0.04, -size * 0.52);
+  ctx.lineTo(0, -size * 0.68);
+  ctx.lineTo(size * 0.04, -size * 0.52);
+  ctx.lineTo(size * 0.08, -size * 0.65);
+  ctx.lineTo(size * 0.12, -size * 0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // 冰蓝眼睛
+  ctx.fillStyle = '#00BFFF';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.05, -size * 0.35, size * 0.04, size * 0.05, 0, 0, Math.PI * 2);
+  ctx.ellipse(size * 0.05, -size * 0.35, size * 0.04, size * 0.05, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000080';
+  ctx.beginPath();
+  ctx.arc(-size * 0.05, -size * 0.35, size * 0.02, 0, Math.PI * 2);
+  ctx.arc(size * 0.05, -size * 0.35, size * 0.02, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 冰晶法杖
+  ctx.strokeStyle = '#B0E0E6';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.3, -size * 0.5);
+  ctx.lineTo(-size * 0.3, size * 0.4);
+  ctx.stroke();
+
+  // 法杖顶部冰晶
+  ctx.fillStyle = '#E0FFFF';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.3, -size * 0.55);
+  ctx.lineTo(-size * 0.38, -size * 0.65);
+  ctx.lineTo(-size * 0.3, -size * 0.75);
+  ctx.lineTo(-size * 0.22, -size * 0.65);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#87CEEB';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.3, -size * 0.55);
+  ctx.lineTo(-size * 0.3, -size * 0.75);
+  ctx.moveTo(-size * 0.38, -size * 0.65);
+  ctx.lineTo(-size * 0.22, -size * 0.65);
+  ctx.stroke();
+
+  // 雪花粒子
+  for (let i = 0; i < 6; i++) {
+    const sx = Math.sin(t * 1.5 + i * 1.2) * size * 0.25;
+    const sy = Math.cos(t * 1.2 + i * 1.8) * size * 0.2 - size * 0.1;
+    const sAlpha = Math.max(0, Math.sin(t * 2 + i * 2) * 0.4 + 0.5);
+    ctx.fillStyle = `rgba(224, 255, 255, ${sAlpha})`;
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(t + i);
+    for (let j = 0; j < 6; j++) {
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -size * 0.03);
+      ctx.stroke();
+      ctx.rotate(Math.PI / 3);
+    }
+    ctx.restore();
+  }
+
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.8);
+}
+function drawPlagueThrower(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 200;
+  const walk = Math.sin(Date.now() / 120) * 2;
+
+  // 破烂身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.25, -size * 0.2);
+  ctx.lineTo(-size * 0.28, size * 0.45);
+  ctx.lineTo(size * 0.28, size * 0.45);
+  ctx.lineTo(size * 0.25, -size * 0.2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 破洞
+  ctx.fillStyle = '#2F4F2F';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.1, size * 0.1, size * 0.06, size * 0.08, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.12, size * 0.25, size * 0.05, size * 0.06, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 头
+  ctx.fillStyle = '#8FBC8F';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.35, size * 0.17, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 防毒面具
+  ctx.fillStyle = '#556B2F';
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.3, size * 0.14, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#333333';
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.35, size * 0.05, 0, Math.PI * 2);
+  ctx.arc(size * 0.06, -size * 0.35, size * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#90EE90';
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.35, size * 0.025, 0, Math.PI * 2);
+  ctx.arc(size * 0.06, -size * 0.35, size * 0.025, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#444444';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.22, size * 0.06, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(0, -size * 0.22, size * 0.02 + i * size * 0.015, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // 投石索
+  const slingAngle = isAttacking ? Math.sin(Date.now() / 30) * 0.8 : Math.sin(t * 0.5) * 0.2;
+  ctx.save();
+  ctx.translate(size * 0.3, -size * 0.1);
+  ctx.rotate(slingAngle);
+  ctx.strokeStyle = '#8B7355';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(size * 0.15, -size * 0.1, size * 0.25, -size * 0.05);
+  ctx.stroke();
+  ctx.fillStyle = weaponColor;
+  ctx.beginPath();
+  ctx.arc(size * 0.25, -size * 0.05, size * 0.06, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.25, -size * 0.11);
+  ctx.lineTo(size * 0.25, size * 0.01);
+  ctx.moveTo(size * 0.19, -size * 0.05);
+  ctx.lineTo(size * 0.31, -size * 0.05);
+  ctx.stroke();
+  ctx.restore();
+
+  // 毒气罐
+  ctx.fillStyle = '#556B2F';
+  ctx.fillRect(-size * 0.35, size * 0.05, size * 0.12, size * 0.18);
+  ctx.fillStyle = '#9ACD32';
+  ctx.fillRect(-size * 0.33, size * 0.07, size * 0.08, size * 0.06);
+  ctx.fillStyle = '#333333';
+  ctx.beginPath();
+  ctx.arc(-size * 0.29, size * 0.03, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 毒雾粒子
+  for (let i = 0; i < 5; i++) {
+    const px = Math.sin(t * 1.2 + i * 1.5) * size * 0.2;
+    const py = Math.cos(t * 0.8 + i * 2) * size * 0.15 + size * 0.1;
+    const pAlpha = Math.max(0, Math.sin(t * 2 + i * 2.5) * 0.3 + 0.4);
+    ctx.fillStyle = `rgba(100, 200, 50, ${pAlpha})`;
+    ctx.beginPath();
+    ctx.arc(px, py, size * 0.04, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 腿
+  ctx.fillStyle = detailColor;
+  ctx.fillRect(-size * 0.12, size * 0.4 + walk, size * 0.08, size * 0.15);
+  ctx.fillRect(size * 0.04, size * 0.4 - walk, size * 0.08, size * 0.15);
+
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.6 + walk);
+}
+function drawThunderMage(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 200;
+
+  // 紫色长袍
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.22, -size * 0.2);
+  ctx.lineTo(-size * 0.28, size * 0.5);
+  ctx.lineTo(size * 0.28, size * 0.5);
+  ctx.lineTo(size * 0.22, -size * 0.2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 闪电纹饰
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.05, -size * 0.1);
+  ctx.lineTo(size * 0.05, size * 0.05);
+  ctx.lineTo(-size * 0.02, size * 0.05);
+  ctx.lineTo(size * 0.08, size * 0.2);
+  ctx.stroke();
+
+  // 头
+  ctx.fillStyle = '#D2B48C';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.35, size * 0.16, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 尖顶帽
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.2, -size * 0.4);
+  ctx.lineTo(-size * 0.05, -size * 0.7);
+  ctx.lineTo(size * 0.05, -size * 0.7);
+  ctx.lineTo(size * 0.2, -size * 0.4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.22, -size * 0.4);
+  ctx.lineTo(size * 0.22, -size * 0.4);
+  ctx.lineTo(size * 0.2, -size * 0.35);
+  ctx.lineTo(-size * 0.2, -size * 0.35);
+  ctx.closePath();
+  ctx.fill();
+
+  // 眼睛
+  ctx.fillStyle = '#9370DB';
+  ctx.beginPath();
+  ctx.arc(-size * 0.05, -size * 0.35, size * 0.03, 0, Math.PI * 2);
+  ctx.arc(size * 0.05, -size * 0.35, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.05, -size * 0.35, size * 0.015, 0, Math.PI * 2);
+  ctx.arc(size * 0.05, -size * 0.35, size * 0.015, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 闪电法杖
+  ctx.strokeStyle = '#8B4513';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.3, -size * 0.5);
+  ctx.lineTo(size * 0.3, size * 0.4);
+  ctx.stroke();
+
+  // 法杖顶部闪电球
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.arc(size * 0.3, -size * 0.55, size * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFFF00';
+  ctx.beginPath();
+  ctx.arc(size * 0.3, -size * 0.55, size * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 电弧
+  const arcIntensity = isAttacking ? 1.0 : Math.max(0, Math.sin(t * 1.5) * 0.5 + 0.3);
+  if (arcIntensity > 0.2) {
+    ctx.strokeStyle = `rgba(255, 255, 0, ${arcIntensity})`;
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2 + t;
+      const r1 = size * 0.1;
+      const r2 = size * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(size * 0.3 + Math.cos(angle) * r1, -size * 0.55 + Math.sin(angle) * r1);
+      ctx.lineTo(size * 0.3 + Math.cos(angle + 0.3) * r2, -size * 0.55 + Math.sin(angle + 0.3) * r2);
+      ctx.stroke();
+    }
+  }
+
+  // 闪电粒子
+  for (let i = 0; i < 4; i++) {
+    const px = Math.sin(t * 2 + i * 1.8) * size * 0.25;
+    const py = Math.cos(t * 1.5 + i * 2.2) * size * 0.2 - size * 0.1;
+    const pAlpha = Math.max(0, Math.sin(t * 3 + i * 2.8) * 0.4 + 0.5);
+    ctx.fillStyle = `rgba(255, 255, 0, ${pAlpha})`;
+    ctx.beginPath();
+    ctx.arc(px, py, size * 0.02, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.75);
+}
+function drawGriffinKnight(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 200;
+  const wingFlap = Math.sin(t) * 0.15;
+  const hoverY = Math.sin(Date.now() / 300) * 3;
+
+  ctx.save();
+  ctx.translate(0, hoverY);
+
+  // 左翼
+  ctx.save();
+  ctx.rotate(wingFlap);
+  ctx.fillStyle = '#F5DEB3';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.1, -size * 0.15);
+  ctx.quadraticCurveTo(-size * 0.5, -size * 0.55, -size * 0.65, -size * 0.25);
+  ctx.quadraticCurveTo(-size * 0.55, -size * 0.15, -size * 0.45, -size * 0.05);
+  ctx.quadraticCurveTo(-size * 0.3, 0, -size * 0.1, size * 0.05);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#D2B48C';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.15 - i * 0.08 * size, -size * 0.1 + i * 0.03 * size);
+    ctx.lineTo(-size * 0.35 - i * 0.06 * size, -size * 0.3 + i * 0.05 * size);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 右翼
+  ctx.save();
+  ctx.rotate(-wingFlap);
+  ctx.fillStyle = '#F5DEB3';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.1, -size * 0.15);
+  ctx.quadraticCurveTo(size * 0.5, -size * 0.55, size * 0.65, -size * 0.25);
+  ctx.quadraticCurveTo(size * 0.55, -size * 0.15, size * 0.45, -size * 0.05);
+  ctx.quadraticCurveTo(size * 0.3, 0, size * 0.1, size * 0.05);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#D2B48C';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(size * 0.15 + i * 0.08 * size, -size * 0.1 + i * 0.03 * size);
+    ctx.lineTo(size * 0.35 + i * 0.06 * size, -size * 0.3 + i * 0.05 * size);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 狮鹫身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.1, size * 0.28, size * 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.15, size * 0.18, size * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 狮鹫后腿
+  ctx.fillStyle = detailColor;
+  const legAnim = Math.sin(Date.now() / 150) * 4;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.12, size * 0.35 + legAnim, size * 0.06, size * 0.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.12, size * 0.35 - legAnim, size * 0.06, size * 0.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#8B7355';
+  ctx.beginPath();
+  ctx.arc(-size * 0.12, size * 0.45 + legAnim, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.12, size * 0.45 - legAnim, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 狮鹫鹰头
+  ctx.fillStyle = '#F5DEB3';
+  ctx.beginPath();
+  ctx.arc(-size * 0.22, -size * 0.15, size * 0.14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#DAA520';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.34, -size * 0.15);
+  ctx.lineTo(-size * 0.42, -size * 0.1);
+  ctx.lineTo(-size * 0.34, -size * 0.05);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.arc(-size * 0.26, -size * 0.18, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.26, -size * 0.18, size * 0.02, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 骑士
+  ctx.fillStyle = '#4A90D9';
+  ctx.beginPath();
+  ctx.ellipse(size * 0.05, -size * 0.15, size * 0.12, size * 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#C0C0C0';
+  ctx.beginPath();
+  ctx.arc(size * 0.05, -size * 0.35, size * 0.1, Math.PI, 0);
+  ctx.fill();
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.arc(size * 0.05, -size * 0.4, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFF';
+  ctx.beginPath();
+  ctx.arc(size * 0.02, -size * 0.34, size * 0.03, 0, Math.PI * 2);
+  ctx.arc(size * 0.08, -size * 0.34, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.arc(size * 0.02, -size * 0.34, size * 0.015, 0, Math.PI * 2);
+  ctx.arc(size * 0.08, -size * 0.34, size * 0.015, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 骑士的剑
+  const swordAngle = isAttacking ? Math.sin(Date.now() / 40) * 0.5 : 0;
+  ctx.save();
+  ctx.translate(size * 0.18, -size * 0.1);
+  ctx.rotate(swordAngle - 0.3);
+  ctx.strokeStyle = weaponColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size * 0.25, -size * 0.3);
+  ctx.stroke();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#8B7355';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.03, size * 0.02);
+  ctx.lineTo(size * 0.03, size * 0.02);
+  ctx.stroke();
+  ctx.restore();
+
+  // 狮鹫尾巴
+  ctx.strokeStyle = bodyColor;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.25, size * 0.1);
+  ctx.quadraticCurveTo(size * 0.4, size * 0.2 + Math.sin(t * 1.5) * 5, size * 0.35, size * 0.35);
+  ctx.stroke();
+
+  ctx.restore();
+  drawHpBar(ctx, size * 0.5, hpPercent, -size * 0.5 + hoverY);
+}
+function drawBatSwarm(ctx, size, bodyColor, detailColor, _weaponColor, hpPercent, _isAttacking) {
+  const t = Date.now() / 100;
+
+  const bats = [
+    { dx: 0, dy: 0, phase: 0, scale: 1.0 },
+    { dx: -size * 0.3, dy: -size * 0.15, phase: 1.2, scale: 0.85 },
+    { dx: size * 0.35, dy: -size * 0.1, phase: 2.4, scale: 0.9 },
+    { dx: -size * 0.15, dy: size * 0.2, phase: 0.8, scale: 0.75 },
+    { dx: size * 0.2, dy: size * 0.25, phase: 3.0, scale: 0.8 },
+  ];
+
+  for (const bat of bats) {
+    ctx.save();
+    const bx = bat.dx + Math.sin(t + bat.phase) * 3;
+    const by = bat.dy + Math.cos(t * 1.3 + bat.phase) * 2;
+    ctx.translate(bx, by);
+    ctx.scale(bat.scale, bat.scale);
+
+    const wingAngle = Math.sin(t * 2 + bat.phase) * 0.4;
+
+    // 蝙蝠身体
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.08, size * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 左翅膀
+    ctx.save();
+    ctx.rotate(wingAngle);
+    ctx.fillStyle = detailColor;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.05, -size * 0.02);
+    ctx.quadraticCurveTo(-size * 0.2, -size * 0.15, -size * 0.25, -size * 0.05);
+    ctx.quadraticCurveTo(-size * 0.18, 0, -size * 0.15, size * 0.02);
+    ctx.quadraticCurveTo(-size * 0.1, size * 0.05, -size * 0.05, size * 0.02);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // 右翅膀
+    ctx.save();
+    ctx.rotate(-wingAngle);
+    ctx.fillStyle = detailColor;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.05, -size * 0.02);
+    ctx.quadraticCurveTo(size * 0.2, -size * 0.15, size * 0.25, -size * 0.05);
+    ctx.quadraticCurveTo(size * 0.18, 0, size * 0.15, size * 0.02);
+    ctx.quadraticCurveTo(size * 0.1, size * 0.05, size * 0.05, size * 0.02);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // 蝙蝠眼睛
+    ctx.fillStyle = '#FF4444';
+    ctx.beginPath();
+    ctx.arc(-size * 0.025, -size * 0.04, size * 0.015, 0, Math.PI * 2);
+    ctx.arc(size * 0.025, -size * 0.04, size * 0.015, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 蝙蝠耳朵
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.04, -size * 0.08);
+    ctx.lineTo(-size * 0.06, -size * 0.14);
+    ctx.lineTo(-size * 0.02, -size * 0.09);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.04, -size * 0.08);
+    ctx.lineTo(size * 0.06, -size * 0.14);
+    ctx.lineTo(size * 0.02, -size * 0.09);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.35);
+}
+function drawYoungDragon(ctx, size, bodyColor, detailColor, _weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 200;
+  const hoverY = Math.sin(Date.now() / 250) * 2;
+
+  ctx.save();
+  ctx.translate(0, hoverY);
+
+  // 翅膀（较小，体现幼年）
+  const wingFlap = Math.sin(t * 1.5) * 0.2;
+  ctx.save();
+  ctx.rotate(wingFlap);
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, -size * 0.1);
+  ctx.quadraticCurveTo(-size * 0.35, -size * 0.35, -size * 0.4, -size * 0.15);
+  ctx.quadraticCurveTo(-size * 0.3, -size * 0.05, -size * 0.15, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#AA0000';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.1, -size * 0.08);
+  ctx.lineTo(-size * 0.3, -size * 0.2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.rotate(-wingFlap);
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.08, -size * 0.1);
+  ctx.quadraticCurveTo(size * 0.35, -size * 0.35, size * 0.4, -size * 0.15);
+  ctx.quadraticCurveTo(size * 0.3, -size * 0.05, size * 0.15, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#AA0000';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.1, -size * 0.08);
+  ctx.lineTo(size * 0.3, -size * 0.2);
+  ctx.stroke();
+  ctx.restore();
+
+  // 龙身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.05, size * 0.18, size * 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FF8C69';
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.08, size * 0.1, size * 0.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 龙尾巴
+  ctx.strokeStyle = bodyColor;
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  const tailWag = Math.sin(t * 2) * 8;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.15, size * 0.15);
+  ctx.quadraticCurveTo(size * 0.3, size * 0.25 + tailWag, size * 0.35, size * 0.35 + tailWag);
+  ctx.stroke();
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.35, size * 0.35 + tailWag);
+  ctx.lineTo(size * 0.42, size * 0.3 + tailWag);
+  ctx.lineTo(size * 0.38, size * 0.42 + tailWag);
+  ctx.closePath();
+  ctx.fill();
+
+  // 龙头
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.25, size * 0.15, size * 0.13, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 龙角
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, -size * 0.35);
+  ctx.lineTo(-size * 0.12, -size * 0.45);
+  ctx.lineTo(-size * 0.04, -size * 0.36);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.08, -size * 0.35);
+  ctx.lineTo(size * 0.12, -size * 0.45);
+  ctx.lineTo(size * 0.04, -size * 0.36);
+  ctx.closePath();
+  ctx.fill();
+
+  // 龙眼
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.06, -size * 0.27, size * 0.04, size * 0.03, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.06, -size * 0.27, size * 0.04, size * 0.03, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.06, -size * 0.27, size * 0.015, size * 0.03, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.06, -size * 0.27, size * 0.015, size * 0.03, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 龙嘴
+  ctx.fillStyle = '#8B0000';
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.18, size * 0.06, size * 0.03, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 小火苗
+  const fireIntensity = isAttacking ? 1.0 : Math.max(0, Math.sin(t * 0.7) * 0.5 + 0.3);
+  if (fireIntensity > 0.2) {
+    ctx.save();
+    ctx.translate(0, -size * 0.15);
+    ctx.fillStyle = `rgba(255, 100, 0, ${fireIntensity * 0.6})`;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.08, 0);
+    ctx.quadraticCurveTo(-size * 0.15, -size * 0.1 * fireIntensity, -size * 0.05, -size * 0.18 * fireIntensity);
+    ctx.quadraticCurveTo(0, -size * 0.22 * fireIntensity, size * 0.05, -size * 0.18 * fireIntensity);
+    ctx.quadraticCurveTo(size * 0.15, -size * 0.1 * fireIntensity, size * 0.08, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = `rgba(255, 220, 50, ${fireIntensity * 0.8})`;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.04, 0);
+    ctx.quadraticCurveTo(-size * 0.06, -size * 0.06 * fireIntensity, 0, -size * 0.12 * fireIntensity);
+    ctx.quadraticCurveTo(size * 0.06, -size * 0.06 * fireIntensity, size * 0.04, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 小龙腿
+  ctx.fillStyle = detailColor;
+  const legAnim = Math.sin(Date.now() / 120) * 3;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.08, size * 0.28 + legAnim, size * 0.05, size * 0.07, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.08, size * 0.28 - legAnim, size * 0.05, size * 0.07, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+  drawHpBar(ctx, size * 0.4, hpPercent, -size * 0.45 + hoverY);
+}
+function drawTreeAncient(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 300;
+  const sway = Math.sin(t) * 2;
+
+  // 树根腿
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, size * 0.3);
+  ctx.quadraticCurveTo(-size * 0.25, size * 0.4, -size * 0.3, size * 0.45);
+  ctx.quadraticCurveTo(-size * 0.2, size * 0.42, -size * 0.1, size * 0.38);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.15, size * 0.3);
+  ctx.quadraticCurveTo(size * 0.25, size * 0.4, size * 0.3, size * 0.45);
+  ctx.quadraticCurveTo(size * 0.2, size * 0.42, size * 0.1, size * 0.38);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.1, size * 0.35);
+  ctx.quadraticCurveTo(-size * 0.18, size * 0.42, -size * 0.22, size * 0.48);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.1, size * 0.35);
+  ctx.quadraticCurveTo(size * 0.18, size * 0.42, size * 0.22, size * 0.48);
+  ctx.stroke();
+
+  // 树干身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.2, size * 0.35);
+  ctx.quadraticCurveTo(-size * 0.25, 0, -size * 0.18, -size * 0.2);
+  ctx.quadraticCurveTo(0, -size * 0.28, size * 0.18, -size * 0.2);
+  ctx.quadraticCurveTo(size * 0.25, 0, size * 0.2, size * 0.35);
+  ctx.closePath();
+  ctx.fill();
+
+  // 树皮纹理
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 5; i++) {
+    const yy = -size * 0.15 + i * size * 0.1;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.12, yy);
+    ctx.quadraticCurveTo(0, yy + 3, size * 0.12, yy);
+    ctx.stroke();
+  }
+
+  // 苔藓
+  ctx.fillStyle = '#228B22';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.12, size * 0.05, size * 0.08, size * 0.06, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.1, size * 0.15, size * 0.06, size * 0.05, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.05, size * 0.25, size * 0.07, size * 0.04, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#32CD32';
+  ctx.beginPath();
+  ctx.ellipse(size * 0.15, -size * 0.05, size * 0.05, size * 0.04, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 树枝手臂
+  const armSwing = isAttacking ? Math.sin(Date.now() / 60) * 0.4 : Math.sin(t * 0.8) * 0.1;
+  ctx.save();
+  ctx.translate(-size * 0.18, -size * 0.05);
+  ctx.rotate(-0.3 + armSwing);
+  ctx.strokeStyle = bodyColor;
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-size * 0.15, -size * 0.1, -size * 0.25, -size * 0.05);
+  ctx.stroke();
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.15, -size * 0.08);
+  ctx.lineTo(-size * 0.2, -size * 0.18);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.2, -size * 0.06);
+  ctx.lineTo(-size * 0.28, -size * 0.12);
+  ctx.stroke();
+  ctx.fillStyle = weaponColor;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.2, -size * 0.18, size * 0.04, size * 0.02, 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.28, -size * 0.12, size * 0.03, size * 0.02, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(size * 0.18, -size * 0.05);
+  ctx.rotate(0.3 - armSwing);
+  ctx.strokeStyle = bodyColor;
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(size * 0.15, -size * 0.1, size * 0.25, -size * 0.05);
+  ctx.stroke();
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.15, -size * 0.08);
+  ctx.lineTo(size * 0.2, -size * 0.18);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.2, -size * 0.06);
+  ctx.lineTo(size * 0.28, -size * 0.12);
+  ctx.stroke();
+  ctx.fillStyle = weaponColor;
+  ctx.beginPath();
+  ctx.ellipse(size * 0.2, -size * 0.18, size * 0.04, size * 0.02, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.28, -size * 0.12, size * 0.03, size * 0.02, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 树冠头部
+  ctx.save();
+  ctx.translate(sway, 0);
+  ctx.fillStyle = '#228B22';
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.3, size * 0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#2E8B57';
+  ctx.beginPath();
+  ctx.arc(-size * 0.08, -size * 0.35, size * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.1, -size * 0.28, size * 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#32CD32';
+  ctx.beginPath();
+  ctx.arc(size * 0.05, -size * 0.38, size * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 树脸
+  ctx.fillStyle = '#3B2F2F';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.06, -size * 0.3, size * 0.035, size * 0.04, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.06, -size * 0.3, size * 0.035, size * 0.04, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#90EE90';
+  ctx.beginPath();
+  ctx.arc(-size * 0.06, -size * 0.3, size * 0.015, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.06, -size * 0.3, size * 0.015, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#3B2F2F';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, -size * 0.22, size * 0.06, 0.1, Math.PI - 0.1);
+  ctx.stroke();
+  ctx.restore();
+
+  drawHpBar(ctx, size * 0.5, hpPercent, -size * 0.55);
+}
+function drawOgreLord(ctx, size, bodyColor, detailColor, weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 200;
+  const stomp = Math.sin(Date.now() / 150) * 3;
+
+  // 粗壮双腿
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.15, size * 0.35 + stomp, size * 0.12, size * 0.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.15, size * 0.35 - stomp, size * 0.12, size * 0.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#654321';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.18, size * 0.48 + stomp, size * 0.1, size * 0.05, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.18, size * 0.48 - stomp, size * 0.1, size * 0.05, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 巨大身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.05, size * 0.28, size * 0.3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 兽皮护甲
+  ctx.fillStyle = '#A0522D';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.22, -size * 0.05);
+  ctx.quadraticCurveTo(-size * 0.25, size * 0.15, -size * 0.18, size * 0.25);
+  ctx.lineTo(size * 0.18, size * 0.25);
+  ctx.quadraticCurveTo(size * 0.25, size * 0.15, size * 0.22, -size * 0.05);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#8B6914';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.15, size * 0.02 + i * size * 0.08);
+    ctx.lineTo(size * 0.15, size * 0.02 + i * size * 0.08);
+    ctx.stroke();
+  }
+
+  // 骨头护甲
+  ctx.fillStyle = '#F5F5DC';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.25, -size * 0.1);
+  ctx.quadraticCurveTo(-size * 0.35, -size * 0.15, -size * 0.3, -size * 0.02);
+  ctx.quadraticCurveTo(-size * 0.28, size * 0.05, -size * 0.22, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#D2B48C';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.28, -size * 0.08);
+  ctx.lineTo(-size * 0.24, size * 0.02);
+  ctx.stroke();
+  ctx.fillStyle = '#F5F5DC';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.25, -size * 0.1);
+  ctx.quadraticCurveTo(size * 0.35, -size * 0.15, size * 0.3, -size * 0.02);
+  ctx.quadraticCurveTo(size * 0.28, size * 0.05, size * 0.22, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#D2B48C';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.28, -size * 0.08);
+  ctx.lineTo(size * 0.24, size * 0.02);
+  ctx.stroke();
+
+  // 左头（主头）
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.arc(-size * 0.1, -size * 0.3, size * 0.14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.arc(-size * 0.1, -size * 0.32, size * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FF0000';
+  ctx.beginPath();
+  ctx.arc(-size * 0.1, -size * 0.32, size * 0.025, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#8B0000';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.1, -size * 0.22, size * 0.06, size * 0.04, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFF0';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.14, -size * 0.22);
+  ctx.lineTo(-size * 0.13, -size * 0.17);
+  ctx.lineTo(-size * 0.12, -size * 0.22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.06, -size * 0.22);
+  ctx.lineTo(-size * 0.07, -size * 0.17);
+  ctx.lineTo(-size * 0.08, -size * 0.22);
+  ctx.closePath();
+  ctx.fill();
+
+  // 右头（副头）
+  ctx.fillStyle = '#7A3B10';
+  ctx.beginPath();
+  ctx.arc(size * 0.12, -size * 0.28, size * 0.11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.arc(size * 0.12, -size * 0.3, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FF0000';
+  ctx.beginPath();
+  ctx.arc(size * 0.12, -size * 0.3, size * 0.02, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#8B0000';
+  ctx.beginPath();
+  ctx.ellipse(size * 0.12, -size * 0.22, size * 0.05, size * 0.03, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFF0';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.09, -size * 0.22);
+  ctx.lineTo(size * 0.085, -size * 0.18);
+  ctx.lineTo(size * 0.095, -size * 0.22);
+  ctx.closePath();
+  ctx.fill();
+
+  // 粗壮手臂
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.3, size * 0.05, size * 0.08, size * 0.18, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.3, size * 0.05, size * 0.08, size * 0.18, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 巨大骨棒
+  const clubSwing = isAttacking ? Math.sin(Date.now() / 50) * 0.5 : Math.sin(t * 0.5) * 0.1;
+  ctx.save();
+  ctx.translate(size * 0.35, size * 0.05);
+  ctx.rotate(clubSwing - 0.4);
+  ctx.strokeStyle = '#D2B48C';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size * 0.05, -size * 0.4);
+  ctx.stroke();
+  ctx.fillStyle = '#F5F5DC';
+  ctx.beginPath();
+  ctx.ellipse(size * 0.05, -size * 0.45, size * 0.1, size * 0.08, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.05 - size * 0.1, -size * 0.45, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(size * 0.05 + size * 0.1, -size * 0.45, size * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#8B0000';
+  ctx.beginPath();
+  ctx.arc(size * 0.08, -size * 0.42, size * 0.02, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  drawHpBar(ctx, size * 0.6, hpPercent, -size * 0.5);
+}
+function drawFireDragon(ctx, size, bodyColor, detailColor, _weaponColor, hpPercent, isAttacking) {
+  const t = Date.now() / 200;
+  const hoverY = Math.sin(Date.now() / 300) * 4;
+
+  ctx.save();
+  ctx.translate(0, hoverY);
+
+  // 巨大翅膀
+  const wingFlap = Math.sin(t) * 0.12;
+  ctx.save();
+  ctx.rotate(wingFlap);
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, -size * 0.1);
+  ctx.quadraticCurveTo(-size * 0.3, -size * 0.5, -size * 0.55, -size * 0.3);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, -size * 0.05);
+  ctx.quadraticCurveTo(-size * 0.25, -size * 0.35, -size * 0.5, -size * 0.15);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(139, 0, 0, 0.7)';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, -size * 0.1);
+  ctx.quadraticCurveTo(-size * 0.3, -size * 0.5, -size * 0.55, -size * 0.3);
+  ctx.quadraticCurveTo(-size * 0.45, -size * 0.15, -size * 0.35, -size * 0.05);
+  ctx.quadraticCurveTo(-size * 0.2, 0, -size * 0.08, size * 0.02);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(204, 55, 0, 0.5)';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.1, -size * 0.08);
+    ctx.lineTo(-size * 0.2 - i * 0.1 * size, -size * 0.2 - i * 0.08 * size);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.rotate(-wingFlap);
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.08, -size * 0.1);
+  ctx.quadraticCurveTo(size * 0.3, -size * 0.5, size * 0.55, -size * 0.3);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.08, -size * 0.05);
+  ctx.quadraticCurveTo(size * 0.25, -size * 0.35, size * 0.5, -size * 0.15);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(139, 0, 0, 0.7)';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.08, -size * 0.1);
+  ctx.quadraticCurveTo(size * 0.3, -size * 0.5, size * 0.55, -size * 0.3);
+  ctx.quadraticCurveTo(size * 0.45, -size * 0.15, size * 0.35, -size * 0.05);
+  ctx.quadraticCurveTo(size * 0.2, 0, size * 0.08, size * 0.02);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(204, 55, 0, 0.5)';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(size * 0.1, -size * 0.08);
+    ctx.lineTo(size * 0.2 + i * 0.1 * size, -size * 0.2 - i * 0.08 * size);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 龙身体
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.05, size * 0.22, size * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FF6347';
+  ctx.beginPath();
+  ctx.ellipse(0, size * 0.08, size * 0.12, size * 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = detailColor;
+  ctx.lineWidth = 1;
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 3; col++) {
+      const sx = -size * 0.08 + col * size * 0.08;
+      const sy = -size * 0.05 + row * size * 0.1;
+      ctx.beginPath();
+      ctx.arc(sx, sy, size * 0.03, 0, Math.PI, true);
+      ctx.stroke();
+    }
+  }
+
+  // 长尾巴
+  const tailWag = Math.sin(t * 1.5) * 12;
+  ctx.strokeStyle = bodyColor;
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(size * 0.18, size * 0.2);
+  ctx.quadraticCurveTo(size * 0.35, size * 0.3 + tailWag, size * 0.45, size * 0.45 + tailWag);
+  ctx.stroke();
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.45, size * 0.45 + tailWag);
+  ctx.quadraticCurveTo(size * 0.5, size * 0.5 + tailWag, size * 0.55, size * 0.55 + tailWag);
+  ctx.stroke();
+  ctx.fillStyle = detailColor;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.55, size * 0.55 + tailWag);
+  ctx.lineTo(size * 0.62, size * 0.48 + tailWag);
+  ctx.lineTo(size * 0.58, size * 0.6 + tailWag);
+  ctx.closePath();
+  ctx.fill();
+
+  // 龙头
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.3, size * 0.18, size * 0.16, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 龙角
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.1, -size * 0.42);
+  ctx.quadraticCurveTo(-size * 0.18, -size * 0.55, -size * 0.12, -size * 0.58);
+  ctx.quadraticCurveTo(-size * 0.08, -size * 0.52, -size * 0.06, -size * 0.44);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.1, -size * 0.42);
+  ctx.quadraticCurveTo(size * 0.18, -size * 0.55, size * 0.12, -size * 0.58);
+  ctx.quadraticCurveTo(size * 0.08, -size * 0.52, size * 0.06, -size * 0.44);
+  ctx.closePath();
+  ctx.fill();
+
+  // 龙眼
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.07, -size * 0.33, size * 0.05, size * 0.04, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.07, -size * 0.33, size * 0.05, size * 0.04, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.07, -size * 0.33, size * 0.02, size * 0.04, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.07, -size * 0.33, size * 0.02, size * 0.04, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 龙嘴
+  ctx.fillStyle = '#8B0000';
+  ctx.beginPath();
+  ctx.ellipse(0, -size * 0.2, size * 0.08, size * 0.04, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFF0';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.06, -size * 0.18);
+  ctx.lineTo(-size * 0.05, -size * 0.13);
+  ctx.lineTo(-size * 0.04, -size * 0.18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.06, -size * 0.18);
+  ctx.lineTo(size * 0.05, -size * 0.13);
+  ctx.lineTo(size * 0.04, -size * 0.18);
+  ctx.closePath();
+  ctx.fill();
+
+  // 喷火效果
+  const fireIntensity = isAttacking ? 1.0 : Math.max(0, Math.sin(t * 0.5) * 0.4 + 0.3);
+  if (fireIntensity > 0.2) {
+    ctx.save();
+    ctx.translate(0, -size * 0.18);
+    ctx.fillStyle = `rgba(255, 69, 0, ${fireIntensity * 0.7})`;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.12, 0);
+    ctx.quadraticCurveTo(-size * 0.2, -size * 0.15 * fireIntensity, -size * 0.08, -size * 0.25 * fireIntensity);
+    ctx.quadraticCurveTo(0, -size * 0.3 * fireIntensity, size * 0.08, -size * 0.25 * fireIntensity);
+    ctx.quadraticCurveTo(size * 0.2, -size * 0.15 * fireIntensity, size * 0.12, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = `rgba(255, 140, 0, ${fireIntensity * 0.8})`;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.08, 0);
+    ctx.quadraticCurveTo(-size * 0.12, -size * 0.1 * fireIntensity, -size * 0.04, -size * 0.18 * fireIntensity);
+    ctx.quadraticCurveTo(0, -size * 0.22 * fireIntensity, size * 0.04, -size * 0.18 * fireIntensity);
+    ctx.quadraticCurveTo(size * 0.12, -size * 0.1 * fireIntensity, size * 0.08, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = `rgba(255, 255, 100, ${fireIntensity})`;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.04, 0);
+    ctx.quadraticCurveTo(-size * 0.05, -size * 0.05 * fireIntensity, 0, -size * 0.1 * fireIntensity);
+    ctx.quadraticCurveTo(size * 0.05, -size * 0.05 * fireIntensity, size * 0.04, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 龙腿
+  ctx.fillStyle = detailColor;
+  const legAnim = Math.sin(Date.now() / 150) * 4;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.1, size * 0.35 + legAnim, size * 0.07, size * 0.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.1, size * 0.35 - legAnim, size * 0.07, size * 0.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFD700';
+  for (let side = -1; side <= 1; side += 2) {
+    for (let c = 0; c < 3; c++) {
+      ctx.beginPath();
+      ctx.arc(side * (size * 0.1 + c * 0.02 * size - size * 0.02), size * 0.45 + (side < 0 ? legAnim : -legAnim), size * 0.02, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+  drawHpBar(ctx, size * 0.6, hpPercent, -size * 0.5 + hoverY);
+}
+function drawHpBar(ctx, width, hpPercent, y) {
+  ctx.fillStyle = '#333333';
+  ctx.fillRect(-width / 2, y, width, 4);
+  const hpColor = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FF9800' : '#F44336';
+  ctx.fillStyle = hpColor;
+  ctx.fillRect(-width / 2, y, width * hpPercent, 4);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(-width / 2, y, width, 4);
+}
+    function drawUnitByConfig(ctx, config, x, y) {
+      const { id, size, bodyColor, detailColor, weaponColor } = config;
+      ctx.save(); ctx.translate(x, y);
+      switch(id) {
+        case "goblin_shield": drawGoblinShield(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "orc_heavy": drawOrcHeavy(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "stone_guard": drawStoneGuard(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "dwarf_ironwall": drawDwarfIronwall(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "wolf_rider": drawWolfRider(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "berserker": drawBerserker(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "crypt_crawler": drawCryptCrawler(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "shadow_assassin": drawShadowAssassin(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "archer": drawArcher(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "elf_shooter": drawElfShooter(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "musketeer": drawMusketeer(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "ballista": drawBallista(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "flame_warlock": drawFlameWarlock(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "ice_witch": drawIceWitch(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "plague_thrower": drawPlagueThrower(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "thunder_mage": drawThunderMage(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "griffin_knight": drawGriffinKnight(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "bat_swarm": drawBatSwarm(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "young_dragon": drawYoungDragon(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "tree_ancient": drawTreeAncient(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "ogre_lord": drawOgreLord(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+        case "fire_dragon": drawFireDragon(ctx, size, bodyColor, detailColor, weaponColor, 1.0, false); break;
+      }
+      ctx.restore();
+    }
+
   </script>
 </body>
 </html>
