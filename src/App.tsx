@@ -36,7 +36,7 @@ import type { AppSheetId } from './features/sheets/sheetRegistry';
 import type { WorkbookStatusSummary } from './types';
 import type { SaveSlot } from './types/save';
 import { ARCADE_MODULE_MAP, type ArcadeGameId } from './features/workbook/workbookRegistry';
-import { getVisibleSheetsForWorkspace } from './features/workbook/workspaceState';
+import { getGameForSheet, getVisibleSheetsForWorkspace } from './features/workbook/workspaceState';
 import { createInitialSaveSlot } from './features/save/saveAdapters';
 import { loadFromStorage, saveToStorage } from './utils/saveStorage';
 import './styles/save.css';
@@ -346,24 +346,11 @@ function AppContent() {
   };
 
   const handleSheetSwitch = (sheet: AppSheetId) => {
-    if (sheet === 'game') {
-      setActiveArcadeGame('aim');
-    } else if (sheet === 'snake') {
-      setActiveArcadeGame('snake');
-    } else if (sheet === 'tetris') {
-      setActiveArcadeGame('tetris');
-    } else if (sheet === 'perler') {
-      setActiveArcadeGame('perler');
-    } else if (sheet === 'pvz' || sheet === 'pvz_collection' || sheet === 'pvz_lab') {
-      setActiveArcadeGame('pvz');
-    } else if (sheet === 'pacman' || sheet === 'pacman_guide') {
-      setActiveArcadeGame('pacman');
-    } else if (sheet === 'zuma' || sheet === 'zuma_collection') {
-      setActiveArcadeGame('zuma');
-    } else if (sheet === 'match3' || sheet === 'match3_lab') {
-      setActiveArcadeGame('match3');
-      setWorkspaceGameId('match3');
-    } else if (sheet !== currentSheet) {
+    const owningGame = getGameForSheet(sheet);
+    if (owningGame) {
+      setActiveArcadeGame(owningGame as ActiveArcadeGame);
+      setWorkspaceGameId(owningGame);
+    } else if (sheet !== 'hub' && sheet !== currentSheet) {
       setActiveArcadeGame(null);
       setWorkspaceGameId(null);
     }
@@ -738,6 +725,7 @@ function AppContent() {
         isOpen={showSaveManager}
         onClose={() => setShowSaveManager(false)}
         currentGame={activeArcadeGame || undefined}
+        currentSheet={currentSheet}
         currentSlotId={currentSaveSlot?.id ?? null}
         onSave={(slot) => setCurrentSaveSlot(slot)}
         onLoad={handleLoadSave}

@@ -1,17 +1,21 @@
 import React, { useMemo, useState } from 'react';
 import type { SaveSlot } from '../types/save';
-import { listSaves, listSavesByGame, deleteFromStorage, createNewSlot, saveToStorage } from '../utils/saveStorage';
+import type { AppSheetId } from '../features/workbook/workbookRegistry';
+import { ARCADE_MODULE_MAP } from '../features/workbook/workbookRegistry';
+import { createInitialSaveSlot } from '../features/save/saveAdapters';
+import { listSaves, listSavesByGame, deleteFromStorage, saveToStorage } from '../utils/saveStorage';
 
 interface SaveManagerProps {
   isOpen: boolean;
   onClose: () => void;
   currentGame?: SaveSlot['gameType'];
+  currentSheet?: AppSheetId;
   currentSlotId?: string | null;
   onSave?: (slot: SaveSlot) => void;
   onLoad?: (slot: SaveSlot) => void;
 }
 
-export const SaveManager: React.FC<SaveManagerProps> = ({ isOpen, onClose, currentGame, currentSlotId, onSave, onLoad }) => {
+export const SaveManager: React.FC<SaveManagerProps> = ({ isOpen, onClose, currentGame, currentSheet, currentSlotId, onSave, onLoad }) => {
   const [selectedSlot, setSelectedSlot] = useState<SaveSlot | null>(null);
   const [showNewSaveDialog, setShowNewSaveDialog] = useState(false);
   const [newSaveName, setNewSaveName] = useState('');
@@ -30,12 +34,8 @@ export const SaveManager: React.FC<SaveManagerProps> = ({ isOpen, onClose, curre
   const handleNewSave = () => {
     if (!newSaveName.trim()) return;
     const gameType = currentGame || 'pvz';
-    const newSlot = createNewSlot(newSaveName, gameType, {
-      gameType,
-      workspaceId: gameType,
-      currentSheet: gameType === 'pvz' ? 'pvz' : gameType === 'perler' ? 'perler' : gameType === 'snake' ? 'snake' : gameType === 'tetris' ? 'tetris' : gameType === 'pacman' ? 'pacman' : gameType === 'zuma' ? 'zuma' : gameType === 'match3' ? 'match3' : 'game',
-      payload: {},
-    });
+    const targetSheet = currentSheet || ARCADE_MODULE_MAP[gameType].entrySheetId;
+    const newSlot = createInitialSaveSlot(newSaveName, gameType, targetSheet);
     saveToStorage(newSlot);
     setShowNewSaveDialog(false);
     setNewSaveName('');
@@ -58,7 +58,7 @@ export const SaveManager: React.FC<SaveManagerProps> = ({ isOpen, onClose, curre
           <button className="save-manager-close" onClick={onClose}>✕</button>
         </div>
 
-        {currentGame && <div className="save-manager-current-game">当前游戏：{currentGame}</div>}
+        {currentGame && <div className="save-manager-current-game">当前游戏：{ARCADE_MODULE_MAP[currentGame].title}</div>}
 
         <div className="save-manager-actions">
           <button className="save-manager-btn primary" onClick={() => setShowNewSaveDialog(true)}>
@@ -92,7 +92,7 @@ export const SaveManager: React.FC<SaveManagerProps> = ({ isOpen, onClose, curre
               >
                 <div className="save-manager-item-info">
                   <span className="save-manager-item-name">{slot.name}</span>
-                  <span className="save-manager-item-game">{slot.gameType}</span>
+                  <span className="save-manager-item-game">{ARCADE_MODULE_MAP[slot.gameType].title}</span>
                   <span className="save-manager-item-time">
                     {new Date(slot.timestamp).toLocaleString('zh-CN')}
                   </span>
