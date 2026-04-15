@@ -41,6 +41,8 @@ interface SnakeSheetProps {
   onFormulaChange?: (text: string) => void;
   onStatusChange?: (summary: WorkbookStatusSummary) => void;
   onExit?: () => void;
+  initialSnapshot?: Record<string, unknown> | null;
+  onSnapshotChange?: (snapshot: Record<string, unknown>) => void;
 }
 
 const TICK_MS = 60;
@@ -104,22 +106,31 @@ function findMatchingPresetId(mode: SnakeMode, difficulty: SnakeDifficulty, mapS
   return matched?.id ?? null;
 }
 
-export const SnakeSheet: React.FC<SnakeSheetProps> = ({ onFormulaChange, onStatusChange, onExit }) => {
+export const SnakeSheet: React.FC<SnakeSheetProps> = ({ onFormulaChange, onStatusChange, onExit, initialSnapshot, onSnapshotChange }) => {
+  const snapshot = initialSnapshot as {
+    mapSizePreset?: SnakeMapSizePreset;
+    selectedPackId?: SnakePackId;
+    selectedPresetId?: string | null;
+    state?: SnakeBoardState;
+    settingsCollapsed?: boolean;
+  } | null;
   const [initialStorageSnapshot] = useState(() => {
     const storage = typeof window === 'undefined' ? undefined : window.localStorage;
     return readSnakeStorage(storage);
   });
-  const [mapSizePreset, setMapSizePreset] = useState<SnakeMapSizePreset>(initialStorageSnapshot.preferences.mapSize);
-  const [selectedPackId, setSelectedPackId] = useState<SnakePackId>('starter');
+  const [mapSizePreset, setMapSizePreset] = useState<SnakeMapSizePreset>(snapshot?.mapSizePreset ?? initialStorageSnapshot.preferences.mapSize);
+  const [selectedPackId, setSelectedPackId] = useState<SnakePackId>(snapshot?.selectedPackId ?? 'starter');
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(() =>
+    snapshot?.selectedPresetId ??
     findMatchingPresetId('classic', 'normal', initialStorageSnapshot.preferences.mapSize),
   );
   const [state, setState] = useState<SnakeBoardState>(() => {
+    if (snapshot?.state) return snapshot.state;
     const size = getSnakeMapSizeOption(initialStorageSnapshot.preferences.mapSize);
     return createSnakeBoardState({ rows: size.rows, cols: size.cols });
   });
   const [lastRunResult, setLastRunResult] = useState<SnakeRunResult | null>(null);
-  const [settingsCollapsed, setSettingsCollapsed] = useState(false);
+  const [settingsCollapsed, setSettingsCollapsed] = useState(snapshot?.settingsCollapsed ?? false);
   const prevStatusRef = useRef(state.status);
   const selectedPreset = selectedPresetId ? getSnakePresetById(selectedPresetId) : null;
   const visiblePresets = getSnakePresetsByPack(selectedPackId);
@@ -169,6 +180,16 @@ export const SnakeSheet: React.FC<SnakeSheetProps> = ({ onFormulaChange, onStatu
       alertTone: state.status === 'dead' ? 'danger' : state.status === 'finished' ? 'success' : state.speedBoostMs > 0 ? 'success' : 'neutral',
     });
   }, [mapSizePreset, onStatusChange, selectedPreset, state]);
+
+  useEffect(() => {
+    onSnapshotChange?.({
+      mapSizePreset,
+      selectedPackId,
+      selectedPresetId,
+      state,
+      settingsCollapsed,
+    });
+  }, [mapSizePreset, selectedPackId, selectedPresetId, state, settingsCollapsed, onSnapshotChange]);
 
   const applyMapSizePreset = (nextPreset: SnakeMapSizePreset) => {
     const nextSize = getSnakeMapSizeOption(nextPreset);

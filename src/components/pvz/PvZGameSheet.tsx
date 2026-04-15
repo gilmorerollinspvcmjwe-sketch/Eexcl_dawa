@@ -43,10 +43,18 @@ const MODE_LABELS: Record<PvZMode, string> = {
 
 interface PvZGameSheetProps {
   onFormulaChange?: (text: string) => void;
+  initialSnapshot?: Record<string, unknown> | null;
+  onSnapshotChange?: (snapshot: Record<string, unknown>) => void;
 }
 
-export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) => {
+export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange, initialSnapshot, onSnapshotChange }) => {
+  const snapshot = initialSnapshot as {
+    state?: PvZBoardState;
+    adventurePackIndex?: number;
+    setupCollapsed?: boolean;
+  } | null;
   const [state, setState] = useState<PvZBoardState>(() => {
+    if (snapshot?.state) return snapshot.state;
     const latestSelection = getLatestPvZScenarioSelection();
     const cached = getCachedPvZContext();
     if (latestSelection && cached?.scenarioId === latestSelection) return cached;
@@ -54,8 +62,8 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
     if (cached) return cached;
     return createPvZBoardState();
   });
-  const [adventurePackIndex, setAdventurePackIndex] = useState(1);
-  const [setupCollapsed, setSetupCollapsed] = useState(false);
+  const [adventurePackIndex, setAdventurePackIndex] = useState(snapshot?.adventurePackIndex ?? 1);
+  const [setupCollapsed, setSetupCollapsed] = useState(snapshot?.setupCollapsed ?? false);
   const progress = useMemo(() => loadProgress(), []);
   const chapterGuidance = getPvZChapterGuidance(state.chapterId);
   const modeLabel = MODE_LABELS[state.mode];
@@ -85,6 +93,14 @@ export const PvZGameSheet: React.FC<PvZGameSheetProps> = ({ onFormulaChange }) =
   useEffect(() => {
     cachePvZContext(state);
   }, [state]);
+
+  useEffect(() => {
+    onSnapshotChange?.({
+      state,
+      adventurePackIndex,
+      setupCollapsed,
+    });
+  }, [state, adventurePackIndex, setupCollapsed, onSnapshotChange]);
 
   useEffect(() => {
     onFormulaChange?.(

@@ -37,15 +37,23 @@ interface TetrisSheetProps {
   onFormulaChange?: (text: string) => void;
   onStatusChange?: (summary: WorkbookStatusSummary) => void;
   onExit?: () => void;
+  initialSnapshot?: Record<string, unknown> | null;
+  onSnapshotChange?: (snapshot: Record<string, unknown>) => void;
 }
 
-export const TetrisSheet: React.FC<TetrisSheetProps> = ({ onFormulaChange, onStatusChange, onExit }) => {
-  const [state, setState] = useState<TetrisBoardState>(() => createTetrisBoardState('marathon'));
+export const TetrisSheet: React.FC<TetrisSheetProps> = ({ onFormulaChange, onStatusChange, onExit, initialSnapshot, onSnapshotChange }) => {
+  const snapshot = initialSnapshot as {
+    state?: TetrisBoardState;
+    selectedPackId?: TetrisPackId;
+    selectedPresetId?: string;
+    settingsCollapsed?: boolean;
+  } | null;
+  const [state, setState] = useState<TetrisBoardState>(() => snapshot?.state ?? createTetrisBoardState('marathon'));
   const [moduleRecord, setModuleRecord] = useState(() => readTetrisModuleRecord());
   const [lastRunUpdate, setLastRunUpdate] = useState<TetrisRunRecordUpdate | null>(null);
-  const [settingsCollapsed, setSettingsCollapsed] = useState(true);
-  const [selectedPackId, setSelectedPackId] = useState<TetrisPackId>('core');
-  const [selectedPresetId, setSelectedPresetId] = useState<string>(findDefaultTetrisPresetId('marathon'));
+  const [settingsCollapsed, setSettingsCollapsed] = useState(snapshot?.settingsCollapsed ?? true);
+  const [selectedPackId, setSelectedPackId] = useState<TetrisPackId>(snapshot?.selectedPackId ?? 'core');
+  const [selectedPresetId, setSelectedPresetId] = useState<string>(snapshot?.selectedPresetId ?? findDefaultTetrisPresetId('marathon'));
   const previousStatusRef = useRef(state.status);
   const visiblePresets = getTetrisPresetsByPack(selectedPackId).filter((preset) => preset.enabled);
   const selectedPreset = getTetrisPresetById(selectedPresetId);
@@ -139,6 +147,15 @@ export const TetrisSheet: React.FC<TetrisSheetProps> = ({ onFormulaChange, onSta
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    onSnapshotChange?.({
+      state,
+      selectedPackId,
+      selectedPresetId,
+      settingsCollapsed,
+    });
+  }, [state, selectedPackId, selectedPresetId, settingsCollapsed, onSnapshotChange]);
 
   const handleModeChange = (mode: TetrisMode) => {
     const nextPresetId = findDefaultTetrisPresetId(mode);

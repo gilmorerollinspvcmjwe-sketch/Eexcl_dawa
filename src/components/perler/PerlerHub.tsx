@@ -20,6 +20,8 @@ interface PerlerHubProps {
   onFormulaChange?: (text: string) => void;
   onSelectedCellChange?: (cell: { row: number; col: number } | null) => void;
   onProgressChange?: (progress: PerlerProgressSummary | null) => void;
+  initialSnapshot?: Record<string, unknown> | null;
+  onSnapshotChange?: (snapshot: Record<string, unknown>) => void;
 }
 
 interface PersistedPerlerState {
@@ -90,24 +92,40 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
   onFormulaChange,
   onSelectedCellChange,
   onProgressChange,
+  initialSnapshot,
+  onSnapshotChange,
 }) => {
   const persisted = useMemo(() => loadPersistedPerlerState(), []);
-  const [workspace, setWorkspace] = useState<PerlerWorkspaceState | null>(entryMode === 'resume' ? persisted.workspace : null);
-  const [importedTemplates, setImportedTemplates] = useState<PerlerTemplate[]>(persisted.importedTemplates);
-  const [completedTemplateIds, setCompletedTemplateIds] = useState<string[]>(persisted.completedTemplateIds);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(persisted.workspace?.id || perlerTemplates[0]?.id || null);
-  const [selectedColor, setSelectedColor] = useState<string>(persisted.currentColor || '#223A6A');
-  const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
-  const [canvasZoom, setCanvasZoom] = useState<number>(persisted.workspace ? getDefaultCanvasZoom(persisted.workspace.width) : 1);
-  const [viewMode, setViewMode] = useState<PerlerViewMode>('split');
+  const snapshot = initialSnapshot as {
+    workspace?: PerlerWorkspaceState | null;
+    importedTemplates?: PerlerTemplate[];
+    completedTemplateIds?: string[];
+    selectedTemplateId?: string | null;
+    selectedColor?: string;
+    activeCell?: { row: number; col: number } | null;
+    canvasZoom?: number;
+    viewMode?: PerlerViewMode;
+    filters?: PerlerFilterState;
+    selectedRegionId?: string;
+  } | null;
+  const [workspace, setWorkspace] = useState<PerlerWorkspaceState | null>(snapshot?.workspace ?? (entryMode === 'resume' ? persisted.workspace : null));
+  const [importedTemplates, setImportedTemplates] = useState<PerlerTemplate[]>(snapshot?.importedTemplates ?? persisted.importedTemplates);
+  const [completedTemplateIds, setCompletedTemplateIds] = useState<string[]>(snapshot?.completedTemplateIds ?? persisted.completedTemplateIds);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(snapshot?.selectedTemplateId ?? persisted.workspace?.id ?? perlerTemplates[0]?.id ?? null);
+  const [selectedColor, setSelectedColor] = useState<string>(snapshot?.selectedColor ?? persisted.currentColor ?? '#223A6A');
+  const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(snapshot?.activeCell ?? null);
+  const [canvasZoom, setCanvasZoom] = useState<number>(snapshot?.canvasZoom ?? (persisted.workspace ? getDefaultCanvasZoom(persisted.workspace.width) : 1));
+  const [viewMode, setViewMode] = useState<PerlerViewMode>(snapshot?.viewMode ?? 'split');
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showFinalize, setShowFinalize] = useState(false);
-  const [filters, setFilters] = useState<PerlerFilterState>({
-    query: '',
-    category: 'all',
-    size: 'all',
-    difficulty: 'all',
-  });
+  const [filters, setFilters] = useState<PerlerFilterState>(
+    snapshot?.filters ?? {
+      query: '',
+      category: 'all',
+      size: 'all',
+      difficulty: 'all',
+    },
+  );
 
   const templates = useMemo(() => [...perlerTemplates, ...importedTemplates.map(normalizeTemplate)], [importedTemplates]);
   const filteredTemplates = useMemo(() => filterPerlerTemplates(templates, filters), [templates, filters]);
@@ -123,7 +141,7 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
     () => (workspace ? buildPerlerRegions(workspace.width, workspace.height) : []),
     [workspace],
   );
-  const [selectedRegionId, setSelectedRegionId] = useState<string>('');
+  const [selectedRegionId, setSelectedRegionId] = useState<string>(snapshot?.selectedRegionId ?? '');
   const effectiveSelectedRegionId =
     regions.length > 0 && regions.some((region) => region.id === selectedRegionId)
       ? selectedRegionId
@@ -137,6 +155,21 @@ export const PerlerHub: React.FC<PerlerHubProps> = ({
       currentColor: selectedColor,
     });
   }, [workspace, importedTemplates, completedTemplateIds, selectedColor]);
+
+  useEffect(() => {
+    onSnapshotChange?.({
+      workspace,
+      importedTemplates,
+      completedTemplateIds,
+      selectedTemplateId,
+      selectedColor,
+      activeCell,
+      canvasZoom,
+      viewMode,
+      filters,
+      selectedRegionId,
+    });
+  }, [workspace, importedTemplates, completedTemplateIds, selectedTemplateId, selectedColor, activeCell, canvasZoom, viewMode, filters, selectedRegionId, onSnapshotChange]);
 
   useEffect(() => {
     onSelectedCellChange?.(activeCell);

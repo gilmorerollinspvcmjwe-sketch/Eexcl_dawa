@@ -39,6 +39,7 @@ import { ARCADE_MODULE_MAP, type ArcadeGameId } from './features/workbook/workbo
 import { getGameForSheet, getVisibleSheetsForWorkspace } from './features/workbook/workspaceState';
 import { createInitialSaveSlot } from './features/save/saveAdapters';
 import { loadFromStorage, saveToStorage } from './utils/saveStorage';
+import { loadWorkbookPersistence, saveWorkbookPersistence } from './features/save/workbookPersistence';
 import './styles/save.css';
 
 const PERLER_PROGRESS_KEY = 'excel-aim-perler-state-v1';
@@ -79,10 +80,14 @@ function AppContent() {
     cancelSettings,
   } = useSettings();
   const { mousePosition, isCrosshairVisible, setCrosshairVisible } = useCrosshair();
+  const persistedWorkbook = useMemo(() => loadWorkbookPersistence(), []);
 
-  const [activeArcadeGame, setActiveArcadeGame] = useState<ActiveArcadeGame>(null);
-  const [workspaceGameId, setWorkspaceGameId] = useState<ArcadeGameId | null>(null);
-  const [currentSaveSlot, setCurrentSaveSlot] = useState<SaveSlot | null>(null);
+  const [activeArcadeGame, setActiveArcadeGame] = useState<ActiveArcadeGame>(persistedWorkbook.workspaceGameId as ActiveArcadeGame);
+  const [workspaceGameId, setWorkspaceGameId] = useState<ArcadeGameId | null>(persistedWorkbook.workspaceGameId);
+  const [currentSaveSlot, setCurrentSaveSlot] = useState<SaveSlot | null>(
+    persistedWorkbook.currentSaveSlotId ? loadFromStorage(persistedWorkbook.currentSaveSlotId) : null,
+  );
+  const [gameSnapshots, setGameSnapshots] = useState<Partial<Record<ArcadeGameId, unknown>>>(persistedWorkbook.gameSnapshots);
   const [perlerEntryMode, setPerlerEntryMode] = useState<PerlerEntryMode>('library');
   const [showSaveManager, setShowSaveManager] = useState(false);
   const [hubFormulaText, setHubFormulaText] = useState('=今日建议：先热手，再摸鱼，再伪装');
@@ -147,6 +152,12 @@ function AppContent() {
     isFPSMode?: boolean;
     fpsConfig?: FPSConfigMap;
   } | null>(null);
+
+  useEffect(() => {
+    if (persistedWorkbook.workspaceGameId) {
+      switchSheet(persistedWorkbook.currentSheet);
+    }
+  }, [persistedWorkbook, switchSheet]);
 
   const { currentFeedback } = useFeedbackSystem({
     combo: gameState.combo,
@@ -315,7 +326,7 @@ function AppContent() {
           gameType: workspaceGameId,
           workspaceId: workspaceGameId,
           currentSheet,
-          payload: currentSaveSlot.data.payload || {},
+          payload: (gameSnapshots[workspaceGameId] as Record<string, unknown> | undefined) || currentSaveSlot.data.payload || {},
         },
       });
       return;
@@ -340,6 +351,10 @@ function AppContent() {
     const loaded = loadFromStorage(slot.id);
     if (loaded) {
       setCurrentSaveSlot(loaded);
+      setGameSnapshots((current) => ({
+        ...current,
+        [loaded.gameType]: loaded.data.payload,
+      }));
       enterGameWorkspace(loaded.gameType);
       switchSheet(loaded.data.currentSheet);
     }
@@ -364,6 +379,22 @@ function AppContent() {
       switchSheet(ARCADE_MODULE_MAP[workspaceGameId].entrySheetId);
     }
   }, [workspaceGameId, visibleSheets, currentSheet, switchSheet]);
+
+  useEffect(() => {
+    saveWorkbookPersistence({
+      workspaceGameId,
+      currentSheet,
+      currentSaveSlotId: currentSaveSlot?.id ?? null,
+      gameSnapshots,
+    });
+  }, [workspaceGameId, currentSheet, currentSaveSlot, gameSnapshots]);
+
+  const updateGameSnapshot = (gameId: ArcadeGameId, snapshot: unknown) => {
+    setGameSnapshots((current) => ({
+      ...current,
+      [gameId]: snapshot,
+    }));
+  };
 
   const titleText = currentSheet === 'hub'
     ? 'Microsoft Excel - 工位娱乐中心.xlsx'
@@ -635,34 +666,51 @@ function AppContent() {
             />
           ) : currentSheet === 'perler' ? (
             <PerlerHub
+              key={`perler-${currentSaveSlot?.id ?? 'live'}`}
               entryMode={perlerEntryMode}
               onExit={handleExitCurrentGame}
               onFormulaChange={setPerlerFormulaText}
               onSelectedCellChange={setPerlerSelectedCell}
               onProgressChange={(progress) => setPerlerProgress(progress)}
+              initialSnapshot={(gameSnapshots.perler as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('perler', snapshot)}
             />
           ) : currentSheet === 'pvz' ? (
-            <PvZGameSheet onFormulaChange={setPvZFormulaText} />
+            <PvZGameSheet
+              key={`pvz-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setPvZFormulaText}
+              initialSnapshot={(gameSnapshots.pvz as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('pvz', snapshot)}
+            />
           ) : currentSheet === 'pvz_collection' ? (
             <PvZCollectionSheet onFormulaChange={setPvZCollectionFormulaText} />
           ) : currentSheet === 'pvz_lab' ? (
             <PvZLabSheet onFormulaChange={setPvZLabFormulaText} />
           ) : currentSheet === 'snake' ? (
             <SnakeSheet
+              key={`snake-${currentSaveSlot?.id ?? 'live'}`}
               onFormulaChange={setSnakeFormulaText}
               onStatusChange={setSnakeStatusSummary}
               onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.snake as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('snake', snapshot)}
             />
           ) : currentSheet === 'tetris' ? (
             <TetrisSheet
+              key={`tetris-${currentSaveSlot?.id ?? 'live'}`}
               onFormulaChange={setTetrisFormulaText}
               onStatusChange={setTetrisStatusSummary}
               onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.tetris as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('tetris', snapshot)}
             />
           ) : currentSheet === 'pacman' ? (
             <PacmanSheet
+              key={`pacman-${currentSaveSlot?.id ?? 'live'}`}
               onFormulaChange={setPacmanFormulaText}
               onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.pacman as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('pacman', snapshot)}
             />
           ) : currentSheet === 'pacman_guide' ? (
             <PacmanGuideSheet
@@ -670,8 +718,11 @@ function AppContent() {
             />
           ) : currentSheet === 'zuma' ? (
             <ZumaGameSheet
+              key={`zuma-${currentSaveSlot?.id ?? 'live'}`}
               onFormulaChange={setZumaFormulaText}
               onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.zuma as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('zuma', snapshot)}
             />
           ) : currentSheet === 'zuma_collection' ? (
             <ZumaCollectionSheet
@@ -679,8 +730,11 @@ function AppContent() {
             />
           ) : currentSheet === 'match3' ? (
             <Match3Sheet
+              key={`match3-${currentSaveSlot?.id ?? 'live'}`}
               onFormulaChange={setMatch3FormulaText}
               onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.match3 as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('match3', snapshot)}
             />
           ) : currentSheet === 'match3_lab' ? (
             <Match3LabSheet
