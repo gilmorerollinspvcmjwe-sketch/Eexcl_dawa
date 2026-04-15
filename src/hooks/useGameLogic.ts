@@ -289,7 +289,7 @@ export function useGameLogic() {
       setFPSConfig(config);
     }
     
-    // switch_track 妯″紡锛氶噸缃紭鍏堢骇椤哄簭
+    // switch_track 模式：重置优先级顺序
     if (mode === 'switch_track') {
       resetPriorityOrder();
     }

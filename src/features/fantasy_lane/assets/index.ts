@@ -24,6 +24,7 @@ export type { UnitRenderConfig, UnitRole, UnitFaction } from './unitConfigs';
 
 // 便捷绘制函数
 import { UNIT_CONFIGS } from './unitConfigs';
+import type { UnitFaction } from './unitConfigs';
 import * as drawFns from './drawTanks';
 import * as drawMelee from './drawMelee';
 import * as drawRanged from './drawRanged';
@@ -63,6 +64,47 @@ const DRAW_FN_MAP: Record<string, (ctx: CanvasRenderingContext2D, size: number, 
   fire_dragon: drawBoss.drawFireDragon,
 };
 
+export interface DrawUnitOnCanvasOptions {
+  side?: UnitFaction;
+  scale?: number;
+  mirror?: boolean;
+}
+
+function clampChannel(value: number) {
+  return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function mixHexColor(source: string, target: string, weight: number) {
+  const normalizedWeight = Math.max(0, Math.min(1, weight));
+  const sourceValue = source.replace('#', '');
+  const targetValue = target.replace('#', '');
+  if (sourceValue.length !== 6 || targetValue.length !== 6) return source;
+
+  const r = clampChannel(parseInt(sourceValue.slice(0, 2), 16) * (1 - normalizedWeight) + parseInt(targetValue.slice(0, 2), 16) * normalizedWeight);
+  const g = clampChannel(parseInt(sourceValue.slice(2, 4), 16) * (1 - normalizedWeight) + parseInt(targetValue.slice(2, 4), 16) * normalizedWeight);
+  const b = clampChannel(parseInt(sourceValue.slice(4, 6), 16) * (1 - normalizedWeight) + parseInt(targetValue.slice(4, 6), 16) * normalizedWeight);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+function resolvePalette(unitId: string, side: UnitFaction) {
+  const config = UNIT_CONFIGS[unitId];
+  if (!config) return null;
+
+  if (side !== 'enemy') {
+    return {
+      bodyColor: config.bodyColor,
+      detailColor: config.detailColor,
+      weaponColor: config.weaponColor,
+    };
+  }
+
+  return {
+    bodyColor: mixHexColor(config.bodyColor, '#c2410c', 0.42),
+    detailColor: mixHexColor(config.detailColor, '#7f1d1d', 0.48),
+    weaponColor: mixHexColor(config.weaponColor, '#5b1b1b', 0.36),
+  };
+}
+
 /** 在Canvas上绘制指定兵种 */
 export function drawUnitOnCanvas(
   ctx: CanvasRenderingContext2D,
@@ -70,7 +112,8 @@ export function drawUnitOnCanvas(
   x: number,
   y: number,
   hpPercent: number,
-  isAttacking: boolean = false
+  isAttackingOrOptions: boolean | DrawUnitOnCanvasOptions = false,
+  options?: DrawUnitOnCanvasOptions,
 ): void {
   const config = UNIT_CONFIGS[unitId];
   if (!config) return;
@@ -78,9 +121,21 @@ export function drawUnitOnCanvas(
   const drawFn = DRAW_FN_MAP[unitId];
   if (!drawFn) return;
 
+  const isAttacking = typeof isAttackingOrOptions === 'boolean' ? isAttackingOrOptions : false;
+  const drawOptions = typeof isAttackingOrOptions === 'boolean' ? options : isAttackingOrOptions;
+  const side = drawOptions?.side ?? config.faction;
+  const scale = drawOptions?.scale ?? 1;
+  const palette = resolvePalette(unitId, side);
+  if (!palette) return;
+
   ctx.save();
   ctx.translate(x, y);
-  drawFn(ctx, config.size, config.bodyColor, config.detailColor, config.weaponColor, hpPercent, isAttacking);
+  if (drawOptions?.mirror) {
+    ctx.scale(-scale, scale);
+  } else if (scale !== 1) {
+    ctx.scale(scale, scale);
+  }
+  drawFn(ctx, config.size, palette.bodyColor, palette.detailColor, palette.weaponColor, hpPercent, isAttacking);
   ctx.restore();
 }
 

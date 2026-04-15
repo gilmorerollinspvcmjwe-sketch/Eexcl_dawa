@@ -1,5 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { buildHubSnapshot, type ArcadeGameId, type PerlerProgressSummary } from '../features/hub/hubData';
+import {
+  buildHubSnapshot,
+  type ArcadeGameId,
+  type FantasyLaneHubSummary,
+  type GoldMinerHubSummary,
+  type PerlerProgressSummary,
+} from '../features/hub/hubData';
 import type { AppSheetId } from '../features/sheets/sheetRegistry';
 import { ARCADE_MODULE_MAP } from '../features/workbook/workbookRegistry';
 import { HubQuickResumeRow } from './hub/HubQuickResumeRow';
@@ -21,12 +27,16 @@ interface GameHubProps {
   onStartPacman?: () => void;
   onStartZuma?: () => void;
   onStartMatch3?: () => void;
+  onStartFantasyLane?: () => void;
+  onStartGoldMiner?: () => void;
   onSwitchSheet: (sheet: AppSheetId) => void;
   trainingDuration?: 30 | 60 | 120;
   difficulty?: DifficultyLevel;
   totalGames: number;
   totalScore: number;
   perlerProgress: PerlerProgressSummary | null;
+  fantasyLaneProgress?: FantasyLaneHubSummary | null;
+  goldMinerProgress?: GoldMinerHubSummary | null;
   onFormulaChange?: (text: string) => void;
 }
 
@@ -43,20 +53,26 @@ export const GameHub: React.FC<GameHubProps> = ({
   onStartPacman,
   onStartZuma,
   onStartMatch3,
+  onStartFantasyLane,
+  onStartGoldMiner,
   onSwitchSheet,
   trainingDuration = 60,
   difficulty = 'normal',
   totalGames,
   totalScore,
   perlerProgress,
+  fantasyLaneProgress,
+  goldMinerProgress,
   onFormulaChange,
 }) => {
   const match3Progress = useMemo(() => getProgressSummary(), []);
   const snapshot = useMemo(
-    () => buildHubSnapshot({ perlerProgress, stats: { totalGames, totalScore } }),
-    [perlerProgress, totalGames, totalScore],
+    () => buildHubSnapshot({ perlerProgress, fantasyLaneProgress, goldMinerProgress, stats: { totalGames, totalScore } }),
+    [fantasyLaneProgress, goldMinerProgress, perlerProgress, totalGames, totalScore],
   );
-  const [selectedGame, setSelectedGame] = useState<ArcadeGameId>(perlerProgress ? 'perler' : 'aim');
+  const [selectedGame, setSelectedGame] = useState<ArcadeGameId>(
+    perlerProgress ? 'perler' : fantasyLaneProgress?.hasStarted ? 'fantasy_lane' : goldMinerProgress?.hasStarted ? 'gold_miner' : 'aim',
+  );
 
   const availableGames = useMemo(() => {
     const enabled = new Set<ArcadeGameId>(['aim', 'perler', 'pvz']);
@@ -65,8 +81,10 @@ export const GameHub: React.FC<GameHubProps> = ({
     if (onStartPacman) enabled.add('pacman');
     if (onStartZuma) enabled.add('zuma');
     if (onStartMatch3) enabled.add('match3');
+    if (onStartFantasyLane) enabled.add('fantasy_lane');
+    if (onStartGoldMiner) enabled.add('gold_miner');
     return enabled;
-  }, [onStartSnake, onStartTetris, onStartPacman, onStartZuma, onStartMatch3]);
+  }, [onStartFantasyLane, onStartGoldMiner, onStartMatch3, onStartPacman, onStartSnake, onStartTetris, onStartZuma]);
 
   useEffect(() => {
     onFormulaChange?.(GAME_DESCRIPTIONS[selectedGame]);
@@ -77,48 +95,56 @@ export const GameHub: React.FC<GameHubProps> = ({
       onStartGame('timed', trainingDuration, undefined, difficulty);
       return;
     }
-
     if (gameId === 'perler') {
       onStartPerler('library');
       return;
     }
-
     if (gameId === 'snake' && onStartSnake) {
       onStartSnake();
       return;
     }
-
     if (gameId === 'tetris' && onStartTetris) {
       onStartTetris();
       return;
     }
-
     if (gameId === 'pvz') {
       onStartPvZ();
       return;
     }
-
     if (gameId === 'match3' && onStartMatch3) {
       onStartMatch3();
       return;
     }
-
     if (gameId === 'pacman' && onStartPacman) {
       onStartPacman();
       return;
     }
-
     if (gameId === 'zuma' && onStartZuma) {
       onStartZuma();
       return;
     }
-
+    if (gameId === 'fantasy_lane' && onStartFantasyLane) {
+      onStartFantasyLane();
+      return;
+    }
+    if (gameId === 'gold_miner' && onStartGoldMiner) {
+      onStartGoldMiner();
+      return;
+    }
     setSelectedGame(gameId);
   };
 
   const handleQuickResume = () => {
     if (snapshot.quickResume.kind === 'perler') {
       onStartPerler('resume');
+      return;
+    }
+    if (snapshot.quickResume.kind === 'fantasy_lane' && onStartFantasyLane) {
+      onStartFantasyLane();
+      return;
+    }
+    if (snapshot.quickResume.kind === 'gold_miner' && onStartGoldMiner) {
+      onStartGoldMiner();
       return;
     }
     onStartGame('timed', trainingDuration, undefined, difficulty);
@@ -215,6 +241,12 @@ export const GameHub: React.FC<GameHubProps> = ({
                 )}
               </button>
               <button className="excel-nav-btn excel-nav-btn--sub" onClick={() => onSwitchSheet('match3_lab')}>图鉴</button>
+              {onStartFantasyLane ? (
+                <button className="excel-nav-btn" onClick={() => onSwitchSheet('fantasy_lane')}>奇幻战线</button>
+              ) : null}
+              {onStartGoldMiner ? (
+                <button className="excel-nav-btn" onClick={() => onSwitchSheet('gold_miner')}>黄金矿工</button>
+              ) : null}
             </div>
           </div>
         </div>

@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createPacmanBoardState } from '../src/features/pacman/pacmanBoardState.ts';
+import {
+  canMoveInDirection,
+  createPacmanBoardState,
+  getMazeDefinition,
+} from '../src/features/pacman/pacmanBoardState.ts';
 import {
   calculatePinkyTarget,
   checkGhostCollision,
@@ -48,6 +52,29 @@ test('selected tutorial pack changes runtime tuning instead of staying on arcade
 
   assert.equal(tutorialState.levelTuning.frightenedDurationMs, 8000);
   assert.equal(tutorialState.levelTuning.ghostSpeed, 0.6);
+});
+
+test('initial pacman spawn direction is walkable and startGame produces movement', () => {
+  const idleState = createPacmanBoardState({ packId: 'arcade', level: 1 });
+  const maze = getMazeDefinition(idleState.mazeId);
+  const startedState = startGame(idleState);
+  const movedState = tickPacmanState(startedState, 1000);
+
+  assert.equal(
+    canMoveInDirection(
+      maze,
+      idleState.pacman.row,
+      idleState.pacman.col,
+      idleState.pacman.direction,
+      false,
+    ),
+    true,
+  );
+  assert.equal(
+    movedState.pacman.pixelX !== startedState.pacman.pixelX ||
+      movedState.pacman.pixelY !== startedState.pacman.pixelY,
+    true,
+  );
 });
 
 test('fruit_rush and one_life packs are registered as real selectable content packs', () => {

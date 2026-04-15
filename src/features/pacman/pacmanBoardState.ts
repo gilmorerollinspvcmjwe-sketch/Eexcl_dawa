@@ -332,11 +332,26 @@ export function createInitialGlobalModeState(tuning: LevelTuningParams): GlobalM
 }
 
 /* 创建初始 Pac-Man 实例 */
+function getInitialPacmanDirection(maze: PacmanMazeDefinition): PacmanDirection {
+  const { row, col } = maze.pacmanSpawn;
+  const preferredDirections: PacmanDirection[] = ['left', 'up', 'right', 'down'];
+
+  for (const direction of preferredDirections) {
+    if (canMoveInDirection(maze, row, col, direction, false)) {
+      return direction;
+    }
+  }
+
+  return 'none';
+}
+
 export function createInitialPacman(maze: PacmanMazeDefinition, tuning: LevelTuningParams): PacmanInstance {
+  const initialDirection = getInitialPacmanDirection(maze);
+
   return {
     row: maze.pacmanSpawn.row,
     col: maze.pacmanSpawn.col,
-    direction: 'left',
+    direction: initialDirection,
     nextDirection: 'none',
     pixelX: maze.pacmanSpawn.col,
     pixelY: maze.pacmanSpawn.row,

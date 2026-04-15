@@ -105,6 +105,16 @@ function createPackLevelState(packId: PacmanPackId, levelNumber: number, mode: P
   });
 }
 
+function normalizePositionSet(value: unknown): Set<string> {
+  if (value instanceof Set) {
+    return new Set(Array.from(value).filter((entry): entry is string => typeof entry === 'string'));
+  }
+  if (Array.isArray(value)) {
+    return new Set(value.filter((entry): entry is string => typeof entry === 'string'));
+  }
+  return new Set<string>();
+}
+
 /* 兼容旧快照，补齐新增字段与关卡包调优参数。 */
 function hydrateSnapshotState(
   rawState: PacmanBoardState | undefined,
@@ -129,6 +139,8 @@ function hydrateSnapshotState(
     fruitSpawnsTriggered: rawState.fruitSpawnsTriggered ?? (((rawState.fruit?.spawnTimeMs ?? 0) > 0 ? 1 : 0) + rawState.fruitsCollected),
     tunnelUses: rawState.tunnelUses ?? 0,
     extraLifeAwarded: rawState.extraLifeAwarded ?? false,
+    eatenPelletPositions: normalizePositionSet(rawState.eatenPelletPositions),
+    eatenEnergizerPositions: normalizePositionSet(rawState.eatenEnergizerPositions),
   };
 }
 

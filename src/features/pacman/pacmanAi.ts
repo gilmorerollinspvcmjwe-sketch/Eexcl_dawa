@@ -20,6 +20,8 @@ import {
   isTunnel,
 } from './pacmanBoardState.ts';
 
+const GHOST_MOVEMENT_SCALE = 2.45;
+
 /* Pinky 原版偏移异常开关（原版中向上时偏移4格而非2格） */
 export const PINKY_OFFSET_BUG_ENABLED = true;
 
@@ -298,7 +300,7 @@ export function updateGhostPosition(state: PacmanBoardState, ghost: GhostInstanc
 
   const baseSpeed = state.levelTuning.ghostSpeed + getElroySpeedBonus(state, newGhost);
   const actualSpeed = baseSpeed * speedMultiplier;
-  const speedPerTick = actualSpeed * (deltaMs / 1000);
+  const speedPerTick = actualSpeed * GHOST_MOVEMENT_SCALE * (deltaMs / 1000);
 
   const currentRow = Math.round(newGhost.pixelY);
   const currentCol = Math.round(newGhost.pixelX);

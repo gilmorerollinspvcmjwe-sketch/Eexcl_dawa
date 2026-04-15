@@ -19,6 +19,8 @@ import {
 
 import { restartLevel } from './pacmanGameLogic.ts';
 
+const PACMAN_MOVEMENT_SCALE = 2.8;
+
 /* 处理方向输入 */
 export function handleDirectionInput(state: PacmanBoardState, direction: PacmanDirection): PacmanBoardState {
   if (state.status !== 'playing' || state.isPaused) return state;
@@ -69,7 +71,7 @@ export function updatePacmanPosition(state: PacmanBoardState, deltaMs: number): 
   if (state.deathAnimationMs > 0) return state;
 
   const maze = getMazeDefinition(state.mazeId);
-  const speedPerTick = state.pacman.speed * (deltaMs / 1000);
+  const speedPerTick = state.pacman.speed * PACMAN_MOVEMENT_SCALE * (deltaMs / 1000);
 
   const newState = tryTurn(state);
   const pacman = newState.pacman;

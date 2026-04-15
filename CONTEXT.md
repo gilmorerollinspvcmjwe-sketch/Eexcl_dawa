@@ -1,5 +1,11 @@
 # 当前进度
 
+- 当前正在做什么：已把奇幻战线从概念稿重构成可开发版 v2，新增 1 份总案和 4 份正式子规格文档，开始把后续实现所需的固定规则、经济节奏、兵种运行时字段和关卡脚本格式全部写死。
+- 上次停在哪里：旧版 `design/fantasy_lane_battle_game_design.md` 已经明确题材、玩法方向和首发规模，但仍停留在产品方案层，缺少能直接拆给状态层和数据层的正式规则表。
+- 近期关键决定和原因：
+  - 2026-04-15 奇幻战线正式切到 v2 可开发版：新增 `design/fantasy_lane_battle_game_design_v2.md`、`design/fantasy_lane_combat_rules_v2.md`、`design/fantasy_lane_economy_pacing_v2.md`、`design/fantasy_lane_unit_data_v2.md`、`design/fantasy_lane_level_script_v2.md`，原因是这类赤潮式战线玩法必须先锁“规则 > 节奏 > 数据 > 脚本”，不能继续只靠概念稿推进。
+  - 2026-04-15 奇幻战线 v2 已锁定为“8 兵种编组 + 3 格指令队列 + 4 层战场 + 22 兵种 + 3 英雄 + 5 章 30 关”的首发结构，原因是这样能保住对推的核心乐趣，同时把学习成本和实现范围压在当前项目可承受范围内。
+
 - 当前正在做什么：已完成 Match3 模块一轮 P1 执行，把 Adventure 主线从 4 包扩到 6 包，新增“障碍压制包 / 特效连锁包”骨架；Sheet16 正式加入 `Adventure / Blitz / Puzzle` 模式入口；关卡脚本与状态层已能表达 `boardTemplateId / colorWeights / prebuiltSpecials / triggerCombo` 这批新能力。
 - 上次停在哪里：上一轮 Match3 虽然已经补完掉落收集、练习真入口和键盘语义，但仍只有 Adventure 单线，主线只到 4 包，Sheet16 没有 Blitz / Puzzle 模式层，脚本也还不能正式表达模板、颜色权重、预置特殊块和组合目标。
 - 近期关键决定和原因：

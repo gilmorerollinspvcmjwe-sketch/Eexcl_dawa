@@ -16,6 +16,27 @@ const DEFAULT_SAVE_ADAPTERS: Record<ArcadeGameId, WorkbookSaveAdapter> = {
   pacman: { gameId: 'pacman', createInitialPayload: () => ({ pack: 'arcade' }) },
   zuma: { gameId: 'zuma', createInitialPayload: () => ({ difficulty: 'normal' }) },
   match3: { gameId: 'match3', createInitialPayload: () => ({ level: 1 }) },
+  gold_miner: { gameId: 'gold_miner', createInitialPayload: () => ({ mode: 'adventure', levelId: 1, phase: 'swinging' }) },
+  fantasy_lane: {
+    gameId: 'fantasy_lane',
+    createInitialPayload: () => ({
+      chapterId: 'chapter-1',
+      levelId: '1-1',
+      heroId: 'warlord',
+      tacticalId: 'fireball',
+      loadoutUnitIds: [
+        'goblin_shield',
+        'archer',
+        'flame_warlock',
+        'orc_heavy',
+        'crypt_crawler',
+        'elf_shooter',
+        'ice_witch',
+        'griffin_knight',
+      ],
+      phase: 'setup',
+    }),
+  },
 };
 
 export function createWorkbookSaveData(input: {
@@ -45,4 +66,3 @@ export function createInitialSaveSlot(name: string, gameId: ArcadeGameId, curren
     }),
   );
 }
-

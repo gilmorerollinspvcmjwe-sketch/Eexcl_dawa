@@ -1,7 +1,5 @@
-/* 吃豆人棋盘渲染组件。负责迷宫、豆子、能量豆、角色渲染、动画效果。 */
-
-import React, { useState, useEffect } from 'react';
-import type { PacmanBoardState, PacmanDirection, GhostId } from '../../features/pacman/pacmanTypes';
+import React, { useEffect, useState } from 'react';
+import type { GhostId, PacmanBoardState } from '../../features/pacman/pacmanTypes';
 import { FRUIT_NAMES, GHOST_EAT_SCORES } from '../../features/pacman/pacmanTypes';
 import { getMazeDefinition } from '../../features/pacman/pacmanBoardState';
 import { getFrightenedRemainingTime, isFrightenedBlinking } from '../../features/pacman/pacmanLevelTuning';
@@ -24,14 +22,6 @@ interface GhostCellStack {
   }>;
 }
 
-const PACMAN_SYMBOLS: Record<PacmanDirection, string> = {
-  up: '⬆',
-  down: '⬇',
-  left: '⬅',
-  right: '➡',
-  none: '●',
-};
-
 const GHOST_SYMBOLS: Record<GhostId, string> = {
   blinky: '👻',
   pinky: '👻',
@@ -45,14 +35,18 @@ const FRUIT_SYMBOLS: Record<string, string> = {
   orange: '🍊',
   apple: '🍎',
   melon: '🍈',
-  galaxian: '🌟',
+  galaxian: '🛸',
   bell: '🔔',
   key: '🔑',
 };
 
 export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
   const maze = getMazeDefinition(state.mazeId);
-  const cellSize = 14;
+  const cellSize = 'clamp(18px, 2.6vh, 28px)';
+  const eatenPelletPositions =
+    state.eatenPelletPositions instanceof Set ? state.eatenPelletPositions : new Set<string>();
+  const eatenEnergizerPositions =
+    state.eatenEnergizerPositions instanceof Set ? state.eatenEnergizerPositions : new Set<string>();
 
   const [scorePopups, setScorePopups] = useState<ScorePopup[]>([]);
   const [fruitAppearing, setFruitAppearing] = useState(false);
@@ -105,7 +99,7 @@ export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
         });
       }
       const timer = window.setTimeout(() => {
-        setScorePopups(prev => [...prev, ...newPopups]);
+        setScorePopups((prev) => [...prev, ...newPopups]);
       }, 0);
       prevGhostsEatenRef.current = state.totalGhostsEaten;
       return () => window.clearTimeout(timer);
@@ -127,10 +121,10 @@ export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
 
   useEffect(() => {
     if (scorePopups.length > 0) {
-      const timer = setTimeout(() => {
-        setScorePopups(prev => prev.slice(1));
+      const timer = window.setTimeout(() => {
+        setScorePopups((prev) => prev.slice(1));
       }, 1000);
-      return () => clearTimeout(timer);
+      return () => window.clearTimeout(timer);
     }
   }, [scorePopups]);
 
@@ -142,12 +136,12 @@ export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
   const boardShellClass = `pacman-board-shell${isVictory ? ' victory' : ''}${isDefeat ? ' defeat' : ''}`;
 
   return (
-    <div className={boardShellClass}>
+    <div className={boardShellClass} style={{ ['--pacman-cell-size' as string]: cellSize }}>
       <div
         className="pacman-board-grid"
         style={{
-          gridTemplateColumns: `repeat(${maze.cols}, ${cellSize}px)`,
-          gridTemplateRows: `repeat(${maze.rows}, ${cellSize}px)`,
+          gridTemplateColumns: `repeat(${maze.cols}, var(--pacman-cell-size))`,
+          gridTemplateRows: `repeat(${maze.rows}, var(--pacman-cell-size))`,
         }}
       >
         {Array.from({ length: maze.rows }, (_, row) =>
@@ -155,16 +149,20 @@ export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
             const cellType = maze.grid[row][col];
             const key = `${row}:${col}`;
 
-            let className = `pacman-board-cell ${cellType}`;
-            let content = '';
-
             const isPacmanHere = pacmanRow === row && pacmanCol === col;
             const ghostStack = ghostPositions.get(key);
             const isFruitHere = fruitActive && fruitRow === row && fruitCol === col;
 
             const isEnergizer = maze.energizerPositions.some(
-              (pos) => pos.row === row && pos.col === col
+              (pos) => pos.row === row && pos.col === col,
             );
+            const pelletConsumed = cellType === 'pellet' && eatenPelletPositions.has(key);
+            const energizerConsumed = isEnergizer && eatenEnergizerPositions.has(key);
+            const baseCellType = pelletConsumed || energizerConsumed ? 'path' : cellType;
+
+            let className = `pacman-board-cell ${baseCellType}`;
+            let content = '';
+            let contentClassName = '';
 
             if (isPacmanHere) {
               className = `pacman-board-cell pacman dir-${state.pacman.direction}`;
@@ -174,7 +172,7 @@ export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
               if (isRespawning) {
                 className += ' respawning';
               }
-              content = PACMAN_SYMBOLS[state.pacman.direction];
+              contentClassName = 'pacman-sprite';
             } else if (ghostStack) {
               const ghost = state.ghosts.find((g) => {
                 const gRow = Math.round(g.pixelY);
@@ -190,7 +188,6 @@ export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
                   content = '👻';
                 } else if (ghost.state === 'eaten') {
                   className = 'pacman-board-cell ghost eaten';
-                  content = '👀';
                 } else {
                   className = `pacman-board-cell ghost ${ghost.ghostId}`;
                   content = GHOST_SYMBOLS[ghost.ghostId];
@@ -205,33 +202,31 @@ export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
                 className += ' appearing';
               }
               content = FRUIT_SYMBOLS[fruitId] || FRUIT_NAMES[fruitId];
-            } else if (isEnergizer && !state.eatenEnergizerPositions.has(key)) {
+            } else if (isEnergizer && !energizerConsumed) {
               className = 'pacman-board-cell energizer';
-              content = '';
-            } else if (cellType === 'pellet' && !state.eatenPelletPositions.has(key)) {
+            } else if (cellType === 'pellet' && !pelletConsumed) {
               className = 'pacman-board-cell pellet';
-              content = '';
             }
 
             return (
               <div key={key} className={className}>
-                <span>{content}</span>
+                <span className={contentClassName}>{content}</span>
                 {ghostStack && ghostStack.ghosts.length > 1 ? (
-                  <small className="pacman-ghost-stack-count">×{ghostStack.ghosts.length}</small>
+                  <small className="pacman-ghost-stack-count">x{ghostStack.ghosts.length}</small>
                 ) : null}
               </div>
             );
-          })
+          }),
         )}
       </div>
 
-      {scorePopups.map(popup => (
+      {scorePopups.map((popup) => (
         <div
           key={popup.id}
           className={`pacman-score-popup score-${popup.score}`}
           style={{
-            left: `${popup.col * cellSize + cellSize / 2}px`,
-            top: `${popup.row * cellSize}px`,
+            left: `calc(${popup.col} * var(--pacman-cell-size) + var(--pacman-cell-size) / 2)`,
+            top: `calc(${popup.row} * var(--pacman-cell-size))`,
           }}
         >
           {popup.score}
@@ -241,7 +236,7 @@ export const PacmanBoard: React.FC<PacmanBoardProps> = ({ state }) => {
       {state.status === 'playing' && state.globalMode.currentMode === 'frightened' && (
         <div className="pacman-frightened-indicator">
           惊吓模式: {Math.ceil(frightenedRemaining / 1000)}秒
-          {isBlinking && <span className="pacman-blink-warning">⚠ 即将结束</span>}
+          {isBlinking && <span className="pacman-blink-warning">即将结束</span>}
         </div>
       )}
     </div>

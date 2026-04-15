@@ -25,8 +25,13 @@ test('snake and tetris workspaces only keep their own main sheets', () => {
   assert.deepEqual(getVisibleSheetsForWorkspace('tetris'), ['tetris']);
 });
 
+test('gold miner workspace keeps battle and guide sheets visible', () => {
+  assert.deepEqual(getVisibleSheetsForWorkspace('gold_miner'), ['gold_miner', 'gold_miner_guide']);
+});
+
 test('sheet ids resolve back to the owning game workspace', () => {
   assert.equal(getGameForSheet('pvz_lab'), 'pvz');
   assert.equal(getGameForSheet('perler'), 'perler');
+  assert.equal(getGameForSheet('gold_miner_guide'), 'gold_miner');
   assert.equal(getGameForSheet('hub'), null);
 });

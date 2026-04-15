@@ -13,8 +13,28 @@ export interface PerlerProgressSummary {
   completion: number;
 }
 
+export interface FantasyLaneHubSummary {
+  hasStarted: boolean;
+  currentChapterLabel: string;
+  completedLevels: number;
+  totalLevels: number;
+  totalStars: number;
+  bestScore: number;
+  lastPlayedLevelName: string;
+}
+
+export interface GoldMinerHubSummary {
+  hasStarted: boolean;
+  highestLevel: number;
+  bestScore: number;
+  totalGoldCollected: number;
+  lastPlayedLabel: string;
+}
+
 export interface HubBuildInput {
   perlerProgress: PerlerProgressSummary | null;
+  fantasyLaneProgress?: FantasyLaneHubSummary | null;
+  goldMinerProgress?: GoldMinerHubSummary | null;
   stats: HubStatsSummary;
 }
 
@@ -68,20 +88,42 @@ function buildPerlerRow(progress: PerlerProgressSummary | null): HubGameRow {
   };
 }
 
+function buildFantasyLaneRow(progress: FantasyLaneHubSummary | null | undefined): HubGameRow {
+  const hasStarted = progress?.hasStarted ?? false;
+  return {
+    id: 'fantasy_lane',
+    title: ARCADE_MODULE_MAP.fantasy_lane.title,
+    status: hasStarted && progress ? progress.currentChapterLabel : '战线',
+    bestRecord: hasStarted && progress ? `${progress.completedLevels}/${progress.totalLevels}` : '第 1 章',
+    todayCount: progress?.completedLevels ?? 0,
+    actionLabel: hasStarted ? '继续' : '启动',
+    accent: ARCADE_MODULE_MAP.fantasy_lane.accent,
+  };
+}
+
+function buildGoldMinerRow(progress: GoldMinerHubSummary | null | undefined): HubGameRow {
+  const hasStarted = progress?.hasStarted ?? false;
+  return {
+    id: 'gold_miner',
+    title: ARCADE_MODULE_MAP.gold_miner.title,
+    status: hasStarted && progress ? `L${progress.highestLevel}` : '矿井',
+    bestRecord: hasStarted && progress ? `${progress.bestScore}` : '$0',
+    todayCount: hasStarted && progress ? Math.max(1, Math.floor(progress.totalGoldCollected / 5000)) : 0,
+    actionLabel: hasStarted ? '继续' : '启动',
+    accent: ARCADE_MODULE_MAP.gold_miner.accent,
+  };
+}
+
 export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
-  const { perlerProgress, stats } = input;
+  const { perlerProgress, fantasyLaneProgress, goldMinerProgress, stats } = input;
 
   const quickResume: HubQuickResume = perlerProgress
-    ? {
-        kind: 'perler',
-        label: `继续 ${perlerProgress.title} ${perlerProgress.completion}%`,
-        description: '',
-      }
-    : {
-        kind: 'aim',
-        label: '继续 60秒练枪',
-        description: '',
-      };
+    ? { kind: 'perler', label: `继续 ${perlerProgress.title} ${perlerProgress.completion}%`, description: '' }
+    : fantasyLaneProgress?.hasStarted
+      ? { kind: 'fantasy_lane', label: `继续 ${fantasyLaneProgress.lastPlayedLevelName}`, description: '' }
+      : goldMinerProgress?.hasStarted
+        ? { kind: 'gold_miner', label: `继续黄金矿工 ${goldMinerProgress.lastPlayedLabel}`, description: '' }
+        : { kind: 'aim', label: '继续 60 秒练枪', description: '' };
 
   return {
     quickResume,
@@ -100,7 +142,7 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
         id: 'snake',
         title: ARCADE_MODULE_MAP.snake.title,
         status: '就绪',
-        bestRecord: '—',
+        bestRecord: '--',
         todayCount: 0,
         actionLabel: '启动',
         accent: ARCADE_MODULE_MAP.snake.accent,
@@ -109,11 +151,13 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
         id: 'tetris',
         title: ARCADE_MODULE_MAP.tetris.title,
         status: '就绪',
-        bestRecord: '—',
+        bestRecord: '--',
         todayCount: 0,
         actionLabel: '启动',
         accent: ARCADE_MODULE_MAP.tetris.accent,
       },
+      buildFantasyLaneRow(fantasyLaneProgress),
+      buildGoldMinerRow(goldMinerProgress),
       buildPerlerRow(perlerProgress),
       {
         id: 'pvz',
@@ -131,7 +175,7 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
       { id: 'perler-one', label: '拼豆 1 次', progress: '0/1', reward: '图鉴', state: 'pending' },
     ],
     activity: [
-      { id: 'theme', text: '夜班蓝', tone: 'success' },
+      { id: 'theme', text: '夜班蓝图同步', tone: 'success' },
       { id: 'alert', text: '效率偏高', tone: 'warning' },
       { id: 'sheetx', text: 'SheetX 闪烁', tone: 'neutral' },
     ],

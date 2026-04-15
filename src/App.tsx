@@ -20,6 +20,11 @@ import { ZumaGameSheet } from './components/zuma/ZumaGameSheet';
 import { ZumaCollectionSheet } from './components/zuma/ZumaCollectionSheet';
 import { Match3Sheet } from './components/match3/Match3Sheet';
 import { Match3LabSheet } from './components/match3/Match3LabSheet';
+import { FantasyLaneSheet } from './components/fantasy_lane/FantasyLaneSheet';
+import { FantasyLaneRosterSheet } from './components/fantasy_lane/FantasyLaneRosterSheet';
+import { FantasyLaneChapterSheet } from './components/fantasy_lane/FantasyLaneChapterSheet';
+import { GoldMinerSheet } from './components/gold_miner/GoldMinerSheet';
+import { GoldMinerGuideSheet } from './components/gold_miner/GoldMinerGuideSheet';
 import { FancyFeedback } from './components/FancyFeedback';
 import { FirstTimeGuide } from './components/FirstTimeGuide';
 import { ModeTutorialModal } from './components/ModeTutorialModal';
@@ -30,7 +35,9 @@ import { useTutorial } from './hooks/useTutorial';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 import type { FPSTrainingMode } from './components/TrainingModeSelector';
-import type { PerlerProgressSummary } from './features/hub/hubData';
+import { getFantasyLaneProgressSummary } from './features/fantasy_lane/fantasyLaneProgressStorage';
+import { getGoldMinerProgressSummary } from './features/gold_miner/goldMinerProgressStorage';
+import type { FantasyLaneHubSummary, GoldMinerHubSummary, PerlerProgressSummary } from './features/hub/hubData';
 import type { DifficultyLevel, GameModeType } from './components/GameHub';
 import type { AppSheetId } from './features/sheets/sheetRegistry';
 import type { WorkbookStatusSummary } from './types';
@@ -44,7 +51,18 @@ import './styles/save.css';
 
 const PERLER_PROGRESS_KEY = 'excel-aim-perler-state-v1';
 
-type ActiveArcadeGame = 'aim' | 'perler' | 'pvz' | 'snake' | 'tetris' | 'pacman' | 'zuma' | 'match3' | null;
+type ActiveArcadeGame =
+  | 'aim'
+  | 'perler'
+  | 'pvz'
+  | 'snake'
+  | 'tetris'
+  | 'pacman'
+  | 'zuma'
+  | 'match3'
+  | 'fantasy_lane'
+  | 'gold_miner'
+  | null;
 type PerlerEntryMode = 'library' | 'resume';
 type FPSConfigMap = Record<string, string | number | boolean | undefined>;
 type HubStartMode = GameModeType | FPSTrainingMode | 'part_training' | 'peek_shot' | 'moving_target';
@@ -104,10 +122,17 @@ function AppContent() {
   const [zumaCollectionFormulaText, setZumaCollectionFormulaText] = useState('=球种图鉴与练习');
   const [match3FormulaText, setMatch3FormulaText] = useState('=三消棋盘就绪，交换消除');
   const [match3LabFormulaText, setMatch3LabFormulaText] = useState('=特殊块与障碍图鉴');
+  const [fantasyLaneFormulaText, setFantasyLaneFormulaText] = useState('=奇幻战线已部署，准备出兵。');
+  const [fantasyLaneRosterFormulaText, setFantasyLaneRosterFormulaText] = useState('=兵种与英雄清单');
+  const [fantasyLaneChapterFormulaText, setFantasyLaneChapterFormulaText] = useState('=章节与关卡总览');
+  const [goldMinerFormulaText, setGoldMinerFormulaText] = useState('=黄金矿工矿区已就绪，瞄准高价值目标。');
+  const [goldMinerGuideFormulaText, setGoldMinerGuideFormulaText] = useState('=矿工图鉴与商店配置');
   const [perlerSelectedCell, setPerlerSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [perlerProgress, setPerlerProgress] = useState<PerlerProgressSummary | null>(() => readPerlerProgressFromStorage());
   const [snakeStatusSummary, setSnakeStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [tetrisStatusSummary, setTetrisStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
+  const [fantasyLaneStatusSummary, setFantasyLaneStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
+  const [goldMinerStatusSummary, setGoldMinerStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
   const [, setModeConfig] = useState<FPSConfigMap>({});
 
@@ -158,6 +183,16 @@ function AppContent() {
       switchSheet(persistedWorkbook.currentSheet);
     }
   }, [persistedWorkbook, switchSheet]);
+
+  const fantasyLaneProgress = useMemo<FantasyLaneHubSummary>(
+    () => getFantasyLaneProgressSummary(),
+    [currentSheet, gameSnapshots.fantasy_lane],
+  );
+
+  const goldMinerProgress = useMemo<GoldMinerHubSummary>(
+    () => getGoldMinerProgressSummary(),
+    [currentSheet, gameSnapshots.gold_miner],
+  );
 
   const { currentFeedback } = useFeedbackSystem({
     combo: gameState.combo,
@@ -275,6 +310,18 @@ function AppContent() {
     switchSheet('match3');
   };
 
+  const handleStartFantasyLaneFromHub = () => {
+    setActiveArcadeGame('fantasy_lane');
+    setWorkspaceGameId('fantasy_lane');
+    switchSheet('fantasy_lane');
+  };
+
+  const handleStartGoldMinerFromHub = () => {
+    setActiveArcadeGame('gold_miner');
+    setWorkspaceGameId('gold_miner');
+    switchSheet('gold_miner');
+  };
+
   const enterGameWorkspace = (gameId: ArcadeGameId) => {
     const module = ARCADE_MODULE_MAP[gameId];
     if (!module) return;
@@ -298,6 +345,8 @@ function AppContent() {
     setPerlerSelectedCell(null);
     setSnakeStatusSummary(undefined);
     setTetrisStatusSummary(undefined);
+    setFantasyLaneStatusSummary(undefined);
+    setGoldMinerStatusSummary(undefined);
     exitToHub();
   };
 
@@ -422,6 +471,16 @@ function AppContent() {
         ? 'Microsoft Excel - 三消.xlsx'
       : currentSheet === 'match3_lab'
         ? 'Microsoft Excel - 三消实验室.xlsx'
+      : currentSheet === 'fantasy_lane'
+        ? 'Microsoft Excel - 奇幻战线.xlsx'
+      : currentSheet === 'fantasy_lane_roster'
+        ? 'Microsoft Excel - 奇幻战线兵种与英雄.xlsx'
+      : currentSheet === 'fantasy_lane_chapter'
+        ? 'Microsoft Excel - 奇幻战线章节与关卡.xlsx'
+      : currentSheet === 'gold_miner'
+        ? 'Microsoft Excel - 榛勯噾鐭垮伐.xlsx'
+      : currentSheet === 'gold_miner_guide'
+        ? 'Microsoft Excel - 榛勯噾鐭垮伐鍥鹃壌.xlsx'
       : currentSheet === 'config'
         ? 'Microsoft Excel - 配置中心.xlsx'
       : 'Microsoft Excel - 练枪数据.xlsx';
@@ -452,6 +511,16 @@ function AppContent() {
                           ? match3FormulaText
                           : currentSheet === 'match3_lab'
                             ? match3LabFormulaText
+                            : currentSheet === 'fantasy_lane'
+                              ? fantasyLaneFormulaText
+                              : currentSheet === 'fantasy_lane_roster'
+                                ? fantasyLaneRosterFormulaText
+                                : currentSheet === 'fantasy_lane_chapter'
+                                  ? fantasyLaneChapterFormulaText
+                            : currentSheet === 'gold_miner'
+                              ? goldMinerFormulaText
+                              : currentSheet === 'gold_miner_guide'
+                                ? goldMinerGuideFormulaText
                             : currentSheet === 'config'
                               ? configFormulaText
                               : undefined;
@@ -464,6 +533,10 @@ function AppContent() {
     ? snakeStatusSummary
     : currentSheet === 'tetris'
       ? tetrisStatusSummary
+      : currentSheet === 'fantasy_lane'
+        ? fantasyLaneStatusSummary
+        : currentSheet === 'gold_miner'
+          ? goldMinerStatusSummary
       : undefined;
 
   return (
@@ -594,6 +667,10 @@ function AppContent() {
                   ? '#0f766e'
                   : currentSheet === 'tetris'
                     ? '#334155'
+                    : currentSheet === 'fantasy_lane'
+                      ? '#b45309'
+                      : currentSheet === 'gold_miner' || currentSheet === 'gold_miner_guide'
+                        ? '#d97706'
                     : undefined
         }
         onNewSave={handleNewSave}
@@ -614,12 +691,16 @@ function AppContent() {
               onStartPacman={handleStartPacmanFromHub}
               onStartZuma={handleStartZumaFromHub}
               onStartMatch3={handleStartMatch3FromHub}
+              onStartFantasyLane={handleStartFantasyLaneFromHub}
+              onStartGoldMiner={handleStartGoldMinerFromHub}
               onSwitchSheet={(sheet) => handleSheetSwitch(sheet)}
               trainingDuration={settings.trainingDuration}
               difficulty={settings.difficulty as DifficultyLevel}
               totalGames={stats.totalGames}
               totalScore={stats.totalScore}
               perlerProgress={perlerProgress}
+              fantasyLaneProgress={fantasyLaneProgress}
+              goldMinerProgress={goldMinerProgress}
               onFormulaChange={setHubFormulaText}
             />
           ) : currentSheet === 'game' ? (
@@ -742,6 +823,42 @@ function AppContent() {
             <Match3LabSheet
               onFormulaChange={setMatch3LabFormulaText}
             />
+          ) : currentSheet === 'fantasy_lane' ? (
+            <FantasyLaneSheet
+              key={`fantasy-lane-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setFantasyLaneFormulaText}
+              onStatusChange={setFantasyLaneStatusSummary}
+              onExit={handleExitCurrentGame}
+              onOpenRoster={() => switchSheet('fantasy_lane_roster')}
+              onOpenChapters={() => switchSheet('fantasy_lane_chapter')}
+              initialSnapshot={(gameSnapshots.fantasy_lane as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('fantasy_lane', snapshot)}
+            />
+          ) : currentSheet === 'fantasy_lane_roster' ? (
+            <FantasyLaneRosterSheet
+              onFormulaChange={setFantasyLaneRosterFormulaText}
+              onOpenBattle={() => switchSheet('fantasy_lane')}
+            />
+          ) : currentSheet === 'fantasy_lane_chapter' ? (
+            <FantasyLaneChapterSheet
+              onFormulaChange={setFantasyLaneChapterFormulaText}
+              onOpenBattle={() => switchSheet('fantasy_lane')}
+            />
+          ) : currentSheet === 'gold_miner' ? (
+            <GoldMinerSheet
+              key={`gold-miner-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setGoldMinerFormulaText}
+              onStatusChange={setGoldMinerStatusSummary}
+              onExit={handleExitCurrentGame}
+              onOpenGuide={() => switchSheet('gold_miner_guide')}
+              initialSnapshot={(gameSnapshots.gold_miner as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('gold_miner', snapshot)}
+            />
+          ) : currentSheet === 'gold_miner_guide' ? (
+            <GoldMinerGuideSheet
+              onFormulaChange={setGoldMinerGuideFormulaText}
+              onOpenBattle={() => switchSheet('gold_miner')}
+            />
           ) : (
             <SettingsPanel
               key="settings-sheet"
@@ -833,4 +950,3 @@ function App() {
 }
 
 export default App;
-

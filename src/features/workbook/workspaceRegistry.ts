@@ -8,7 +8,6 @@ export interface WorkbookWorkspaceDefinition {
   visibleSheetIds: AppSheetId[];
 }
 
-// 动态工作区注册表：后续新增游戏时，只需要在这里登记主页面、配置页和附加页。
 export const WORKSPACE_REGISTRY: Record<ArcadeGameId, WorkbookWorkspaceDefinition> = {
   aim: {
     gameId: 'aim',
@@ -65,5 +64,19 @@ export const WORKSPACE_REGISTRY: Record<ArcadeGameId, WorkbookWorkspaceDefinitio
     configSheetId: 'match3_lab',
     extraSheetIds: [],
     visibleSheetIds: ['match3', 'match3_lab'],
+  },
+  fantasy_lane: {
+    gameId: 'fantasy_lane',
+    mainSheetId: 'fantasy_lane',
+    configSheetId: 'fantasy_lane_chapter',
+    extraSheetIds: ['fantasy_lane_roster'],
+    visibleSheetIds: ['fantasy_lane', 'fantasy_lane_roster', 'fantasy_lane_chapter'],
+  },
+  gold_miner: {
+    gameId: 'gold_miner',
+    mainSheetId: 'gold_miner',
+    configSheetId: 'gold_miner_guide',
+    extraSheetIds: [],
+    visibleSheetIds: ['gold_miner', 'gold_miner_guide'],
   },
 };

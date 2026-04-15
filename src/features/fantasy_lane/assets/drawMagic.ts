@@ -1,7 +1,7 @@
 /* 法术/范围兵种绘制：火焰术士、冰霜女巫、瘟疫投手、雷电法师（子agent详细设计版） */
 
 /** 火焰术士 - 红色长袍，火焰法杖，兜帽遮脸，火焰环绕 */
-export function drawFlameWarlock(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, weaponColor: string, hpPercent: number, isAttacking: boolean): void {
+export function drawFlameWarlock(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, _weaponColor: string, hpPercent: number, isAttacking: boolean): void {
   const t = Date.now() / 200;
 
   // 红色长袍
@@ -91,7 +91,7 @@ export function drawFlameWarlock(ctx: CanvasRenderingContext2D, size: number, bo
 }
 
 /** 冰霜女巫 - 冰蓝色长裙，冰晶法杖，冰冠，雪花环绕 */
-export function drawIceWitch(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, weaponColor: string, hpPercent: number, isAttacking: boolean): void {
+export function drawIceWitch(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, _detailColor: string, _weaponColor: string, hpPercent: number, _isAttacking: boolean): void {
   const t = Date.now() / 200;
 
   // 冰蓝色长裙
@@ -316,7 +316,7 @@ export function drawPlagueThrower(ctx: CanvasRenderingContext2D, size: number, b
 }
 
 /** 雷电法师 - 紫色长袍，闪电法杖，尖顶帽，电弧环绕 */
-export function drawThunderMage(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, weaponColor: string, hpPercent: number, isAttacking: boolean): void {
+export function drawThunderMage(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, _weaponColor: string, hpPercent: number, isAttacking: boolean): void {
   const t = Date.now() / 200;
 
   // 紫色长袍

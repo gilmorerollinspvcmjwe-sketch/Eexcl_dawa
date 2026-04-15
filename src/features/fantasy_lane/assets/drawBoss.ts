@@ -170,7 +170,7 @@ export function drawTreeAncient(ctx: CanvasRenderingContext2D, size: number, bod
 }
 
 /** 食人魔领主：超大体型，双头，巨大骨棒，兽皮+骨头护甲 */
-export function drawOgreLord(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, weaponColor: string, hpPercent: number, isAttacking: boolean): void {
+export function drawOgreLord(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, _weaponColor: string, hpPercent: number, isAttacking: boolean): void {
   const t = Date.now() / 200;
   const stomp = Math.sin(Date.now() / 150) * 3;
 
