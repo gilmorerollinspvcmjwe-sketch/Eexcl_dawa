@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   applyGoldMinerShopPurchase,
   advanceGoldMinerToLevel,
@@ -64,15 +64,95 @@ export const GoldMinerSheet: React.FC<GoldMinerSheetProps> = ({
   });
   const runKeyRef = useRef('');
   const prevStatusRef = useRef(state.status);
+  const stateRef = useRef(state);
 
   const hudViewModel = useMemo(() => buildGoldMinerHudViewModel(state), [state]);
   const overlayViewModel = useMemo(() => buildGoldMinerOverlayViewModel(state), [state]);
   const resultSummary = useMemo(() => buildGoldMinerResultSummary(state), [state]);
   const progressSummary = useMemo(() => getGoldMinerProgressSummary(), []);
 
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   const togglePauseState = () => {
     setState((current) => (current.status === 'paused' ? resumeGoldMiner(current) : pauseGoldMiner(current)));
   };
+
+  const restartCurrentLevel = useCallback(() => {
+    setState((current) => restartGoldMinerLevel(
+      current,
+      current.mode === 'endless' ? createEndlessGoldMinerLevel(current.levelId) : getGoldMinerLevel(current.levelId),
+    ));
+  }, []);
+
+  const triggerPrimaryAction = useCallback(() => {
+    const current = stateRef.current;
+    if (current.status === 'paused') {
+      setState((value) => resumeGoldMiner(value));
+      return;
+    }
+    if (current.status === 'shop') {
+      if (current.mode === 'adventure') {
+        if (current.levelId >= getGoldMinerMaxAdventureLevel()) {
+          setSelectedMode('endless');
+          setState(advanceGoldMinerToLevel(current, createEndlessGoldMinerLevel(1)));
+          return;
+        }
+        setState(advanceGoldMinerToLevel(current, getGoldMinerLevel(current.levelId + 1)));
+        return;
+      }
+      setState(advanceGoldMinerToLevel(current, createEndlessGoldMinerLevel(current.levelId + 1)));
+      return;
+    }
+    if (current.status === 'game_over') {
+      restartCurrentLevel();
+      return;
+    }
+    setState((value) => launchGoldMinerHook(value));
+  }, [restartCurrentLevel]);
+
+  const triggerShopPurchase = useCallback((slot: number) => {
+    const item = GOLD_MINER_SHOP_REGISTRY[slot];
+    if (!item) return;
+    setState((current) => applyGoldMinerShopPurchase(current, item.id));
+  }, []);
+
+  const handleHotkey = useCallback((rawKey: string) => {
+    const key = rawKey.toLowerCase();
+
+    if (key >= '1' && key <= '9') {
+      triggerShopPurchase(Number(key) - 1);
+      return true;
+    }
+
+    if (key === ' ' || key === 'space' || key === 'spacebar' || key === 'enter') {
+      triggerPrimaryAction();
+      return true;
+    }
+
+    if (key === 'arrowup' || key === 'd' || key === 'f') {
+      setState((current) => applyGoldMinerDynamite(current));
+      return true;
+    }
+
+    if (key === 'p') {
+      togglePauseState();
+      return true;
+    }
+
+    if (key === 'r') {
+      restartCurrentLevel();
+      return true;
+    }
+
+    if (key === 'escape' && onExit) {
+      onExit();
+      return true;
+    }
+
+    return false;
+  }, [onExit, restartCurrentLevel, triggerPrimaryAction, triggerShopPurchase]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -115,48 +195,18 @@ export const GoldMinerSheet: React.FC<GoldMinerSheetProps> = ({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase();
-      if (key === ' ' || key === 'enter') {
-        event.preventDefault();
-        setState((current) => launchGoldMinerHook(current));
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
         return;
       }
-      if (key === 'arrowup' || key === 'd') {
+
+      if (handleHotkey(event.key)) {
         event.preventDefault();
-        setState((current) => applyGoldMinerDynamite(current));
-        return;
-      }
-      if (key === 'p') {
-        event.preventDefault();
-        togglePauseState();
-        return;
-      }
-      if (key === 'r') {
-        event.preventDefault();
-        setState((current) => restartGoldMinerLevel(current, current.mode === 'endless' ? createEndlessGoldMinerLevel(current.levelId) : getGoldMinerLevel(current.levelId)));
-        return;
-      }
-      if (key === 'escape' && onExit) {
-        event.preventDefault();
-        onExit();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onExit]);
-
-  const handleNextLevel = () => {
-    if (state.mode === 'adventure') {
-      if (state.levelId >= getGoldMinerMaxAdventureLevel()) {
-        setSelectedMode('endless');
-        setState(advanceGoldMinerToLevel(state, createEndlessGoldMinerLevel(1)));
-        return;
-      }
-      setState(advanceGoldMinerToLevel(state, getGoldMinerLevel(state.levelId + 1)));
-      return;
-    }
-    setState(advanceGoldMinerToLevel(state, createEndlessGoldMinerLevel(state.levelId + 1)));
-  };
+  }, [handleHotkey]);
 
   return (
     <div className="gold-miner-sheet">
@@ -194,7 +244,11 @@ export const GoldMinerSheet: React.FC<GoldMinerSheetProps> = ({
         <span>总收入 {progressSummary.totalGoldCollected.toLocaleString()}</span>
       </div>
 
-      <GoldMinerBoard state={state} onLaunch={() => setState((current) => launchGoldMinerHook(current))} />
+      <GoldMinerBoard
+        state={state}
+        onLaunch={() => setState((current) => launchGoldMinerHook(current))}
+        onHotkey={handleHotkey}
+      />
 
       <GoldMinerOverlay
         overlay={overlayViewModel}
@@ -202,22 +256,10 @@ export const GoldMinerSheet: React.FC<GoldMinerSheetProps> = ({
         shopItems={GOLD_MINER_SHOP_REGISTRY}
         currentBank={state.totalBank + state.score}
         onBuyShopItem={(itemId) => setState((current) => applyGoldMinerShopPurchase(current, itemId))}
-        onPrimaryAction={() => {
-          if (state.status === 'paused') {
-            setState((current) => resumeGoldMiner(current));
-            return;
-          }
-          if (state.status === 'shop') {
-            handleNextLevel();
-            return;
-          }
-          if (state.status === 'game_over') {
-            setState((current) => restartGoldMinerLevel(current, current.mode === 'endless' ? createEndlessGoldMinerLevel(current.levelId) : getGoldMinerLevel(current.levelId)));
-          }
-        }}
+        onPrimaryAction={triggerPrimaryAction}
         onSecondaryAction={() => {
           if (state.status === 'paused' || state.status === 'shop') {
-            setState((current) => restartGoldMinerLevel(current, current.mode === 'endless' ? createEndlessGoldMinerLevel(current.levelId) : getGoldMinerLevel(current.levelId)));
+            restartCurrentLevel();
             return;
           }
           onExit?.();

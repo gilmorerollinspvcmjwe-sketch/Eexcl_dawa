@@ -68,21 +68,40 @@ export const Game2048Sheet: React.FC<Game2048SheetProps> = ({
 
   useEffect(() => {
     onSnapshotChange?.({ state });
+  }, [onSnapshotChange, state]);
+
+  useEffect(() => {
     setRecord((current) => {
+      const nextBestScore = Math.max(current.stats.bestScore, state.score);
+      const nextBestTile = Math.max(current.stats.bestTile, state.maxTile);
+      const nextActiveRun = state.status === 'lost' ? null : { state };
+      const currentActiveRunState =
+        current.activeRun && typeof current.activeRun === 'object'
+          ? (current.activeRun as { state?: Game2048BoardState }).state
+          : undefined;
+      const hasChanges =
+        current.stats.bestScore !== nextBestScore ||
+        current.stats.bestTile !== nextBestTile ||
+        (state.status === 'lost' ? current.activeRun !== null : currentActiveRunState !== state);
+
+      if (!hasChanges) {
+        return current;
+      }
+
       const nextRecord = {
         ...current,
         stats: {
-          bestScore: Math.max(current.stats.bestScore, state.score),
-          bestTile: Math.max(current.stats.bestTile, state.maxTile),
+          bestScore: nextBestScore,
+          bestTile: nextBestTile,
           totalRuns: current.stats.totalRuns,
           totalWins: current.stats.totalWins,
         },
-        activeRun: state.status === 'lost' ? null : { state },
+        activeRun: nextActiveRun,
       };
       writeGame2048Record(globalThis.localStorage, nextRecord);
       return nextRecord;
     });
-  }, [onSnapshotChange, state]);
+  }, [state]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

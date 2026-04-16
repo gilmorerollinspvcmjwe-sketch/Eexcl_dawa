@@ -2,14 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { FantasyLaneBattleResult } from '../src/features/fantasy_lane/fantasyLaneTypes.ts';
 import {
+  canUpgradeFantasyLaneUnit,
   getFantasyLaneChapterProgress,
   getFantasyLaneLevelStatus,
   getFantasyLaneProgressSummary,
+  getFantasyLaneUnitBattleBonus,
+  getFantasyLaneUnitUpgradeCost,
+  getUnitFragmentCount,
   isFantasyLaneLevelUnlocked,
   loadFantasyLaneProgress,
   recordFantasyLaneLevelResult,
   recordFantasyLaneLevelStart,
   resetFantasyLaneProgress,
+  upgradeFantasyLaneUnitWithFragments,
 } from '../src/features/fantasy_lane/fantasyLaneProgressStorage.ts';
 
 const mockStorage: Record<string, string> = {};
@@ -53,8 +58,8 @@ test('initial fantasy lane progress starts at chapter one with no completed leve
   assert.equal(progress.lastPlayedLevelId, '1-1');
   assert.equal(summary.hasStarted, false);
   assert.equal(summary.completedLevels, 0);
-  assert.equal(summary.totalLevels, 30);
-  assert.equal(Object.keys(chapterRecords ?? {}).length, 5);
+  assert.equal(summary.totalLevels, 42);
+  assert.equal(Object.keys(chapterRecords ?? {}).length, 7);
   assert.equal(chapterRecords?.['chapter-1']?.bossCleared, false);
   assert.equal(battleTotals?.totalRuns, 0);
   assert.equal(battleTotals?.bossRuns, 0);
@@ -78,6 +83,32 @@ test('recordFantasyLaneLevelStart tracks attempts and last played level', () => 
   assert.equal(summary.hasStarted, true);
   assert.equal(activeRun?.runId, 'run-open-1');
   assert.deepEqual(activeRun?.loadoutUnitIds, ['goblin_shield', 'thunder_mage', 'griffin_knight']);
+});
+
+test('unit star upgrades consume fragments and expose battle bonuses', () => {
+  const initial = loadFantasyLaneProgress();
+  const seeded = {
+    ...initial,
+    unlockedUnits: [...new Set([...initial.unlockedUnits, 'archer'])],
+    unitFragments: {
+      ...initial.unitFragments,
+      archer: 5,
+    },
+  };
+
+  assert.equal(getFantasyLaneUnitUpgradeCost(0), 3);
+  assert.equal(canUpgradeFantasyLaneUnit(seeded, 'archer'), true);
+
+  const upgraded = upgradeFantasyLaneUnitWithFragments('archer', seeded);
+  const stored = loadFantasyLaneProgress();
+  const bonus = getFantasyLaneUnitBattleBonus(upgraded.unitStars.archer ?? 0);
+
+  assert.equal(upgraded.unitStars.archer, 1);
+  assert.equal(getUnitFragmentCount(upgraded, 'archer'), 2);
+  assert.equal(stored.unitStars.archer, 1);
+  assert.equal(bonus.damageMultiplier, 1.05);
+  assert.equal(bonus.healthMultiplier, 1.08);
+  assert.equal(canUpgradeFantasyLaneUnit(upgraded, 'archer'), false);
 });
 
 test('recordFantasyLaneLevelResult stores completion, stars, and next unlock', () => {

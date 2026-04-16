@@ -1,10 +1,21 @@
-/* 这个文件负责奇幻战线的进度存档，统一管理解锁、关卡记录、运行时统计以及回放/调试字段。 */
+﻿/* 杩欎釜鏂囦欢璐熻矗濂囧够鎴樼嚎鐨勮繘搴﹀瓨妗ｏ紝缁熶竴绠＄悊瑙ｉ攣銆佸叧鍗¤褰曘€佽繍琛屾椂缁熻浠ュ強鍥炴斁/璋冭瘯瀛楁銆?*/
 import { FANTASY_LANE_CHAPTERS, FANTASY_LANE_LEVELS, getFantasyLaneLevelById, getFantasyLaneLevelsByChapter } from './fantasyLaneLevelCatalog.ts';
-import { FANTASY_LANE_UNIT_MAP } from './fantasyLaneUnitRegistry.ts';
+import { FANTASY_LANE_UNIT_MAP, FANTASY_LANE_UNITS } from './fantasyLaneUnitRegistry.ts';
 import type { FantasyLaneBattleResult } from './fantasyLaneTypes.ts';
 
 const STORAGE_KEY = 'fantasy-lane-progress-v1';
 const RECENT_RUN_LIMIT = 5;
+export const FANTASY_LANE_PRESET_SLOT_COUNT = 4;
+const FANTASY_LANE_STAR_FRAGMENT_COSTS = [3, 5, 8] as const;
+
+export interface FantasyLaneLoadoutPreset {
+  slotId: number;
+  name: string;
+  unitIds: string[];
+  heroId?: string;
+  tacticalSkillId?: string;
+  updatedAt: number;
+}
 
 export interface FantasyLaneRuntimeStatsSnapshot {
   summoned: number;
@@ -169,12 +180,13 @@ export interface FantasyLaneProgressData {
   telemetryRunCount: number;
   chapterRecords: Record<string, FantasyLaneChapterRecord>;
   battleTotals: FantasyLaneBattleTotals;
-  // 已解锁的单位ID列表
+  // 已解锁的单位 ID 列表
   unlockedUnits: string[];
-  // 单位碎片（单位ID -> 数量）
+  // 单位碎片（单位 ID -> 数量）
   unitFragments: Record<string, number>;
-  // 单位星级（单位ID -> 星级）
+  // 单位星级（单位 ID -> 星级）
   unitStars: Record<string, number>;
+  loadoutPresets: Record<string, FantasyLaneLoadoutPreset>;
 }
 
 export interface FantasyLaneProgressSummary {
@@ -191,6 +203,18 @@ export interface FantasyLaneProgressSummary {
   starPercent: number;
   lastPlayedLevelId: string;
   lastPlayedLevelName: string;
+}
+
+export interface FantasyLaneCollectionSummary {
+  unlocked: number;
+  total: number;
+  percent: number;
+  groundUnlocked: number;
+  groundTotal: number;
+  airUnlocked: number;
+  airTotal: number;
+  chapterCleared: number;
+  chapterTotal: number;
 }
 
 function createEmptyRuntimeStats(): FantasyLaneRuntimeStatsSnapshot {
@@ -224,6 +248,57 @@ function createEmptyBattleTotals(): FantasyLaneBattleTotals {
     bossClears: 0,
     phaseEntries: {},
     bossPhaseTriggers: {},
+  };
+}
+
+function getPresetSlotIds() {
+  return Array.from({ length: FANTASY_LANE_PRESET_SLOT_COUNT }, (_, index) => index + 1);
+}
+
+function createDefaultLoadoutPresets(): Record<string, FantasyLaneLoadoutPreset> {
+  return Object.fromEntries(
+    getPresetSlotIds().map((slotId) => [
+      String(slotId),
+      {
+        slotId,
+        name: `缂栫粍${slotId}`,
+        unitIds: [],
+        updatedAt: 0,
+      } satisfies FantasyLaneLoadoutPreset,
+    ]),
+  ) as Record<string, FantasyLaneLoadoutPreset>;
+}
+
+export function createDefaultFantasyLaneLoadoutPresets() {
+  return createDefaultLoadoutPresets();
+}
+
+export function getFantasyLaneUnitUpgradeCost(starLevel: number) {
+  return FANTASY_LANE_STAR_FRAGMENT_COSTS[Math.max(0, Math.min(FANTASY_LANE_STAR_FRAGMENT_COSTS.length - 1, starLevel))] ?? 0;
+}
+
+function normalizePreset(input: unknown, slotId: number): FantasyLaneLoadoutPreset {
+  const fallback = {
+    slotId,
+    name: `缂栫粍${slotId}`,
+    unitIds: [],
+    updatedAt: 0,
+  } satisfies FantasyLaneLoadoutPreset;
+
+  if (!input || typeof input !== 'object') return fallback;
+
+  const data = input as Partial<FantasyLaneLoadoutPreset>;
+  const validUnitIds = normalizeStringList(data.unitIds)
+    .filter((unitId) => Boolean(FANTASY_LANE_UNIT_MAP[unitId]))
+    .slice(0, 8);
+
+  return {
+    slotId,
+    name: typeof data.name === 'string' && data.name.trim().length > 0 ? data.name.trim().slice(0, 16) : fallback.name,
+    unitIds: validUnitIds,
+    heroId: typeof data.heroId === 'string' && data.heroId.length > 0 ? data.heroId : undefined,
+    tacticalSkillId: typeof data.tacticalSkillId === 'string' && data.tacticalSkillId.length > 0 ? data.tacticalSkillId : undefined,
+    updatedAt: typeof data.updatedAt === 'number' ? Math.max(0, data.updatedAt) : 0,
   };
 }
 
@@ -408,6 +483,7 @@ function createInitialProgress(): FantasyLaneProgressData {
     unlockedUnits: [],
     unitFragments: {},
     unitStars: {},
+    loadoutPresets: createDefaultLoadoutPresets(),
   };
 }
 
@@ -682,6 +758,10 @@ function normalize(data: Partial<FantasyLaneProgressData> | null | undefined): F
   const telemetryRunCount = typeof data?.telemetryRunCount === 'number' ? Math.max(0, data.telemetryRunCount) : 0;
   const chapterRecords = buildChapterRecords(cleanedRecords, lastPlayedLevelId);
   const battleTotals = normalizeBattleTotals(data?.battleTotals, cleanedRecords);
+  const defaultPresets = createDefaultLoadoutPresets();
+  const loadoutPresets = Object.fromEntries(
+    getPresetSlotIds().map((slotId) => [String(slotId), normalizePreset(data?.loadoutPresets?.[String(slotId)], slotId)]),
+  ) as Record<string, FantasyLaneLoadoutPreset>;
 
   return {
     ...base,
@@ -703,6 +783,7 @@ function normalize(data: Partial<FantasyLaneProgressData> | null | undefined): F
     unlockedUnits: Array.isArray(data?.unlockedUnits) ? data.unlockedUnits : [],
     unitFragments: data?.unitFragments && typeof data.unitFragments === 'object' ? { ...data.unitFragments } : {},
     unitStars: data?.unitStars && typeof data.unitStars === 'object' ? { ...data.unitStars } : {},
+    loadoutPresets: { ...defaultPresets, ...loadoutPresets },
   };
 }
 
@@ -764,7 +845,7 @@ export function recordFantasyLaneLevelResult(
 ) {
   const progress = loadFantasyLaneProgress();
   const currentRecord = progress.levelRecords[levelId] ?? createLevelRecord(levelId);
-  const completed = result.title.includes('成功');
+  const completed = result.title.includes('鎴愬姛');
   const finishedAt = typeof payload?.finishedAt === 'number' ? payload.finishedAt : Date.now();
   const runtimeStats = payload?.runtimeStats ? normalizeRuntimeStats(payload.runtimeStats) : undefined;
   const replay = normalizeReplaySnapshot(payload?.replay);
@@ -911,7 +992,67 @@ export function getFantasyLaneProgressSummary(progress: FantasyLaneProgressData 
   };
 }
 
-// 解锁单位
+export function listFantasyLaneLoadoutPresets(progress: FantasyLaneProgressData = loadFantasyLaneProgress()) {
+  return getPresetSlotIds().map((slotId) => normalizePreset(progress.loadoutPresets[String(slotId)], slotId));
+}
+
+export function saveFantasyLaneLoadoutPreset(
+  slotId: number,
+  payload: Pick<FantasyLaneLoadoutPreset, 'unitIds'> & Partial<Pick<FantasyLaneLoadoutPreset, 'name' | 'heroId' | 'tacticalSkillId'>>,
+) {
+  const clampedSlotId = Math.max(1, Math.min(FANTASY_LANE_PRESET_SLOT_COUNT, Math.floor(slotId)));
+  const progress = loadFantasyLaneProgress();
+  const currentPreset = normalizePreset(progress.loadoutPresets[String(clampedSlotId)], clampedSlotId);
+  const nextPreset = normalizePreset(
+    {
+      ...currentPreset,
+      ...payload,
+      slotId: clampedSlotId,
+      updatedAt: Date.now(),
+    },
+    clampedSlotId,
+  );
+
+  progress.loadoutPresets = {
+    ...progress.loadoutPresets,
+    [String(clampedSlotId)]: nextPreset,
+  };
+  saveFantasyLaneProgress(progress);
+  return progress;
+}
+
+export function getFantasyLaneCollectionSummary(progress: FantasyLaneProgressData = loadFantasyLaneProgress()): FantasyLaneCollectionSummary {
+  const unlocked = FANTASY_LANE_UNITS.filter((unit) => isUnitUnlocked(progress, unit.id)).length;
+  const total = FANTASY_LANE_UNITS.length;
+  const groundUnits = FANTASY_LANE_UNITS.filter((unit) => unit.layer === 'ground');
+  const airUnits = FANTASY_LANE_UNITS.filter((unit) => unit.layer === 'air');
+  const groundUnlocked = groundUnits.filter((unit) => isUnitUnlocked(progress, unit.id)).length;
+  const airUnlocked = airUnits.filter((unit) => isUnitUnlocked(progress, unit.id)).length;
+  const chapterRecords = Object.values(progress.chapterRecords);
+  const chapterCleared = chapterRecords.filter((record) => record.completedLevels >= record.totalLevels).length;
+
+  return {
+    unlocked,
+    total,
+    percent: total > 0 ? Math.round((unlocked / total) * 100) : 0,
+    groundUnlocked,
+    groundTotal: groundUnits.length,
+    airUnlocked,
+    airTotal: airUnits.length,
+    chapterCleared,
+    chapterTotal: chapterRecords.length,
+  };
+}
+
+export function getFantasyLaneUnitBattleBonus(starLevel: number) {
+  const safeStarLevel = Math.max(0, Math.min(3, Math.floor(starLevel)));
+  return {
+    damageMultiplier: 1 + safeStarLevel * 0.05,
+    healthMultiplier: 1 + safeStarLevel * 0.08,
+  };
+}
+
+// 瑙ｉ攣鍗曚綅
 export function unlockUnit(progress: FantasyLaneProgressData, unitId: string): FantasyLaneProgressData {
   if (progress.unlockedUnits.includes(unitId)) return progress;
   return {
@@ -920,7 +1061,7 @@ export function unlockUnit(progress: FantasyLaneProgressData, unitId: string): F
   };
 }
 
-// 添加单位碎片
+// 娣诲姞鍗曚綅纰庣墖
 export function addUnitFragment(progress: FantasyLaneProgressData, unitId: string, count: number): FantasyLaneProgressData {
   const currentCount = progress.unitFragments[unitId] || 0;
   return {
@@ -932,7 +1073,7 @@ export function addUnitFragment(progress: FantasyLaneProgressData, unitId: strin
   };
 }
 
-// 升级单位星级
+// 鍗囩骇鍗曚綅鏄熺骇
 export function upgradeUnitStar(progress: FantasyLaneProgressData, unitId: string): FantasyLaneProgressData {
   const currentStar = progress.unitStars[unitId] || 0;
   if (currentStar >= 3) return progress;
@@ -945,17 +1086,101 @@ export function upgradeUnitStar(progress: FantasyLaneProgressData, unitId: strin
   };
 }
 
-// 检查单位是否已解锁
-export function isUnitUnlocked(progress: FantasyLaneProgressData, unitId: string): boolean {
-  // 已解锁列表中的单位
-  if (progress.unlockedUnits.includes(unitId)) return true;
-  // 没有解锁条件的单位默认解锁（原有兵种）
-  const unit = FANTASY_LANE_UNIT_MAP[unitId];
-  if (!unit || !unit.unlockCondition) return true;
-  return false;
+export function canUpgradeFantasyLaneUnit(progress: FantasyLaneProgressData, unitId: string) {
+  if (!isUnitUnlocked(progress, unitId)) return false;
+  const currentStar = progress.unitStars[unitId] || 0;
+  if (currentStar >= 3) return false;
+  return getUnitFragmentCount(progress, unitId) >= getFantasyLaneUnitUpgradeCost(currentStar);
 }
 
-// 获取单位碎片数量
+export function upgradeFantasyLaneUnitWithFragments(unitId: string, progress: FantasyLaneProgressData = loadFantasyLaneProgress()) {
+  if (!canUpgradeFantasyLaneUnit(progress, unitId)) return progress;
+
+  const currentStar = progress.unitStars[unitId] || 0;
+  const cost = getFantasyLaneUnitUpgradeCost(currentStar);
+  const nextProgress: FantasyLaneProgressData = {
+    ...progress,
+    unitFragments: {
+      ...progress.unitFragments,
+      [unitId]: Math.max(0, getUnitFragmentCount(progress, unitId) - cost),
+    },
+    unitStars: {
+      ...progress.unitStars,
+      [unitId]: currentStar + 1,
+    },
+  };
+
+  saveFantasyLaneProgress(nextProgress);
+  return nextProgress;
+}
+
+// 妫€鏌ュ崟浣嶆槸鍚﹀凡瑙ｉ攣
+function isUnitUnlockedByCondition(
+  progress: FantasyLaneProgressData,
+  unit: typeof FANTASY_LANE_UNIT_MAP[string],
+): boolean {
+  const unlockCondition = unit.unlockCondition;
+  if (!unlockCondition) return true;
+
+  switch (unlockCondition.type) {
+    case 'level_clear':
+    case 'boss_clear':
+      return unlockCondition.levelId ? progress.completedLevels.includes(unlockCondition.levelId) : false;
+    case 'star_reward':
+      if (!unlockCondition.levelId || typeof unlockCondition.stars !== 'number') return false;
+      return (progress.levelRecords[unlockCondition.levelId]?.bestStars ?? 0) >= unlockCondition.stars;
+    case 'fragment_synthesis':
+      return getUnitFragmentCount(progress, unit.id) >= (unlockCondition.fragmentCount ?? Number.POSITIVE_INFINITY);
+    default:
+      return false;
+  }
+}
+
+function buildDerivedUnitUnlockCondition(unitId: string) {
+  for (const level of FANTASY_LANE_LEVELS) {
+    if (level.unlockRewards?.includes(unitId)) {
+      return {
+        type: 'level_clear' as const,
+        levelId: level.id,
+      };
+    }
+
+    if (level.starRewards) {
+      for (const [starsText, rewardedUnits] of Object.entries(level.starRewards)) {
+        if (!rewardedUnits.includes(unitId)) continue;
+        return {
+          type: 'star_reward' as const,
+          levelId: level.id,
+          stars: Number(starsText),
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+export function isUnitUnlocked(progress: FantasyLaneProgressData, unitId: string): boolean {
+  if (progress.unlockedUnits.includes(unitId)) return true;
+
+  const unit = FANTASY_LANE_UNIT_MAP[unitId];
+  if (!unit) return false;
+
+  if (unit.unlockCondition) {
+    return isUnitUnlockedByCondition(progress, unit);
+  }
+
+  const derivedUnlockCondition = buildDerivedUnitUnlockCondition(unitId);
+  if (derivedUnlockCondition) {
+    return isUnitUnlockedByCondition(progress, {
+      ...unit,
+      unlockCondition: derivedUnlockCondition,
+    });
+  }
+
+  return true;
+}
+
 export function getUnitFragmentCount(progress: FantasyLaneProgressData, unitId: string): number {
   return progress.unitFragments[unitId] || 0;
 }

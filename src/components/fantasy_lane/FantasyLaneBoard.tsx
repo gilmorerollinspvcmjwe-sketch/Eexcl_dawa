@@ -1,215 +1,196 @@
-import React, { useMemo } from 'react';
-import { FANTASY_LANE_UNIT_MAP } from '../../features/fantasy_lane/fantasyLaneUnitRegistry.ts';
-import type { FantasyLaneImpactEffect, FantasyLaneProjectile, FantasyLaneRuntimeState, FantasyLaneUnitInstance } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
-import { FantasyLaneUnitSprite } from './FantasyLaneUnitSprite';
-import {
-  RANGE_LABELS,
-  getClashZoneLabel,
-  getPhaseNarrativeTone,
-  getUnitCombatAccent,
-  getUnitSpriteScale,
-} from './fantasyLaneUiMeta.ts';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { FantasyLaneRuntimeState } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
+import { getPhaseNarrativeTone } from './fantasyLaneUiMeta.ts';
+import { drawFantasyLaneBattlefieldCanvas } from './render/fantasyLaneBattlefieldRenderer.ts';
 
 interface FantasyLaneBoardProps {
   state: FantasyLaneRuntimeState;
 }
 
-function getUnitTitle(unit: FantasyLaneUnitInstance) {
-  const definition = FANTASY_LANE_UNIT_MAP[unit.templateId];
-  if (!definition) return unit.templateId;
-  return [
-    definition.name,
-    `${definition.layer === 'air' ? '空中' : '地面'} ${RANGE_LABELS[definition.rangeBand]}`,
-    `HP ${Math.round(unit.hp)} / 护甲 ${Math.round(unit.armorHp)}`,
-  ].join(' | ');
+interface BattlefieldViewport {
+  width: number;
+  height: number;
+  pixelRatio: number;
 }
 
-function getProjectileClass(projectile: FantasyLaneProjectile) {
-  const definition = FANTASY_LANE_UNIT_MAP[projectile.sourceUnitId];
-  const projectileKind =
-    projectile.sourceUnitId === 'archer' || projectile.sourceUnitId === 'elf_shooter'
-      ? 'arrow'
-      : projectile.sourceUnitId === 'ballista' || projectile.sourceUnitId === 'heavy_crossbow'
-        ? 'bolt'
-        : projectile.sourceUnitId === 'musketeer'
-          ? 'shot'
-          : projectile.sourceUnitId === 'ice_witch'
-            ? 'shard'
-            : projectile.sourceUnitId === 'plague_thrower'
-              ? 'glob'
-          : projectile.sourceUnitId === 'thunder_mage' || projectile.sourceUnitId === 'thunder_eagle'
-            ? 'spark'
-            : projectile.sourceUnitId === 'flame_warlock' || projectile.sourceUnitId === 'fire_dragon' || projectile.sourceUnitId === 'young_dragon' || projectile.sourceUnitId === 'phoenix'
-              ? 'fireball'
-              : projectile.sourceUnitId === 'holy_knight' || projectile.sourceUnitId === 'angel'
-                ? 'holy_bolt'
-                : projectile.sourceUnitId === 'druid'
-                  ? 'leaf'
-                  : projectile.sourceUnitId === 'elementalist'
-                    ? 'element_orb'
-                    : projectile.sourceUnitId === 'field_medic'
-                      ? 'heal_beam'
-                      : projectile.sourceUnitId === 'demolitionist'
-                        ? 'bomb'
-                        : projectile.sourceUnitId === 'blade_master'
-                          ? 'slash'
-                          : projectile.sourceUnitId === 'wind_spirit'
-                            ? 'gust'
-                            : projectile.sourceUnitId === 'gargoyle'
-                              ? 'stone'
-                              : definition?.damageType === 'antiAir'
-                                ? 'javelin'
-                                : definition?.damageType === 'magic'
-                                  ? 'orb'
-                                  : 'orb';
-  return [
-    'fantasy-lane-projectile',
-    `fantasy-lane-projectile--${projectile.side}`,
-    `fantasy-lane-projectile--${projectileKind}`,
-    projectile.layer === 'air' ? 'is-air' : 'is-ground',
-  ].join(' ');
-}
+const TARGET_FPS = 12;
 
-function getProjectileStyle(projectile: FantasyLaneProjectile) {
-  const angle = Math.atan2((projectile.toY - projectile.fromY) * 100, projectile.toX - projectile.fromX) * (180 / Math.PI);
-  return {
-    left: `${projectile.x}%`,
-    top: `${projectile.y * 100}%`,
-    backgroundColor: projectile.color,
-    color: projectile.color,
-    transform: `translate(-50%, -50%) rotate(${angle}deg)`,
-  };
-}
-
-function getImpactClass(impact: FantasyLaneImpactEffect) {
-  return [
-    'fantasy-lane-impact',
-    impact.layer === 'air' ? 'is-air' : 'is-ground',
-    `fantasy-lane-impact--${impact.kind}`,
-  ].join(' ');
+function resolvePixelRatio() {
+  if (typeof window === 'undefined') return 1;
+  return Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
 }
 
 export const FantasyLaneBoard: React.FC<FantasyLaneBoardProps> = ({ state }) => {
-  const phaseTone = useMemo(() => getPhaseNarrativeTone(state.pressureLabel), [state.pressureLabel]);
-  const clashZoneLabel = useMemo(() => getClashZoneLabel(state.frontline, state.airControl), [state.frontline, state.airControl]);
+  const battlefieldRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const latestStateRef = useRef(state);
+  const [viewport, setViewport] = useState<BattlefieldViewport>({
+    width: 0,
+    height: 0,
+    pixelRatio: resolvePixelRatio(),
+  });
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [debugVisible, setDebugVisible] = useState(false);
 
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => setPrefersReducedMotion(media.matches);
+    sync();
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', sync);
+      return () => media.removeEventListener('change', sync);
+    }
+
+    media.addListener(sync);
+    return () => media.removeListener(sync);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tagName = target.tagName.toLowerCase();
+      return tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return;
+      if (event.key === '`' || event.key === 'F2') {
+        event.preventDefault();
+        setDebugVisible((current) => !current);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const battlefield = battlefieldRef.current;
+    if (!battlefield) return;
+
+    const syncSize = () => {
+      const rect = battlefield.getBoundingClientRect();
+      const nextViewport: BattlefieldViewport = {
+        width: Math.max(1, Math.round(rect.width)),
+        height: Math.max(1, Math.round(rect.height)),
+        pixelRatio: resolvePixelRatio(),
+      };
+      setViewport((current) => {
+        if (
+          current.width === nextViewport.width &&
+          current.height === nextViewport.height &&
+          current.pixelRatio === nextViewport.pixelRatio
+        ) {
+          return current;
+        }
+        return nextViewport;
+      });
+    };
+
+    syncSize();
+
+    const resizeObserver = new ResizeObserver(syncSize);
+    resizeObserver.observe(battlefield);
+    window.addEventListener('resize', syncSize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', syncSize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const pixelWidth = Math.max(1, Math.round(viewport.width * viewport.pixelRatio));
+    const pixelHeight = Math.max(1, Math.round(viewport.height * viewport.pixelRatio));
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+  }, [viewport.height, viewport.pixelRatio, viewport.width]);
+
+  const paint = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    drawFantasyLaneBattlefieldCanvas(context, latestStateRef.current, viewport, { debug: debugVisible });
+  };
+
+  useEffect(() => {
+    paint();
+  }, [debugVisible, state, viewport.height, viewport.pixelRatio, viewport.width]);
+
+  useEffect(() => {
+    if (state.phase !== 'playing' || prefersReducedMotion) return;
+
+    let rafId = 0;
+    let lastPaint = 0;
+    const frameDuration = 1000 / TARGET_FPS;
+
+    const loop = (timestamp: number) => {
+      if (timestamp - lastPaint >= frameDuration) {
+        lastPaint = timestamp;
+        paint();
+      }
+      rafId = window.requestAnimationFrame(loop);
+    };
+
+    rafId = window.requestAnimationFrame(loop);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [debugVisible, prefersReducedMotion, state.phase, viewport.height, viewport.pixelRatio, viewport.width]);
+
+  const phaseTone = useMemo(() => getPhaseNarrativeTone(state.pressureLabel), [state.pressureLabel]);
   return (
     <div className="fantasy-lane-board-shell">
-      {state.activeWarning && (
-        <div className="fantasy-lane-warning-banner">
-          <strong>{state.activeWarning.text.includes('技能') ? '技能预警' : '战场提示'}</strong>
-          <span>{state.activeWarning.text}</span>
-        </div>
-      )}
-
       <div
-          className={`fantasy-lane-battlefield fantasy-lane-battlefield--${phaseTone}${state.activeWarning ? ' is-alert' : ''}`}
-          role="img"
-          aria-label="奇幻战线主战场"
-        >
-          <div className="fantasy-lane-battlefield-stage-banner">
-            <strong>{state.phaseLabel}</strong>
-          </div>
-
-          <div className="fantasy-lane-battlefield-zone fantasy-lane-battlefield-zone--player" />
+        ref={battlefieldRef}
+        className={`fantasy-lane-battlefield fantasy-lane-battlefield--${phaseTone}${state.activeWarning ? ' is-alert' : ''}`}
+        role="img"
+        aria-label="奇幻战线主战场"
+      >
+        <div className="fantasy-lane-battlefield-zone fantasy-lane-battlefield-zone--player" />
         <div className="fantasy-lane-battlefield-zone fantasy-lane-battlefield-zone--enemy" />
-          <div
-            className="fantasy-lane-battlefield-clash-zone"
-            style={{ left: `${Math.max(12, state.clashX - 9)}%`, width: '18%' }}
-          >
-            <span className="fantasy-lane-clash-zone-label">{clashZoneLabel}</span>
-          </div>
 
-          <div className="fantasy-lane-battlefield-base fantasy-lane-battlefield-base--player">
+        <div className="fantasy-lane-battlefield-render-layer" aria-hidden="true">
+          <canvas ref={canvasRef} className="fantasy-lane-battlefield-canvas" />
+        </div>
+
+        <button
+          type="button"
+          className={`fantasy-lane-battlefield-debug-toggle${debugVisible ? ' is-active' : ''}`}
+          onClick={() => setDebugVisible((current) => !current)}
+          title="` / F2"
+          aria-label="Toggle battlefield debug view"
+        >
+          DBG
+        </button>
+
+        <div className="fantasy-lane-battlefield-stage-banner">
+          <strong>{state.phaseLabel}</strong>
+        </div>
+
+        <div className="fantasy-lane-battlefield-base fantasy-lane-battlefield-base--player">
           <strong>我方主堡</strong>
           <small>{Math.round(state.playerBaseHp)}</small>
         </div>
+
         <div className="fantasy-lane-battlefield-base fantasy-lane-battlefield-base--enemy">
           <strong>敌方主堡</strong>
           <small>{Math.round(state.enemyBaseHp)}</small>
         </div>
-
-        <div className="fantasy-lane-clash-line" style={{ left: `${state.clashX}%` }} />
-
-        {state.projectiles.map((projectile) => (
-          <div
-            key={projectile.id}
-            className={getProjectileClass(projectile)}
-            style={getProjectileStyle(projectile)}
-          >
-            <span className="fantasy-lane-projectile-trail" />
-            <span className="fantasy-lane-projectile-glow" />
-            <span className="fantasy-lane-projectile-core" />
-          </div>
-        ))}
-
-        {state.impacts.map((impact) => (
-          <div
-            key={impact.id}
-            className={getImpactClass(impact)}
-            style={{
-              left: `${impact.x}%`,
-              top: `${impact.y * 100}%`,
-              color: impact.color,
-              borderColor: impact.color,
-              boxShadow: `0 0 0 1px ${impact.color} inset, 0 0 22px ${impact.color}`,
-            }}
-          />
-        ))}
-
-        {state.units.map((unit) => {
-          const definition = FANTASY_LANE_UNIT_MAP[unit.templateId];
-          if (!definition) return null;
-          const hpPercent = Math.max(0, unit.hp / definition.maxHp);
-          const classes = [
-            'fantasy-lane-unit',
-            `fantasy-lane-unit--${unit.side}`,
-            unit.layer === 'air' ? 'is-air' : 'is-ground',
-            state.bossUnitInstanceId === unit.instanceId ? 'is-boss' : '',
-            unit.attackAnimMs > 0 ? 'is-attacking' : '',
-            unit.hitFlashMs > 0 ? 'is-hit' : '',
-            unit.blockedMs > 340 ? 'is-blocked' : '',
-          ]
-            .filter(Boolean)
-            .join(' ');
-
-          return (
-            <div
-              key={unit.instanceId}
-              className={classes}
-              style={{
-                left: `${unit.x}%`,
-                top: `${unit.y * 100}%`,
-                zIndex: unit.layer === 'air' ? 7 : 5,
-                ['--fantasy-unit-accent' as string]: getUnitCombatAccent({
-                  hitFlashMs: unit.hitFlashMs,
-                  attackAnimMs: unit.attackAnimMs,
-                  blockedMs: unit.blockedMs,
-                  side: unit.side,
-                }),
-              }}
-              title={getUnitTitle(unit)}
-            >
-              <div className="fantasy-lane-unit-body">
-                <FantasyLaneUnitSprite
-                  unitId={unit.templateId}
-                  side={unit.side}
-                  hpPercent={hpPercent}
-                  isAttacking={unit.attackAnimMs > 0}
-                  animated={state.phase === 'playing'}
-                  scale={getUnitSpriteScale(definition.footprint)}
-                />
-              </div>
-              <div className="fantasy-lane-unit-health">
-                <span
-                  className="fantasy-lane-unit-health-fill"
-                  style={{ width: `${Math.max(7, Math.round(hpPercent * 100))}%` }}
-                />
-              </div>
-              <small className="fantasy-lane-unit-caption">{definition.shortName}</small>
-            </div>
-          );
-        })}
       </div>
     </div>
   );

@@ -69,10 +69,10 @@ export const FANTASY_LANE_COMBAT_PROTOCOLS: Record<'melee' | 'ranged' | 'air', F
     advanceFactor: 1.08,
     idleAdvanceFactor: 0.82,
     holdRangeBuffer: 1.1,
-    retreatFactor: 0.58,
+    retreatFactor: 0,
     driftStrength: 0.008,
     blockedDrift: 0.003,
-    allowRetreat: true,
+    allowRetreat: false,
   },
 };
 

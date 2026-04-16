@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { FANTASY_LANE_LEVELS } from '../../features/fantasy_lane/fantasyLaneLevelCatalog.ts';
 import { FANTASY_LANE_HEROES, FANTASY_LANE_TACTICAL_SKILLS, FANTASY_LANE_UNITS } from '../../features/fantasy_lane/fantasyLaneUnitRegistry.ts';
-import '../../styles/fantasy-lane.css';
-import type { FantasyLaneCombatRole, FantasyLaneUnitDefinition } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
-import { FantasyLaneUnitSprite } from './FantasyLaneUnitSprite';
-import { formatCooldownMs, getUnitSpriteScale } from './fantasyLaneUiMeta.ts';
+import type { FantasyLaneCombatRole, FantasyLaneUnitDefinition, FantasyLaneUnitUnlockCondition } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
 import {
   canUpgradeFantasyLaneUnit,
   getFantasyLaneCollectionSummary,
@@ -14,6 +12,9 @@ import {
   loadFantasyLaneProgress,
   upgradeFantasyLaneUnitWithFragments,
 } from '../../features/fantasy_lane/fantasyLaneProgressStorage.ts';
+import { FantasyLaneUnitSprite } from './FantasyLaneUnitSprite';
+import { formatCooldownMs, getUnitSpriteScale } from './fantasyLaneUiMeta.ts';
+import '../../styles/fantasy-lane.css';
 
 type LayerFilter = 'all' | 'ground' | 'air';
 type UnlockFilter = 'all' | 'unlocked' | 'locked';
@@ -22,9 +23,39 @@ type ProfileFilter = 'all' | 'single' | 'aoe';
 type TargetFilter = 'all' | 'ground_only' | 'air_only' | 'both';
 type RoleFilter = 'all' | FantasyLaneCombatRole;
 
+type RosterFilters = {
+  layer: LayerFilter;
+  unlock: UnlockFilter;
+  range: RangeFilter;
+  profile: ProfileFilter;
+  target: TargetFilter;
+  role: RoleFilter;
+};
+
 interface FantasyLaneRosterSheetProps {
   onFormulaChange?: (text: string) => void;
 }
+
+const DEFAULT_FILTERS: RosterFilters = {
+  layer: 'all',
+  unlock: 'all',
+  range: 'all',
+  profile: 'all',
+  target: 'all',
+  role: 'all',
+};
+
+const LAYER_FILTERS: Array<{ value: LayerFilter; label: string }> = [
+  { value: 'all', label: '全部' },
+  { value: 'ground', label: '地面' },
+  { value: 'air', label: '空中' },
+];
+
+const UNLOCK_FILTERS: Array<{ value: UnlockFilter; label: string }> = [
+  { value: 'all', label: '全部' },
+  { value: 'unlocked', label: '已解锁' },
+  { value: 'locked', label: '未解锁' },
+];
 
 const ROLE_LABELS: Record<FantasyLaneCombatRole, string> = {
   tank: '前排',
@@ -67,26 +98,26 @@ const ARMOR_TYPE_LABELS: Record<FantasyLaneUnitDefinition['armorType'], string> 
 };
 
 const RANGE_FILTERS: Array<{ value: RangeFilter; label: string }> = [
-  { value: 'all', label: '全部射程' },
+  { value: 'all', label: '全部' },
   { value: 'melee', label: '近战' },
   { value: 'ranged', label: '远程' },
 ];
 
 const PROFILE_FILTERS: Array<{ value: ProfileFilter; label: string }> = [
-  { value: 'all', label: '全部形态' },
+  { value: 'all', label: '全部' },
   { value: 'single', label: '单体' },
   { value: 'aoe', label: 'AOE' },
 ];
 
 const TARGET_FILTERS: Array<{ value: TargetFilter; label: string }> = [
-  { value: 'all', label: '全部目标' },
+  { value: 'all', label: '全部' },
   { value: 'ground_only', label: '对地' },
   { value: 'air_only', label: '对空' },
   { value: 'both', label: '空地' },
 ];
 
 const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
-  { value: 'all', label: '全部定位' },
+  { value: 'all', label: '全部' },
   { value: 'tank', label: '前排' },
   { value: 'fighter', label: '战士' },
   { value: 'sniper', label: '射手' },
@@ -101,18 +132,47 @@ function getAttackLabel(unit: FantasyLaneUnitDefinition) {
   return unit.rangeBand === 'melee' ? '近战单体' : '远程单体';
 }
 
-function getUnlockText(unit: FantasyLaneUnitDefinition) {
-  if (!unit.unlockCondition) return '默认';
+function resolveDisplayUnlockCondition(unit: FantasyLaneUnitDefinition): FantasyLaneUnitUnlockCondition | undefined {
+  if (unit.unlockCondition) return unit.unlockCondition;
 
-  switch (unit.unlockCondition.type) {
+  for (const level of FANTASY_LANE_LEVELS) {
+    if (level.unlockRewards?.includes(unit.id)) {
+      return {
+        type: 'level_clear',
+        levelId: level.id,
+      };
+    }
+
+    if (level.starRewards) {
+      for (const [starsText, rewardedUnits] of Object.entries(level.starRewards)) {
+        if (!rewardedUnits.includes(unit.id)) continue;
+        return {
+          type: 'star_reward',
+          levelId: level.id,
+          stars: Number(starsText),
+        };
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function getUnlockText(unit: FantasyLaneUnitDefinition) {
+  const unlockCondition = resolveDisplayUnlockCondition(unit);
+  if (!unlockCondition) return '默认开放';
+
+  switch (unlockCondition.type) {
     case 'level_clear':
-      return unit.unlockCondition.levelId ? `通关 ${unit.unlockCondition.levelId}` : '通关解锁';
+      return unlockCondition.levelId ? `通关 ${unlockCondition.levelId}` : '通关解锁';
     case 'boss_clear':
-      return unit.unlockCondition.levelId ? `Boss ${unit.unlockCondition.levelId}` : 'Boss 解锁';
+      return unlockCondition.levelId ? `击败 ${unlockCondition.levelId}` : 'Boss 解锁';
     case 'star_reward':
-      return unit.unlockCondition.stars ? `${unit.unlockCondition.stars} 星奖励` : '星级奖励';
+      return unlockCondition.levelId && unlockCondition.stars
+        ? `${unlockCondition.levelId} ${unlockCondition.stars} 星`
+        : '星级解锁';
     case 'fragment_synthesis':
-      return unit.unlockCondition.fragmentCount ? `${unit.unlockCondition.fragmentCount} 碎片合成` : '碎片合成';
+      return unlockCondition.fragmentCount ? `${unlockCondition.fragmentCount} 碎片合成` : '碎片合成';
     default:
       return '待解锁';
   }
@@ -123,13 +183,24 @@ function formatNumber(value: number, digits = 1) {
   return value.toFixed(digits);
 }
 
+function applyRosterFilters(
+  unit: FantasyLaneUnitDefinition,
+  filters: RosterFilters,
+  unlocked: boolean,
+) {
+  if (filters.layer !== 'all' && unit.layer !== filters.layer) return false;
+  if (filters.unlock === 'unlocked' && !unlocked) return false;
+  if (filters.unlock === 'locked' && unlocked) return false;
+  if (filters.range !== 'all' && unit.rangeBand !== filters.range) return false;
+  if (filters.profile !== 'all' && unit.damageProfile !== filters.profile) return false;
+  if (filters.target !== 'all' && unit.targetRule !== filters.target) return false;
+  if (filters.role !== 'all' && unit.role !== filters.role) return false;
+  return true;
+}
+
 export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ onFormulaChange }) => {
-  const [layerFilter, setLayerFilter] = useState<LayerFilter>('all');
-  const [unlockFilter, setUnlockFilter] = useState<UnlockFilter>('all');
-  const [rangeFilter, setRangeFilter] = useState<RangeFilter>('all');
-  const [profileFilter, setProfileFilter] = useState<ProfileFilter>('all');
-  const [targetFilter, setTargetFilter] = useState<TargetFilter>('all');
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [draftFilters, setDraftFilters] = useState<RosterFilters>(DEFAULT_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<RosterFilters>(DEFAULT_FILTERS);
   const [progress, setProgress] = useState(() => loadFantasyLaneProgress());
 
   const collection = getFantasyLaneCollectionSummary(progress);
@@ -139,18 +210,8 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
   }, [onFormulaChange]);
 
   const filteredUnits = useMemo(() => {
-    return FANTASY_LANE_UNITS.filter((unit) => {
-      const unlocked = isUnitUnlocked(progress, unit.id);
-      if (layerFilter !== 'all' && unit.layer !== layerFilter) return false;
-      if (unlockFilter === 'unlocked' && !unlocked) return false;
-      if (unlockFilter === 'locked' && unlocked) return false;
-      if (rangeFilter !== 'all' && unit.rangeBand !== rangeFilter) return false;
-      if (profileFilter !== 'all' && unit.damageProfile !== profileFilter) return false;
-      if (targetFilter !== 'all' && unit.targetRule !== targetFilter) return false;
-      if (roleFilter !== 'all' && unit.role !== roleFilter) return false;
-      return true;
-    });
-  }, [layerFilter, unlockFilter, rangeFilter, profileFilter, targetFilter, roleFilter, progress]);
+    return FANTASY_LANE_UNITS.filter((unit) => applyRosterFilters(unit, appliedFilters, isUnitUnlocked(progress, unit.id)));
+  }, [appliedFilters, progress]);
 
   const visibleGroundUnits = filteredUnits.filter((unit) => unit.layer === 'ground');
   const visibleAirUnits = filteredUnits.filter((unit) => unit.layer === 'air');
@@ -164,7 +225,10 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
     const battleBonus = getFantasyLaneUnitBattleBonus(stars);
 
     return (
-      <div key={unit.id} className={`fantasy-lane-unit-card fantasy-lane-roster-unit-card${index % 2 === 0 ? '' : ' is-alt'}${!unlocked ? ' fantasy-lane-unit--locked' : ''}`}>
+      <div
+        key={unit.id}
+        className={`fantasy-lane-unit-card fantasy-lane-roster-unit-card${index % 2 === 0 ? '' : ' is-alt'}${!unlocked ? ' fantasy-lane-unit--locked' : ''}`}
+      >
         <div className="fantasy-lane-unit-card-header">
           <div className="fantasy-lane-unit-card-icon">
             {unlocked ? (
@@ -183,17 +247,19 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
           <div className="fantasy-lane-unit-card-title">
             <div className="fantasy-lane-unit-card-name-row">
               <strong>{unlocked ? unit.name : '???'}</strong>
-              <span className="fantasy-lane-unit-card-icon-text">{unlocked ? unit.icon : ''}</span>
+              <span className="fantasy-lane-unit-card-icon-text">{unlocked ? unit.icon : '?'}</span>
             </div>
-            <div className="fantasy-lane-unit-card-tags">
-              <span className={`fantasy-lane-tag fantasy-lane-tag--primary fantasy-lane-tag--role-${unit.role}`}>
-                {ROLE_LABELS[unit.role]}
-              </span>
-              <span className="fantasy-lane-tag fantasy-lane-tag--secondary">{FOOTPRINT_LABELS[unit.footprint]}</span>
-              <span className="fantasy-lane-tag fantasy-lane-tag--secondary">{getAttackLabel(unit)}</span>
-              <span className="fantasy-lane-tag fantasy-lane-tag--target">{TARGET_RULE_LABELS[unit.targetRule]}</span>
-              <span className="fantasy-lane-tag fantasy-lane-tag--feature">{unit.layer === 'air' ? '空中' : '地面'}</span>
-            </div>
+            {unlocked ? (
+              <div className="fantasy-lane-unit-card-tags">
+                <span className={`fantasy-lane-tag fantasy-lane-tag--primary fantasy-lane-tag--role-${unit.role}`}>
+                  {ROLE_LABELS[unit.role]}
+                </span>
+                <span className="fantasy-lane-tag fantasy-lane-tag--secondary">{FOOTPRINT_LABELS[unit.footprint]}</span>
+                <span className="fantasy-lane-tag fantasy-lane-tag--secondary">{getAttackLabel(unit)}</span>
+                <span className="fantasy-lane-tag fantasy-lane-tag--target">{TARGET_RULE_LABELS[unit.targetRule]}</span>
+                <span className="fantasy-lane-tag fantasy-lane-tag--feature">{unit.layer === 'air' ? '空中' : '地面'}</span>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -277,66 +343,86 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
           </div>
           <div className="fantasy-lane-roster-filter-grid">
             <div className="fantasy-lane-roster-filter-group">
-              <span className="fantasy-lane-roster-filter-label">层级</span>
-              <div className="fantasy-lane-roster-filter-scroll">
-                <button type="button" className={`fantasy-lane-roster-filter${layerFilter === 'all' ? ' is-active' : ''}`} onClick={() => setLayerFilter('all')}>全部</button>
-                <button type="button" className={`fantasy-lane-roster-filter fantasy-lane-roster-filter--ground${layerFilter === 'ground' ? ' is-active' : ''}`} onClick={() => setLayerFilter('ground')}>地面</button>
-                <button type="button" className={`fantasy-lane-roster-filter fantasy-lane-roster-filter--air${layerFilter === 'air' ? ' is-active' : ''}`} onClick={() => setLayerFilter('air')}>空中</button>
-              </div>
+              <label className="fantasy-lane-roster-filter-label" htmlFor="fantasy-lane-roster-filter-layer">层级</label>
+              <select
+                id="fantasy-lane-roster-filter-layer"
+                className="fantasy-lane-roster-filter-select"
+                value={draftFilters.layer}
+                onChange={(event) => setDraftFilters((current) => ({ ...current, layer: event.target.value as LayerFilter }))}
+              >
+                {LAYER_FILTERS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
             </div>
-
             <div className="fantasy-lane-roster-filter-group">
-              <span className="fantasy-lane-roster-filter-label">解锁</span>
-              <div className="fantasy-lane-roster-filter-scroll">
-                <button type="button" className={`fantasy-lane-roster-unlock-filter${unlockFilter === 'all' ? ' is-active' : ''}`} onClick={() => setUnlockFilter('all')}>全部</button>
-                <button type="button" className={`fantasy-lane-roster-unlock-filter${unlockFilter === 'unlocked' ? ' is-active' : ''}`} onClick={() => setUnlockFilter('unlocked')}>已解锁</button>
-                <button type="button" className={`fantasy-lane-roster-unlock-filter${unlockFilter === 'locked' ? ' is-active' : ''}`} onClick={() => setUnlockFilter('locked')}>未解锁</button>
-              </div>
+              <label className="fantasy-lane-roster-filter-label" htmlFor="fantasy-lane-roster-filter-unlock">解锁</label>
+              <select
+                id="fantasy-lane-roster-filter-unlock"
+                className="fantasy-lane-roster-filter-select"
+                value={draftFilters.unlock}
+                onChange={(event) => setDraftFilters((current) => ({ ...current, unlock: event.target.value as UnlockFilter }))}
+              >
+                {UNLOCK_FILTERS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
             </div>
-
             <div className="fantasy-lane-roster-filter-group">
-              <span className="fantasy-lane-roster-filter-label">射程</span>
-              <div className="fantasy-lane-roster-filter-scroll">
+              <label className="fantasy-lane-roster-filter-label" htmlFor="fantasy-lane-roster-filter-range">射程</label>
+              <select
+                id="fantasy-lane-roster-filter-range"
+                className="fantasy-lane-roster-filter-select"
+                value={draftFilters.range}
+                onChange={(event) => setDraftFilters((current) => ({ ...current, range: event.target.value as RangeFilter }))}
+              >
                 {RANGE_FILTERS.map((item) => (
-                  <button key={item.value} type="button" className={`fantasy-lane-roster-filter${rangeFilter === item.value ? ' is-active' : ''}`} onClick={() => setRangeFilter(item.value)}>
-                    {item.label}
-                  </button>
+                  <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
-              </div>
+              </select>
             </div>
-
             <div className="fantasy-lane-roster-filter-group">
-              <span className="fantasy-lane-roster-filter-label">形态</span>
-              <div className="fantasy-lane-roster-filter-scroll">
+              <label className="fantasy-lane-roster-filter-label" htmlFor="fantasy-lane-roster-filter-profile">形态</label>
+              <select
+                id="fantasy-lane-roster-filter-profile"
+                className="fantasy-lane-roster-filter-select"
+                value={draftFilters.profile}
+                onChange={(event) => setDraftFilters((current) => ({ ...current, profile: event.target.value as ProfileFilter }))}
+              >
                 {PROFILE_FILTERS.map((item) => (
-                  <button key={item.value} type="button" className={`fantasy-lane-roster-filter${profileFilter === item.value ? ' is-active' : ''}`} onClick={() => setProfileFilter(item.value)}>
-                    {item.label}
-                  </button>
+                  <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
-              </div>
+              </select>
             </div>
-
             <div className="fantasy-lane-roster-filter-group">
-              <span className="fantasy-lane-roster-filter-label">目标</span>
-              <div className="fantasy-lane-roster-filter-scroll">
+              <label className="fantasy-lane-roster-filter-label" htmlFor="fantasy-lane-roster-filter-target">目标</label>
+              <select
+                id="fantasy-lane-roster-filter-target"
+                className="fantasy-lane-roster-filter-select"
+                value={draftFilters.target}
+                onChange={(event) => setDraftFilters((current) => ({ ...current, target: event.target.value as TargetFilter }))}
+              >
                 {TARGET_FILTERS.map((item) => (
-                  <button key={item.value} type="button" className={`fantasy-lane-roster-filter${targetFilter === item.value ? ' is-active' : ''}`} onClick={() => setTargetFilter(item.value)}>
-                    {item.label}
-                  </button>
+                  <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
-              </div>
+              </select>
             </div>
-
             <div className="fantasy-lane-roster-filter-group">
-              <span className="fantasy-lane-roster-filter-label">定位</span>
-              <div className="fantasy-lane-roster-filter-scroll">
+              <label className="fantasy-lane-roster-filter-label" htmlFor="fantasy-lane-roster-filter-role">定位</label>
+              <select
+                id="fantasy-lane-roster-filter-role"
+                className="fantasy-lane-roster-filter-select"
+                value={draftFilters.role}
+                onChange={(event) => setDraftFilters((current) => ({ ...current, role: event.target.value as RoleFilter }))}
+              >
                 {ROLE_FILTERS.map((item) => (
-                  <button key={item.value} type="button" className={`fantasy-lane-roster-filter${roleFilter === item.value ? ' is-active' : ''}`} onClick={() => setRoleFilter(item.value)}>
-                    {item.label}
-                  </button>
+                  <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
-              </div>
+              </select>
             </div>
+            <button type="button" className="fantasy-lane-btn fantasy-lane-btn--small fantasy-lane-roster-filter-apply" onClick={() => setAppliedFilters(draftFilters)}>
+              确定
+            </button>
           </div>
         </div>
 

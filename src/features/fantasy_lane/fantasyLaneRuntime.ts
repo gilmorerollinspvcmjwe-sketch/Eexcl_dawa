@@ -64,7 +64,16 @@ import type {
 } from './fantasyLaneTypes.ts';
 import { FANTASY_LANE_IDS } from './fantasyLaneTypes.ts';
 import type { FantasyLaneProgressData } from './fantasyLaneProgressStorage.ts';
-import { isUnitUnlocked } from './fantasyLaneProgressStorage.ts';
+import {
+  createDefaultFantasyLaneLoadoutPresets,
+  getFantasyLaneUnitBattleBonus,
+  isUnitUnlocked,
+  loadFantasyLaneProgress,
+} from './fantasyLaneProgressStorage.ts';
+import { createFantasyLaneBattleLoop } from './runtime/fantasyLaneBattleLoop.ts';
+import { cloneRuntimeStateForMutation } from './runtime/fantasyLaneStateMutation.ts';
+import { buildFantasyLaneDeterministicSeed } from './runtime/fantasyLaneTelemetry.ts';
+import { getFantasyLaneUnitBuckets } from './runtime/fantasyLaneUnitBuckets.ts';
 
 type TargetSelection = {
   target: FantasyLaneUnitInstance | null;
@@ -87,31 +96,6 @@ const DEBUG_EVENT_LIMIT = 48;
 const RUNTIME_EVENT_LIMIT = 120;
 
 // 复制运行时状态，保证 tick 仍然是纯函数出口。
-function cloneState(state: FantasyLaneRuntimeState): FantasyLaneRuntimeState {
-  return {
-    ...state,
-    queue: [...state.queue],
-    unitCooldowns: { ...state.unitCooldowns },
-    units: state.units.map((unit) => ({
-      ...unit,
-      combatState: unit.combatState ? { ...unit.combatState } : undefined,
-    })),
-    projectiles: state.projectiles.map((projectile) => ({ ...projectile })),
-    impacts: state.impacts.map((impact) => ({ ...impact })),
-    effects: state.effects.map((effect) => ({ ...effect })),
-    scheduledEvents: state.scheduledEvents.map((event) => ({
-      ...event,
-      spawnGroup: event.spawnGroup ? { ...event.spawnGroup } : undefined,
-    })),
-    triggeredBossPhases: [...state.triggeredBossPhases],
-    activeWarning: state.activeWarning ? { ...state.activeWarning } : null,
-    result: state.result ? { ...state.result, tips: [...state.result.tips] } : null,
-    debugEvents: state.debugEvents.map((event) => ({ ...event })),
-    runtimeEvents: state.runtimeEvents.map((event) => ({ ...event })),
-    phaseTimeline: state.phaseTimeline.map((entry) => ({ ...entry })),
-    stats: { ...state.stats },
-  };
-}
 
 // 统一初始化技能冷却状态。
 function createSkillState(definition: FantasyLaneHeroDefinition | FantasyLaneTacticalSkillDefinition) {
@@ -325,8 +309,7 @@ function getLoadoutPop(loadout: string[]) {
 
 // 计算场上某阵营的实时人口。
 function getActivePop(units: FantasyLaneUnitInstance[], side: FantasyLaneSide) {
-  return units
-    .filter((unit) => unit.side === side)
+  return getFantasyLaneUnitBuckets(units).bySide[side]
     .reduce((sum, unit) => sum + (FANTASY_LANE_UNIT_MAP[unit.templateId]?.pop ?? 0), 0);
 }
 
@@ -369,6 +352,10 @@ function pushImpact(state: FantasyLaneRuntimeState, input: Omit<FantasyLaneImpac
 // 统一处理伤害倍率，主堡视为 structure。
 function getDamageMultiplier(source: FantasyLaneUnitDefinition, target: FantasyLaneUnitDefinition | 'base') {
   return getDamageMultiplierFromMatrix(source.damageType, target === 'base' ? 'structure' : target.armorType);
+}
+
+function getScaledUnitDamage(unit: FantasyLaneUnitInstance, definition: FantasyLaneUnitDefinition) {
+  return definition.damage * (typeof unit.damageMultiplier === 'number' ? unit.damageMultiplier : 1);
 }
 
 // 统一给单位扣血，并把护甲先吃掉。
@@ -556,7 +543,8 @@ export function shouldRetainCurrentTarget(
 
 // 把单位筛到可索敌的前方目标集合里。
 function getCandidateTargets(state: FantasyLaneRuntimeState, unit: FantasyLaneUnitInstance, definition: FantasyLaneUnitDefinition) {
-  return state.units.filter((target) => {
+  const enemySide: FantasyLaneSide = unit.side === 'player' ? 'enemy' : 'player';
+  return getFantasyLaneUnitBuckets(state.units).bySide[enemySide].filter((target) => {
     if (target.side === unit.side) return false;
     const targetDefinition = FANTASY_LANE_UNIT_MAP[target.templateId];
     if (!targetDefinition) return false;
@@ -691,9 +679,6 @@ function updateRangedUnitIntent(
   const protocol = getCombatProtocol(definition);
   const direction = unit.side === 'player' ? 1 : -1;
   if (selection.target && selection.targetDefinition) {
-    if (protocol.allowRetreat && selection.distance < definition.minimumRange) {
-      return resolveRetreat(unit, definition, selection.target, selection.targetDefinition, travelStep);
-    }
     if (selection.distance <= definition.preferredRange + protocol.holdRangeBuffer) {
       return {
         mode: 'attackTarget',
@@ -752,9 +737,6 @@ function updateAirUnitIntent(
     const preferredRange = selection.target.layer === 'air'
       ? definition.preferredRange + protocol.holdRangeBuffer
       : definition.preferredRange;
-    if (definition.rangeBand === 'ranged' && selection.distance < definition.minimumRange && protocol.allowRetreat) {
-      return resolveRetreat(unit, definition, selection.target, selection.targetDefinition, travelStep);
-    }
     if (selection.distance <= preferredRange) {
       return {
         mode: 'attackTarget',
@@ -801,33 +783,6 @@ function updateAirUnitIntent(
 }
 
 // 远程过近时轻微后撤并做纵向让位，避免原地互顶。
-function resolveRetreat(
-  unit: FantasyLaneUnitInstance,
-  definition: FantasyLaneUnitDefinition,
-  target: FantasyLaneUnitInstance,
-  targetDefinition: FantasyLaneUnitDefinition,
-  travelStep: number,
-) {
-  const protocol = getCombatProtocol(definition);
-  const direction = unit.side === 'player' ? 1 : -1;
-  const driftDirection = unit.y <= target.y ? -1 : 1;
-  const bounds = getLaneYBounds(definition.layer);
-
-  return {
-    mode: 'retreat',
-    target,
-    targetDefinition,
-    targetBase: false,
-    distance: edgeDistance(unit, definition, target, targetDefinition),
-    desiredX: unit.x - direction * travelStep * protocol.retreatFactor,
-    desiredY: clamp(
-      unit.y + driftDirection * protocol.driftStrength,
-      bounds.min,
-      bounds.max,
-    ),
-  } satisfies UnitIntent;
-}
-
 // 判断单位是否处于攻击锁脚状态。
 function isMovementLocked(unit: FantasyLaneUnitInstance) {
   return unit.attackAnimMs > 0 || (unit.combatState?.windupRemainingMs ?? 0) > 0;
@@ -875,7 +830,7 @@ function launchProjectile(
     y: source.y,
     targetInstanceId: target?.instanceId ?? null,
     targetBase,
-    damage: definition.damage,
+    damage: getScaledUnitDamage(source, definition),
     splashRadius: definition.splashRadius,
     damageType: definition.damageType,
     color: definition.attackColor,
@@ -886,11 +841,16 @@ function launchProjectile(
 }
 
 // 给主堡结算伤害并保留命中反馈。
-function attackBase(state: FantasyLaneRuntimeState, source: FantasyLaneUnitInstance, definition: FantasyLaneUnitDefinition) {
+function attackBase(
+  state: FantasyLaneRuntimeState,
+  source: FantasyLaneUnitInstance,
+  definition: FantasyLaneUnitDefinition,
+  damageOverride?: number,
+) {
   const targetSide = source.side === 'player' ? 'enemy' : 'player';
   const damage = scaleDamage(
     state,
-    definition.damage * getDamageMultiplier(definition, 'base'),
+    (damageOverride ?? getScaledUnitDamage(source, definition)) * getDamageMultiplier(definition, 'base'),
     source.side,
     targetSide,
   );
@@ -983,11 +943,21 @@ function resolvePendingAttack(state: FantasyLaneRuntimeState, unit: FantasyLaneU
     if (definition.rangeBand === 'ranged') {
       launchProjectile(state, unit, definition, target, false);
     } else if (definition.splashRadius > 0) {
-      applyAreaDamage(state, definition, unit.side, target.layer, target.x, target.y, definition.damage, definition.splashRadius, target.instanceId);
+      applyAreaDamage(
+        state,
+        definition,
+        unit.side,
+        target.layer,
+        target.x,
+        target.y,
+        getScaledUnitDamage(unit, definition),
+        definition.splashRadius,
+        target.instanceId,
+      );
     } else {
       applyDamageToUnit(
         target,
-        scaleDamage(state, definition.damage * getDamageMultiplier(definition, targetDefinition), unit.side, target.side),
+        scaleDamage(state, getScaledUnitDamage(unit, definition) * getDamageMultiplier(definition, targetDefinition), unit.side, target.side),
       );
       pushImpact(state, {
         x: target.x,
@@ -1080,6 +1050,12 @@ function resolveFriendlySoftCollision(
   return Math.max(desiredX, previousPlaced.x + minGap);
 }
 
+function clampForwardProgress(unit: FantasyLaneUnitInstance, desiredX: number) {
+  return unit.side === 'player'
+    ? Math.max(unit.x, desiredX)
+    : Math.min(unit.x, desiredX);
+}
+
 // 统一处理移动和拥堵漂移。
 function resolveMovement(
   state: FantasyLaneRuntimeState,
@@ -1093,11 +1069,12 @@ function resolveMovement(
   let desiredX = isMovementLocked(unit) ? unit.x : intent.desiredX;
   let desiredY = intent.desiredY;
 
-  if (intent.mode === 'advance' || intent.mode === 'attackTarget') {
+  if (intent.mode === 'advance') {
     desiredX = applyTargetSpacing(intent, definition);
   }
 
   desiredX = resolveFriendlySoftCollision(unit, definition, desiredX, previousPlaced);
+  desiredX = clampForwardProgress(unit, desiredX);
   desiredX = clamp(
     desiredX,
     FANTASY_LANE_RUNTIME_CONSTANTS.lanePaddingMinX,
@@ -1134,8 +1111,8 @@ function resolveMovement(
 
 // 处理单侧单层主循环，把三类单位协议真正拆开后统一调度。
 function processSideLayer(state: FantasyLaneRuntimeState, side: FantasyLaneSide, layer: FantasyLaneLayer, deltaMs: number) {
-  const units = state.units
-    .filter((unit) => unit.side === side && unit.layer === layer)
+  const units = getFantasyLaneUnitBuckets(state.units).bySideLayer[side][layer]
+    .slice()
     .sort((left, right) => (side === 'player' ? right.x - left.x : left.x - right.x));
 
   let previousPlaced: { x: number; y: number; radius: number; threshold: number; blockWeight: number } | null = null;
@@ -1160,7 +1137,7 @@ function processSideLayer(state: FantasyLaneRuntimeState, side: FantasyLaneSide,
         if (ensureCombatState(unit).windupRemainingMs === 0) {
           resolvePendingAttack(state, unit, definition);
         }
-      } else if (intent.mode === 'attackBase' && baseDistance(unit, definition) <= definition.preferredRange) {
+      } else if (intent.mode === 'attackBase') {
         beginAttackWindup(unit, definition, null, true, deltaMs);
         if (ensureCombatState(unit).windupRemainingMs === 0) {
           resolvePendingAttack(state, unit, definition);
@@ -1173,19 +1150,14 @@ function processSideLayer(state: FantasyLaneRuntimeState, side: FantasyLaneSide,
 }
 
 // 计算当前局收入，囤钱衰减和终局加压都在这里统一收口。
-function getIncomePerSecond(elapsedMs: number, gold: number, overtimeTriggered: boolean) {
-  return getIncomePerSecondByRules(elapsedMs, gold, overtimeTriggered);
-}
-
 // 统一检查出兵是否合法，人口和巨型单位上限都在这里。
 function canSpawnUnit(state: FantasyLaneRuntimeState, unitId: string, side: FantasyLaneSide) {
   const definition = FANTASY_LANE_UNIT_MAP[unitId];
   if (!definition) return false;
 
-  const activePop = getActivePop(state.units, side);
-  const activeGiants = state.units.filter(
-    (unit) => unit.side === side && FANTASY_LANE_UNIT_MAP[unit.templateId]?.footprint === 'giant',
-  ).length;
+  const sideUnits = getFantasyLaneUnitBuckets(state.units).bySide[side];
+  const activePop = sideUnits.reduce((sum, unit) => sum + (FANTASY_LANE_UNIT_MAP[unit.templateId]?.pop ?? 0), 0);
+  const activeGiants = sideUnits.filter((unit) => FANTASY_LANE_UNIT_MAP[unit.templateId]?.footprint === 'giant').length;
 
   if (activePop + definition.pop > state.popLimit) return false;
   if (definition.footprint === 'giant' && activeGiants >= FANTASY_LANE_RUNTIME_CONSTANTS.giantUnitLimit) return false;
@@ -1198,6 +1170,8 @@ function spawnUnit(state: FantasyLaneRuntimeState, unitId: string, side: Fantasy
   if (!definition || !canSpawnUnit(state, unitId, side)) return false;
 
   const seed = state.rngSeed++;
+  const starLevel = Math.max(0, Math.min(3, state.unitStarLevels[unitId] ?? 0));
+  const battleBonus = getFantasyLaneUnitBattleBonus(starLevel);
   const spawnSlot = normalizeSpawnLane(
     definition,
     laneOverride === 'front' || laneOverride === 'mid' || laneOverride === 'rear' || laneOverride === 'air'
@@ -1214,14 +1188,17 @@ function spawnUnit(state: FantasyLaneRuntimeState, unitId: string, side: Fantasy
     lane: spawnSlot.lane,
     x: side === 'player' ? getPlayerSpawnXFromRules() : getEnemySpawnXFromRules(),
     y: createUnitY(seed, spawnSlot.layer, definition.rangeBand),
-    hp: definition.maxHp,
-    armorHp: definition.armorHp,
+    hp: Math.max(1, Math.round(definition.maxHp * battleBonus.healthMultiplier)),
+    armorHp: Math.max(0, Math.round(definition.armorHp * battleBonus.healthMultiplier)),
     attackCooldownMs: Math.round(definition.attackIntervalMs * 0.4),
     attackAnimMs: 0,
     hitFlashMs: 0,
     blockedMs: 0,
     lastTargetId: null,
     spawnedAtMs: state.elapsedMs,
+    starLevel,
+    damageMultiplier: battleBonus.damageMultiplier,
+    healthMultiplier: battleBonus.healthMultiplier,
     combatState: createCombatState(),
   });
 
@@ -1342,7 +1319,7 @@ function processScheduledEvents(state: FantasyLaneRuntimeState) {
 
 // 统一处理投射物飞行和命中。
 function processProjectiles(state: FantasyLaneRuntimeState, deltaMs: number) {
-  const nextProjectiles: FantasyLaneProjectile[] = [];
+  let writeIndex = 0;
 
   state.projectiles.forEach((projectile) => {
     const remainingMs = projectile.remainingMs - deltaMs;
@@ -1352,23 +1329,36 @@ function processProjectiles(state: FantasyLaneRuntimeState, deltaMs: number) {
     const toX = projectile.targetBase ? projectile.toX : target?.x ?? projectile.toX;
     const toY = projectile.targetBase ? projectile.toY : target?.y ?? projectile.toY;
     const progress = clamp(1 - Math.max(remainingMs, 0) / projectile.totalMs, 0, 1);
-    const nextProjectile = {
-      ...projectile,
-      toX,
-      toY,
-      x: projectile.fromX + (toX - projectile.fromX) * progress,
-      y: projectile.fromY + (toY - projectile.fromY) * progress,
-      remainingMs,
-    };
+    projectile.toX = toX;
+    projectile.toY = toY;
+    projectile.x = projectile.fromX + (toX - projectile.fromX) * progress;
+    projectile.y = projectile.fromY + (toY - projectile.fromY) * progress;
+    projectile.remainingMs = remainingMs;
 
     if (remainingMs <= 0) {
-      processProjectileHit(state, nextProjectile);
+      processProjectileHit(state, projectile);
       return;
     }
-    nextProjectiles.push(nextProjectile);
+    state.projectiles[writeIndex] = projectile;
+    writeIndex += 1;
   });
 
-  state.projectiles = nextProjectiles;
+  state.projectiles.length = writeIndex;
+}
+
+function processImpacts(state: FantasyLaneRuntimeState, deltaMs: number) {
+  let writeIndex = 0;
+
+  state.impacts.forEach((impact) => {
+    impact.remainingMs -= deltaMs;
+    if (impact.remainingMs <= 0) {
+      return;
+    }
+    state.impacts[writeIndex] = impact;
+    writeIndex += 1;
+  });
+
+  state.impacts.length = writeIndex;
 }
 
 // 统一处理投射物落点伤害。
@@ -1395,9 +1385,13 @@ function processProjectileHit(state: FantasyLaneRuntimeState, projectile: Fantas
         blockedMs: 0,
         lastTargetId: null,
         spawnedAtMs: 0,
+        starLevel: 0,
+        damageMultiplier: 1,
+        healthMultiplier: 1,
         combatState: createCombatState(),
       },
       definition,
+      projectile.damage,
     );
     return;
   }
@@ -1705,6 +1699,7 @@ function setPhaseMetadata(state: FantasyLaneRuntimeState) {
 
 // 统一计算前线、空优和拥堵统计。
 function updateBattleMetrics(state: FantasyLaneRuntimeState, deltaMs: number) {
+  const buckets = getFantasyLaneUnitBuckets(state.units);
   const playerFront = getGroundFrontlineFromUnits(state.units, 'player');
   const enemyFront = getGroundFrontlineFromUnits(state.units, 'enemy');
   state.frontline = Math.round(playerFront - (100 - enemyFront));
@@ -1712,7 +1707,7 @@ function updateBattleMetrics(state: FantasyLaneRuntimeState, deltaMs: number) {
   state.activePop = getActivePop(state.units, 'player');
   state.airControl = getAirControlDeltaFromUnits(state.units);
 
-  const crowdedUnits = state.units.filter((unit) => {
+  const crowdedUnits = buckets.bySide.player.concat(buckets.bySide.enemy).filter((unit) => {
     const definition = FANTASY_LANE_UNIT_MAP[unit.templateId];
     return unit.layer === 'ground' && unit.blockedMs > 320 && definition.footprint !== 'small';
   }).length;
@@ -1933,6 +1928,8 @@ function createBaseState(
   const hero = FANTASY_LANE_HERO_MAP[heroId] ?? FANTASY_LANE_HEROES[0];
   const tactical = FANTASY_LANE_TACTICAL_MAP[tacticalId] ?? FANTASY_LANE_TACTICAL_SKILLS[0];
   const safeLoadout = ensureLoadout(loadout);
+  const progress = loadFantasyLaneProgress();
+  const initialSeed = buildFantasyLaneDeterministicSeed(level.id, hero.id, tactical.id, safeLoadout);
 
   return {
     phase: 'setup',
@@ -1959,6 +1956,7 @@ function createBaseState(
     clashX: 50,
     congestion: 0,
     unitCooldowns: Object.fromEntries(FANTASY_LANE_UNITS.map((unit) => [unit.id, 0])),
+    unitStarLevels: { ...(progress.unitStars ?? {}) },
     heroSkill: createSkillState(hero),
     tacticalSkill: createSkillState(tactical),
     globalSpawnCooldownMs: 0,
@@ -1977,7 +1975,7 @@ function createBaseState(
     lastHint: `已载入 ${level.id} ${level.name}。调整编组后开始战斗。`,
     activeWarning: null,
     result: null,
-    rngSeed: 1,
+    rngSeed: initialSeed,
     scheduledEvents: buildScheduledEvents(level),
     triggeredBossPhases: [],
     bossUnitInstanceId: null,
@@ -2022,16 +2020,25 @@ function normalizePersistedState(persisted: FantasyLaneRuntimeState): FantasyLan
     persisted.selectedTacticalId ?? FANTASY_LANE_IDS.defaultTacticalId,
     persisted.loadoutUnitIds ?? FANTASY_LANE_IDS.defaultLoadout,
   );
+  const unitStarLevels = { ...base.unitStarLevels, ...(persisted.unitStarLevels ?? {}) };
 
   const next: FantasyLaneRuntimeState = {
     ...base,
     ...persisted,
     queue: [...(persisted.queue ?? [])],
     unitCooldowns: { ...base.unitCooldowns, ...(persisted.unitCooldowns ?? {}) },
-    units: (persisted.units ?? []).map((unit) => ({
-      ...unit,
-      combatState: unit.combatState ? { ...unit.combatState } : undefined,
-    })),
+    unitStarLevels,
+    units: (persisted.units ?? []).map((unit) => {
+      const starLevel = typeof unit.starLevel === 'number' ? unit.starLevel : unitStarLevels[unit.templateId] ?? 0;
+      const battleBonus = getFantasyLaneUnitBattleBonus(starLevel);
+      return {
+        ...unit,
+        starLevel,
+        damageMultiplier: typeof unit.damageMultiplier === 'number' ? unit.damageMultiplier : battleBonus.damageMultiplier,
+        healthMultiplier: typeof unit.healthMultiplier === 'number' ? unit.healthMultiplier : battleBonus.healthMultiplier,
+        combatState: unit.combatState ? { ...unit.combatState } : undefined,
+      };
+    }),
     projectiles: (persisted.projectiles ?? []).map((projectile) => ({ ...projectile })),
     impacts: (persisted.impacts ?? []).map((impact) => ({ ...impact })),
     effects: (persisted.effects ?? []).map((effect) => ({ ...effect })),
@@ -2172,52 +2179,126 @@ function queueUnit(state: FantasyLaneRuntimeState, unitId: string) {
 // 对外暴露统一技能施放入口。
 function castSkill(state: FantasyLaneRuntimeState, skillId: string) {
   if (state.phase !== 'playing') return state;
-  const next = cloneState(state);
+  const next = cloneRuntimeStateForMutation(state);
   applySkill(next, skillId);
   return next;
 }
 
 // 战斗主循环。
 function tick(state: FantasyLaneRuntimeState, deltaMs: number): FantasyLaneRuntimeState {
-  if (state.phase !== 'playing') return state;
-  const next = cloneState(state);
+  return fantasyLaneBattleLoop.step(state, deltaMs);
+}
 
-  next.elapsedMs += deltaMs;
-  if (next.overtimeTriggered) {
-    next.overtimeRemainingMs = Math.max(0, next.overtimeRemainingMs - deltaMs);
-  }
+// 鎴樻枟涓诲惊鐜€?
+const EMPTY_PROGRESS_FOR_RUNTIME_TICK: FantasyLaneProgressData = {
+  completedLevels: [],
+  levelRecords: {},
+  totalCompleted: 0,
+  totalStars: 0,
+  bestScore: 0,
+  highestUnlockedLevelId: '1-1',
+  highestChapterId: 'chapter-1',
+  lastPlayedLevelId: '1-1',
+  updatedAt: 0,
+  runtimeTotals: {
+    summoned: 0,
+    defeated: 0,
+    queueBlocked: 0,
+    projectilesFired: 0,
+    aoeHits: 0,
+    frontlineSummons: 0,
+    antiAirSummons: 0,
+    aoeSummons: 0,
+    goldSpent: 0,
+    goldCappedMs: 0,
+    congestionMs: 0,
+    engagedUnits: 0,
+    totalEngageDelayMs: 0,
+    heroSkillCast: 0,
+    tacticalSkillCast: 0,
+    lastSkillCastAtMs: null,
+    averageEngageTimeMs: 0,
+  },
+  telemetryRunCount: 0,
+  chapterRecords: {},
+  battleTotals: {
+    totalRuns: 0,
+    wins: 0,
+    losses: 0,
+    bossRuns: 0,
+    bossClears: 0,
+    phaseEntries: {},
+    bossPhaseTriggers: {},
+  },
+  unlockedUnits: [],
+  unitFragments: {},
+  unitStars: {},
+  loadoutPresets: createDefaultFantasyLaneLoadoutPresets(),
+};
 
-  Object.keys(next.unitCooldowns).forEach((unitId) => {
-    next.unitCooldowns[unitId] = Math.max(0, next.unitCooldowns[unitId] - deltaMs);
+/* function handleOvertimeTriggered(state: FantasyLaneRuntimeState) {
+  addEffect(state.effects, 'both', 'haste', 0.08, FANTASY_LANE_RUNTIME_CONSTANTS.overtimeDurationMs);
+  state.heroSkill.remainingMs = Math.max(0, state.heroSkill.remainingMs - 7000);
+  state.tacticalSkill.remainingMs = Math.max(0, state.tacticalSkill.remainingMs - 6000);
+  state.activeWarning = { id: 'overtime', text: '杩涘叆缁堝眬鍔犲帇锛?5 绉掑唴蹇呴』鏀跺彛銆?, remainingMs: 4200 };
+  pushDebugEvent(state, 'overtime', '杩涘叆缁堝眬鍔犲帇');
+  pushRuntimeEvent(state, {
+    type: 'overtime',
+    phaseId: state.currentPhaseId,
+    phaseLabel: state.phaseLabel,
+    pressure: 'overtime',
+    text: '杩涘叆缁堝眬鍔犲帇',
   });
-  next.heroSkill.remainingMs = Math.max(0, next.heroSkill.remainingMs - deltaMs);
-  next.tacticalSkill.remainingMs = Math.max(0, next.tacticalSkill.remainingMs - deltaMs);
-  next.globalSpawnCooldownMs = Math.max(0, next.globalSpawnCooldownMs - deltaMs);
-  next.enemySpawnCooldownMs = Math.max(0, next.enemySpawnCooldownMs - deltaMs);
-  next.effects = next.effects
-    .map((effect) => ({ ...effect, remainingMs: effect.remainingMs - deltaMs }))
-    .filter((effect) => effect.remainingMs > 0);
-  next.impacts = next.impacts
-    .map((impact) => ({ ...impact, remainingMs: impact.remainingMs - deltaMs }))
-    .filter((impact) => impact.remainingMs > 0);
+}
 
-  if (next.activeWarning) {
-    next.activeWarning.remainingMs -= deltaMs;
-    if (next.activeWarning.remainingMs <= 0) {
-      next.activeWarning = null;
-    }
-  }
+*/
 
-  next.gold = Math.min(
-    FANTASY_LANE_RUNTIME_CONSTANTS.maxGold,
-    next.gold + getIncomePerSecond(next.elapsedMs, next.gold, next.overtimeTriggered) * (deltaMs / 1000),
-  );
-  if (next.gold >= 220) {
-    next.stats.goldCappedMs += deltaMs;
-  }
+function handleOvertimeTriggered(state: FantasyLaneRuntimeState) {
+  addEffect(state.effects, 'both', 'haste', 0.08, FANTASY_LANE_RUNTIME_CONSTANTS.overtimeDurationMs);
+  state.heroSkill.remainingMs = Math.max(0, state.heroSkill.remainingMs - 7000);
+  state.tacticalSkill.remainingMs = Math.max(0, state.tacticalSkill.remainingMs - 6000);
+  state.activeWarning = { id: 'overtime', text: 'Overtime pressure started', remainingMs: 4200 };
+  pushDebugEvent(state, 'overtime', 'Overtime pressure started');
+  pushRuntimeEvent(state, {
+    type: 'overtime',
+    phaseId: state.currentPhaseId,
+    phaseLabel: state.phaseLabel,
+    pressure: 'overtime',
+    text: 'Overtime pressure started',
+  });
+}
 
-  setPhaseMetadata(next);
+const fantasyLaneBattleLoop = createFantasyLaneBattleLoop({
+  cloneStateForMutation: cloneRuntimeStateForMutation,
+  prelude: {
+    maxGold: FANTASY_LANE_RUNTIME_CONSTANTS.maxGold,
+    overtimeDurationMs: FANTASY_LANE_RUNTIME_CONSTANTS.overtimeDurationMs,
+    goldCappedThreshold: 220,
+    getIncomePerSecond: getIncomePerSecondByRules,
+    setPhaseMetadata,
+    onOvertimeTriggered: handleOvertimeTriggered,
+  },
+  systems: {
+    setPhaseMetadata,
+    processScheduledEvents,
+    processPlayerQueue,
+    processImpacts,
+    processProjectiles,
+    processBurnline,
+    processSideLayer,
+    pruneUnits,
+    processBossPhases,
+    updateBattleMetrics,
+  },
+  finalize: {
+    getLevel,
+    maybeFinalizeBattle,
+    emptyProgress: EMPTY_PROGRESS_FOR_RUNTIME_TICK,
+  },
+});
 
+
+/*
   if (!next.overtimeTriggered && next.elapsedMs >= next.battleTimeLimitMs) {
     next.overtimeTriggered = true;
     next.overtimeRemainingMs = FANTASY_LANE_RUNTIME_CONSTANTS.overtimeDurationMs;
@@ -2279,6 +2360,7 @@ function tick(state: FantasyLaneRuntimeState, deltaMs: number): FantasyLaneRunti
 
   return maybeFinalizeBattle(next, level, emptyProgress);
 }
+*/
 
 // 给公式栏生成一行当前局摘要。
 function getFormulaText(state: FantasyLaneRuntimeState) {

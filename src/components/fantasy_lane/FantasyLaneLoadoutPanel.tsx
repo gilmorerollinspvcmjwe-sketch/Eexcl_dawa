@@ -362,21 +362,6 @@ export const FantasyLaneLoadoutPanel: React.FC<FantasyLaneLoadoutPanelProps> = (
             </div>
           </section>
 
-          <section className="fantasy-lane-level-summary">
-            <div className="fantasy-lane-level-summary-head">
-              <h4>关卡信息</h4>
-              <strong>{currentLevel.id}</strong>
-            </div>
-            <div className="fantasy-lane-roster-meta">
-              <span>名称 {currentLevel.name}</span>
-              <span>时限 {Math.round(currentLevel.battleTimeLimitMs / 1000)}s</span>
-              <span>开局金币 {currentLevel.startingGold}</span>
-              <span>我方基地 {currentLevel.playerBaseHp}</span>
-              <span>敌方基地 {currentLevel.enemyBaseHp}</span>
-              <span>压力 {currentLevel.enemyPressure}</span>
-            </div>
-          </section>
-
           {/* 本局编组 */}
           <section className="fantasy-lane-pick-block fantasy-lane-loadout-section">
             <div className="fantasy-lane-loadout-head">

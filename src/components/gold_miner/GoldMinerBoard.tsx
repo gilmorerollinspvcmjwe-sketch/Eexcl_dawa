@@ -25,6 +25,7 @@ export interface GoldMinerBoardProps {
   state: GoldMinerBoardState;
   reducedMotion?: boolean;
   onLaunch?: () => void;
+  onHotkey?: (key: string) => boolean;
 }
 
 // 根据物件类型分派到对应的素材绘制函数。
@@ -36,7 +37,7 @@ function drawBoardItem(context: CanvasRenderingContext2D, item: GoldMinerItem): 
   drawGoldMinerLoot(context, item);
 }
 
-export const GoldMinerBoard: React.FC<GoldMinerBoardProps> = ({ state, reducedMotion = false, onLaunch }) => {
+export const GoldMinerBoard: React.FC<GoldMinerBoardProps> = ({ state, reducedMotion = false, onLaunch, onHotkey }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -139,7 +140,17 @@ export const GoldMinerBoard: React.FC<GoldMinerBoardProps> = ({ state, reducedMo
       width={GOLD_MINER_BOARD_WIDTH}
       height={GOLD_MINER_BOARD_HEIGHT}
       onClick={onLaunch}
+      tabIndex={0}
+      role="application"
+      aria-label="Gold Miner board"
+      onPointerDown={(event) => {
+        event.currentTarget.focus();
+      }}
+      onKeyDown={(event) => {
+        if (onHotkey?.(event.key)) {
+          event.preventDefault();
+        }
+      }}
     />
   );
 };
-

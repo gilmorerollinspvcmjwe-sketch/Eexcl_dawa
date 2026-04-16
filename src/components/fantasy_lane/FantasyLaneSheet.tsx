@@ -16,12 +16,18 @@ import {
 } from '../../features/fantasy_lane/fantasyLaneSelectionBridge.ts';
 import { fantasyLaneRuntimeAdapter, getFantasyLaneRecommendedLoadoutWarnings } from '../../features/fantasy_lane/fantasyLaneRuntime.ts';
 import type { FantasyLaneRuntimeState, FantasyLaneSheetSnapshot } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
+import {
+  buildFantasyLaneBattleSnapshot,
+  buildFantasyLaneProgressDebugSnapshot,
+  buildFantasyLaneRuntimeDebugSnapshot,
+  buildFantasyLaneRuntimeStatsSnapshot,
+} from '../../features/fantasy_lane/runtime/fantasyLaneTelemetry.ts';
 import type { WorkbookStatusSummary } from '../../types/workbook.ts';
 import { FantasyLaneBoard } from './FantasyLaneBoard';
 import { FantasyLaneHud } from './FantasyLaneHud';
 import { FantasyLaneLoadoutPanel } from './FantasyLaneLoadoutPanel';
 import { FantasyLaneResultPanel } from './FantasyLaneResultPanel';
-import { getBossPhaseVisualState } from './fantasyLaneUiMeta.ts';
+import { useFantasyLaneBattleLoop } from './useFantasyLaneBattleLoop.ts';
 import '../../styles/fantasy-lane.css';
 
 interface FantasyLaneSheetProps {
@@ -61,16 +67,15 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
     [state.loadoutUnitIds, state.selectedLevelId],
   );
   const canEditSetup = state.phase === 'setup' || state.phase === 'won' || state.phase === 'lost';
+  latestStateRef.current = state;
+
+  useFantasyLaneBattleLoop({
+    stateRef: latestStateRef,
+    setState,
+    tick: fantasyLaneRuntimeAdapter.tick,
+  });
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setState((current) => fantasyLaneRuntimeAdapter.tick(current, 200));
-    }, 200);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    latestStateRef.current = state;
     onFormulaChange?.(fantasyLaneRuntimeAdapter.getFormulaText(state));
     onStatusChange?.(fantasyLaneRuntimeAdapter.getStatusSummary(state));
   }, [onFormulaChange, onStatusChange, state]);
@@ -84,13 +89,23 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
 
   useEffect(() => {
     if (state.phase === 'playing') return;
-    onSnapshotChange?.({ state, setupCollapsed });
+    onSnapshotChange?.({
+      state,
+      setupCollapsed,
+      battleSnapshot: buildFantasyLaneBattleSnapshot(state),
+      debugSnapshot: buildFantasyLaneRuntimeDebugSnapshot(state),
+    });
   }, [onSnapshotChange, setupCollapsed, state]);
 
   useEffect(() => {
     if (!onSnapshotChange || state.phase !== 'playing') return;
     const timer = window.setInterval(() => {
-      onSnapshotChange({ state: latestStateRef.current, setupCollapsed });
+      onSnapshotChange({
+        state: latestStateRef.current,
+        setupCollapsed,
+        battleSnapshot: buildFantasyLaneBattleSnapshot(latestStateRef.current),
+        debugSnapshot: buildFantasyLaneRuntimeDebugSnapshot(latestStateRef.current),
+      });
     }, 1000);
     return () => window.clearInterval(timer);
   }, [onSnapshotChange, setupCollapsed, state.phase]);
@@ -106,11 +121,23 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
   useEffect(() => {
     const previousPhase = previousPhaseRef.current;
     if (previousPhase !== 'playing' && state.phase === 'playing') {
-      setProgress(recordFantasyLaneLevelStart(state.selectedLevelId));
+      setProgress(recordFantasyLaneLevelStart(state.selectedLevelId, {
+        runId: `${state.selectedLevelId}-${Date.now()}`,
+        heroId: state.selectedHeroId,
+        tacticalSkillId: state.selectedTacticalId,
+        loadoutUnitIds: state.loadoutUnitIds,
+        runtimeSeed: state.rngSeed,
+        startedAt: Date.now(),
+      }));
     }
     if (previousPhase !== state.phase && (state.phase === 'won' || state.phase === 'lost') && state.result) {
       const baseHpPercent = (state.playerBaseHp / Math.max(1, state.playerBaseHpMax)) * 100;
-      const result = recordFantasyLaneLevelResult(state.selectedLevelId, state.result, baseHpPercent);
+      const result = recordFantasyLaneLevelResult(state.selectedLevelId, state.result, baseHpPercent, {
+        finishedAt: Date.now(),
+        currentPhaseId: state.currentPhaseId,
+        runtimeStats: buildFantasyLaneRuntimeStatsSnapshot(state),
+        debug: buildFantasyLaneProgressDebugSnapshot(state),
+      });
       setProgress(result);
 
       // 应用奖励到进度
@@ -231,29 +258,6 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
             <div className="fantasy-lane-main-title">
               <span className="fantasy-lane-kicker">{currentLevel.chapterName}</span>
               <h2>{currentLevel.id} {currentLevel.name}</h2>
-              <div className="fantasy-lane-main-stripes">
-                {currentLevel.phases.map((phase) => (
-                  <span
-                    key={phase.id}
-                    className={`fantasy-lane-phase-pill${state.currentPhaseId === phase.id ? ' is-active' : ''}`}
-                  >
-                    {phase.label}
-                  </span>
-                ))}
-                {currentLevel.boss && (
-                  <>
-                    <span className="fantasy-lane-strip-sep">·</span>
-                    {currentLevel.boss.phases.map((phase, index) => (
-                      <span
-                        key={phase.id}
-                        className={`fantasy-lane-boss-phase-pill is-${getBossPhaseVisualState(currentLevel, state, phase.id)}`}
-                      >
-                        P{index + 1}
-                      </span>
-                    ))}
-                  </>
-                )}
-              </div>
             </div>
           </div>
 

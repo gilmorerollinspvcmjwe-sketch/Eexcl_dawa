@@ -39,7 +39,9 @@ export function drawGoldMinerClaw(
 ): void {
   context.save();
   context.translate(input.x, input.y);
-  context.rotate((input.angleDeg * Math.PI) / 180);
+  // The gameplay angle uses clockwise degrees from straight down.
+  // Negating here keeps the claw body aligned with the rope direction.
+  context.rotate((-input.angleDeg * Math.PI) / 180);
 
   const metal = context.createLinearGradient(-14, -14, 14, 14);
   metal.addColorStop(0, '#e2e8f0');

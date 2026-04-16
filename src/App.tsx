@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExcelHeader } from './components/ExcelHeader';
 import { SheetTabs } from './components/SheetTabs';
 import { ExcelGrid } from './components/ExcelGrid';
@@ -449,12 +449,34 @@ function AppContent() {
     });
   }, [workspaceGameId, currentSheet, currentSaveSlot, gameSnapshots]);
 
-  const updateGameSnapshot = (gameId: ArcadeGameId, snapshot: unknown) => {
-    setGameSnapshots((current) => ({
-      ...current,
-      [gameId]: snapshot,
-    }));
-  };
+  const updateGameSnapshot = useCallback((gameId: ArcadeGameId, snapshot: unknown) => {
+    setGameSnapshots((current) => {
+      if (current[gameId] === snapshot) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [gameId]: snapshot,
+      };
+    });
+  }, []);
+
+  const snapshotHandlers = useMemo(
+    () => ({
+      perler: (snapshot: unknown) => updateGameSnapshot('perler', snapshot),
+      pvz: (snapshot: unknown) => updateGameSnapshot('pvz', snapshot),
+      snake: (snapshot: unknown) => updateGameSnapshot('snake', snapshot),
+      tetris: (snapshot: unknown) => updateGameSnapshot('tetris', snapshot),
+      pacman: (snapshot: unknown) => updateGameSnapshot('pacman', snapshot),
+      zuma: (snapshot: unknown) => updateGameSnapshot('zuma', snapshot),
+      match3: (snapshot: unknown) => updateGameSnapshot('match3', snapshot),
+      fantasy_lane: (snapshot: unknown) => updateGameSnapshot('fantasy_lane', snapshot),
+      gold_miner: (snapshot: unknown) => updateGameSnapshot('gold_miner', snapshot),
+      game2048: (snapshot: unknown) => updateGameSnapshot('game2048', snapshot),
+    }),
+    [updateGameSnapshot],
+  );
 
   const titleText = currentSheet === 'hub'
     ? 'Microsoft Excel - 工位娱乐中心.xlsx'
@@ -772,14 +794,14 @@ function AppContent() {
               onSelectedCellChange={setPerlerSelectedCell}
               onProgressChange={(progress) => setPerlerProgress(progress)}
               initialSnapshot={(gameSnapshots.perler as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('perler', snapshot)}
+              onSnapshotChange={snapshotHandlers.perler}
             />
           ) : currentSheet === 'pvz' ? (
             <PvZGameSheet
               key={`pvz-${currentSaveSlot?.id ?? 'live'}`}
               onFormulaChange={setPvZFormulaText}
               initialSnapshot={(gameSnapshots.pvz as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('pvz', snapshot)}
+              onSnapshotChange={snapshotHandlers.pvz}
             />
           ) : currentSheet === 'pvz_collection' ? (
             <PvZCollectionSheet onFormulaChange={setPvZCollectionFormulaText} />
@@ -792,7 +814,7 @@ function AppContent() {
               onStatusChange={setSnakeStatusSummary}
               onExit={handleExitCurrentGame}
               initialSnapshot={(gameSnapshots.snake as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('snake', snapshot)}
+              onSnapshotChange={snapshotHandlers.snake}
             />
           ) : currentSheet === 'tetris' ? (
             <TetrisSheet
@@ -801,7 +823,7 @@ function AppContent() {
               onStatusChange={setTetrisStatusSummary}
               onExit={handleExitCurrentGame}
               initialSnapshot={(gameSnapshots.tetris as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('tetris', snapshot)}
+              onSnapshotChange={snapshotHandlers.tetris}
             />
           ) : currentSheet === 'pacman' ? (
             <PacmanSheet
@@ -810,7 +832,7 @@ function AppContent() {
               onExit={handleExitCurrentGame}
               onReturnToGuide={() => switchSheet('pacman_guide')}
               initialSnapshot={(gameSnapshots.pacman as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('pacman', snapshot)}
+              onSnapshotChange={snapshotHandlers.pacman}
             />
           ) : currentSheet === 'pacman_guide' ? (
             <PacmanGuideSheet
@@ -823,7 +845,7 @@ function AppContent() {
               onFormulaChange={setZumaFormulaText}
               onExit={handleExitCurrentGame}
               initialSnapshot={(gameSnapshots.zuma as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('zuma', snapshot)}
+              onSnapshotChange={snapshotHandlers.zuma}
             />
           ) : currentSheet === 'zuma_collection' ? (
             <ZumaCollectionSheet
@@ -835,7 +857,7 @@ function AppContent() {
               onFormulaChange={setMatch3FormulaText}
               onExit={handleExitCurrentGame}
               initialSnapshot={(gameSnapshots.match3 as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('match3', snapshot)}
+              onSnapshotChange={snapshotHandlers.match3}
             />
           ) : currentSheet === 'match3_lab' ? (
             <Match3LabSheet
@@ -850,7 +872,7 @@ function AppContent() {
               onOpenRoster={() => switchSheet('fantasy_lane_roster')}
               onOpenChapters={() => switchSheet('fantasy_lane_chapter')}
               initialSnapshot={(gameSnapshots.fantasy_lane as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('fantasy_lane', snapshot)}
+              onSnapshotChange={snapshotHandlers.fantasy_lane}
             />
           ) : currentSheet === 'fantasy_lane_roster' ? (
             <FantasyLaneRosterSheet
@@ -868,7 +890,7 @@ function AppContent() {
               onExit={handleExitCurrentGame}
               onOpenGuide={() => switchSheet('gold_miner_guide')}
               initialSnapshot={(gameSnapshots.gold_miner as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('gold_miner', snapshot)}
+              onSnapshotChange={snapshotHandlers.gold_miner}
             />
           ) : currentSheet === 'gold_miner_guide' ? (
             <GoldMinerGuideSheet
@@ -882,7 +904,7 @@ function AppContent() {
               onStatusChange={setGame2048StatusSummary}
               onExit={handleExitCurrentGame}
               initialSnapshot={(gameSnapshots.game2048 as Record<string, unknown> | null) ?? null}
-              onSnapshotChange={(snapshot) => updateGameSnapshot('game2048', snapshot)}
+              onSnapshotChange={snapshotHandlers.game2048}
             />
           ) : (
             <SettingsPanel

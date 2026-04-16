@@ -286,6 +286,9 @@ export interface FantasyLaneUnitInstance {
   blockedMs: number;
   lastTargetId: string | null;
   spawnedAtMs: number;
+  starLevel: number;
+  damageMultiplier: number;
+  healthMultiplier: number;
   combatState?: FantasyLaneUnitCombatState;
 }
 
@@ -423,6 +426,54 @@ export interface FantasyLaneBattleStats {
   lastSkillCastAtMs: number | null;
 }
 
+export interface FantasyLaneUnitBucketSummary {
+  side: FantasyLaneSide;
+  layer: FantasyLaneLayer;
+  lane: FantasyLaneLaneId;
+  count: number;
+  totalPop: number;
+}
+
+export interface FantasyLaneBattleSnapshot {
+  version: 'v1';
+  levelId: string;
+  chapterId: string;
+  phase: FantasyLaneBattlePhase;
+  phaseLabel: string;
+  pressureLabel: string;
+  elapsedMs: number;
+  rngSeed: number;
+  gold: number;
+  activePop: number;
+  popLimit: number;
+  queueLength: number;
+  queueLimit: number;
+  playerBaseHp: number;
+  enemyBaseHp: number;
+  frontline: number;
+  airControl: number;
+  clashX: number;
+  congestion: number;
+  heroSkillRemainingMs: number;
+  tacticalSkillRemainingMs: number;
+  bucketSummary: FantasyLaneUnitBucketSummary[];
+}
+
+export interface FantasyLaneRuntimeDebugSnapshot {
+  version: 'v1';
+  levelId: string;
+  phase: FantasyLaneBattlePhase;
+  rngSeed: number;
+  currentPhaseId: string;
+  currentBossPhaseId: string | null;
+  warningText: string | null;
+  queue: string[];
+  unitBuckets: FantasyLaneUnitBucketSummary[];
+  recentDebugEvents: FantasyLaneDebugEvent[];
+  recentRuntimeEvents: FantasyLaneRuntimeEvent[];
+  phaseTimeline: FantasyLanePhaseTimelineEntry[];
+}
+
 export interface FantasyLaneRuntimeState {
   phase: FantasyLaneBattlePhase;
   selectedLevelId: string;
@@ -448,6 +499,7 @@ export interface FantasyLaneRuntimeState {
   clashX: number;
   congestion: number;
   unitCooldowns: Record<string, number>;
+  unitStarLevels: Record<string, number>;
   heroSkill: FantasyLaneSkillState;
   tacticalSkill: FantasyLaneSkillState;
   globalSpawnCooldownMs: number;
@@ -478,6 +530,8 @@ export interface FantasyLaneRuntimeState {
 
 export interface FantasyLaneSheetSnapshot {
   state?: FantasyLaneRuntimeState;
+  battleSnapshot?: FantasyLaneBattleSnapshot;
+  debugSnapshot?: FantasyLaneRuntimeDebugSnapshot;
   setupCollapsed?: boolean;
   selectedTab?: 'levels' | 'loadout';
 }
