@@ -1,10 +1,117 @@
+/* 这个文件负责奇幻战线的进度存档，统一管理解锁、关卡记录、运行时统计以及回放/调试字段。 */
 import { FANTASY_LANE_CHAPTERS, FANTASY_LANE_LEVELS, getFantasyLaneLevelById, getFantasyLaneLevelsByChapter } from './fantasyLaneLevelCatalog.ts';
+import { FANTASY_LANE_UNIT_MAP } from './fantasyLaneUnitRegistry.ts';
 import type { FantasyLaneBattleResult } from './fantasyLaneTypes.ts';
 
 const STORAGE_KEY = 'fantasy-lane-progress-v1';
+const RECENT_RUN_LIMIT = 5;
+
+export interface FantasyLaneRuntimeStatsSnapshot {
+  summoned: number;
+  defeated: number;
+  queueBlocked: number;
+  projectilesFired: number;
+  aoeHits: number;
+  frontlineSummons: number;
+  antiAirSummons: number;
+  aoeSummons: number;
+  goldSpent: number;
+  goldCappedMs: number;
+  congestionMs: number;
+  engagedUnits: number;
+  totalEngageDelayMs: number;
+  heroSkillCast: number;
+  tacticalSkillCast: number;
+  lastSkillCastAtMs: number | null;
+  averageEngageTimeMs: number;
+}
+
+export interface FantasyLaneReplayCheckpoint {
+  atMs: number;
+  label: string;
+  frontline: number;
+  airControl: number;
+}
+
+export interface FantasyLaneReplayEvent {
+  atMs: number;
+  type: string;
+  detail: string;
+}
+
+export interface FantasyLaneReplaySnapshot {
+  version: string;
+  seed: number;
+  checkpoints: FantasyLaneReplayCheckpoint[];
+  events: FantasyLaneReplayEvent[];
+}
+
+export interface FantasyLaneDebugSnapshot {
+  warnings: string[];
+  congestionPeak: number;
+  frontlineRange: {
+    min: number;
+    max: number;
+  };
+  bossPhaseIds: string[];
+}
+
+export interface FantasyLaneRunSetup {
+  levelId: string;
+  runId: string;
+  heroId?: string;
+  tacticalSkillId?: string;
+  loadoutUnitIds: string[];
+  runtimeSeed?: number;
+  startedAt: number;
+}
+
+export interface FantasyLaneRunRecord extends FantasyLaneRunSetup {
+  finishedAt: number;
+  currentPhaseId: string;
+  completed: boolean;
+  resultTitle: string;
+  stars: number;
+  score: number;
+  baseHpPercent: number;
+  runtimeStats?: FantasyLaneRuntimeStatsSnapshot;
+  replay?: FantasyLaneReplaySnapshot;
+  debug?: FantasyLaneDebugSnapshot;
+}
+
+export interface FantasyLaneLevelResultPayload {
+  finishedAt?: number;
+  currentPhaseId?: string;
+  runtimeStats?: Partial<FantasyLaneRuntimeStatsSnapshot>;
+  replay?: FantasyLaneReplaySnapshot;
+  debug?: FantasyLaneDebugSnapshot;
+}
+
+export interface FantasyLanePhaseSnapshot {
+  phaseId: string;
+  label: string;
+  pressure: string;
+  reached: boolean;
+  completed: boolean;
+  checkpointCount: number;
+  eventCount: number;
+}
+
+export interface FantasyLaneBossBattleSummary {
+  bossId: string;
+  bossName: string;
+  totalPhaseCount: number;
+  triggeredPhaseIds: string[];
+  triggeredPhaseCount: number;
+  cleared: boolean;
+  lastTriggeredPhaseId?: string;
+}
 
 export interface FantasyLaneLevelRecord {
   levelId: string;
+  chapterId: string;
+  chapterOrder: number;
+  chapterLevelIndex: number;
   attempts: number;
   completed: boolean;
   bestStars: number;
@@ -12,6 +119,39 @@ export interface FantasyLaneLevelRecord {
   bestBaseHpPercent: number;
   completedAt?: number;
   lastPlayedAt?: number;
+  lastStart?: FantasyLaneRunSetup;
+  latestRun?: FantasyLaneRunRecord;
+  recentRuns: FantasyLaneRunRecord[];
+  latestReplay?: FantasyLaneReplaySnapshot;
+  latestDebug?: FantasyLaneDebugSnapshot;
+  lastRuntimeStats?: FantasyLaneRuntimeStatsSnapshot;
+  phaseSnapshots: FantasyLanePhaseSnapshot[];
+  latestBossBattle?: FantasyLaneBossBattleSummary;
+}
+
+export interface FantasyLaneChapterRecord {
+  chapterId: string;
+  chapterName: string;
+  totalLevels: number;
+  completedLevels: number;
+  stars: number;
+  maxStars: number;
+  bestScore: number;
+  bossLevelId: string;
+  bossCleared: boolean;
+  bestBossScore: number;
+  lastPlayedLevelId?: string;
+  lastBossLevelId?: string;
+}
+
+export interface FantasyLaneBattleTotals {
+  totalRuns: number;
+  wins: number;
+  losses: number;
+  bossRuns: number;
+  bossClears: number;
+  phaseEntries: Record<string, number>;
+  bossPhaseTriggers: Record<string, number>;
 }
 
 export interface FantasyLaneProgressData {
@@ -24,6 +164,17 @@ export interface FantasyLaneProgressData {
   highestChapterId: string;
   lastPlayedLevelId: string;
   updatedAt: number;
+  activeRun?: FantasyLaneRunSetup;
+  runtimeTotals: FantasyLaneRuntimeStatsSnapshot;
+  telemetryRunCount: number;
+  chapterRecords: Record<string, FantasyLaneChapterRecord>;
+  battleTotals: FantasyLaneBattleTotals;
+  // 已解锁的单位ID列表
+  unlockedUnits: string[];
+  // 单位碎片（单位ID -> 数量）
+  unitFragments: Record<string, number>;
+  // 单位星级（单位ID -> 星级）
+  unitStars: Record<string, number>;
 }
 
 export interface FantasyLaneProgressSummary {
@@ -42,17 +193,221 @@ export interface FantasyLaneProgressSummary {
   lastPlayedLevelName: string;
 }
 
+function createEmptyRuntimeStats(): FantasyLaneRuntimeStatsSnapshot {
+  return {
+    summoned: 0,
+    defeated: 0,
+    queueBlocked: 0,
+    projectilesFired: 0,
+    aoeHits: 0,
+    frontlineSummons: 0,
+    antiAirSummons: 0,
+    aoeSummons: 0,
+    goldSpent: 0,
+    goldCappedMs: 0,
+    congestionMs: 0,
+    engagedUnits: 0,
+    totalEngageDelayMs: 0,
+    heroSkillCast: 0,
+    tacticalSkillCast: 0,
+    lastSkillCastAtMs: null,
+    averageEngageTimeMs: 0,
+  };
+}
+
+function createEmptyBattleTotals(): FantasyLaneBattleTotals {
+  return {
+    totalRuns: 0,
+    wins: 0,
+    losses: 0,
+    bossRuns: 0,
+    bossClears: 0,
+    phaseEntries: {},
+    bossPhaseTriggers: {},
+  };
+}
+
+function getAverageEngageTimeMs(engagedUnits: number, totalEngageDelayMs: number, fallback = 0) {
+  if (engagedUnits > 0) {
+    return Math.round(totalEngageDelayMs / engagedUnits);
+  }
+  return Math.max(0, fallback);
+}
+
+function createLevelRecord(levelId: string): FantasyLaneLevelRecord {
+  const level = getFantasyLaneLevelById(levelId);
+  return {
+    levelId,
+    chapterId: level.chapterId,
+    chapterOrder: Number.parseInt(level.chapterId.replace('chapter-', ''), 10),
+    chapterLevelIndex: level.indexInChapter,
+    attempts: 0,
+    completed: false,
+    bestStars: 0,
+    bestScore: 0,
+    bestBaseHpPercent: 0,
+    recentRuns: [],
+    phaseSnapshots: [],
+  };
+}
+
+function incrementCounter(counter: Record<string, number>, key: string) {
+  counter[key] = (counter[key] ?? 0) + 1;
+}
+
+function buildPhaseSnapshots(
+  levelId: string,
+  currentPhaseId: string | undefined,
+  replay: FantasyLaneReplaySnapshot | undefined,
+  completed: boolean,
+): FantasyLanePhaseSnapshot[] {
+  const level = getFantasyLaneLevelById(levelId);
+  const currentPhaseIndex = currentPhaseId ? level.phases.findIndex((phase) => phase.id === currentPhaseId) : -1;
+  let highestReachedIndex = completed ? level.phases.length - 1 : currentPhaseIndex;
+
+  const phaseSnapshots = level.phases.map((phase, index) => {
+    const startAtMs = phase.startAtSec * 1000;
+    const endAtMs = typeof phase.endAtSec === 'number' ? phase.endAtSec * 1000 : Number.POSITIVE_INFINITY;
+    const checkpointCount =
+      replay?.checkpoints.filter((checkpoint) => checkpoint.atMs >= startAtMs && checkpoint.atMs < endAtMs).length ?? 0;
+    const eventCount = replay?.events.filter((event) => event.atMs >= startAtMs && event.atMs < endAtMs).length ?? 0;
+
+    if (checkpointCount > 0 || eventCount > 0) {
+      highestReachedIndex = Math.max(highestReachedIndex, index);
+    }
+
+    return {
+      phaseId: phase.id,
+      label: phase.label,
+      pressure: phase.pressure,
+      reached: false,
+      completed: false,
+      checkpointCount,
+      eventCount,
+    };
+  });
+
+  if (highestReachedIndex < 0) {
+    return completed ? phaseSnapshots.map((phase) => ({ ...phase, reached: true, completed: true })) : [];
+  }
+
+  return phaseSnapshots.map((phase, index) => ({
+    ...phase,
+    reached: index <= highestReachedIndex,
+    completed: completed ? true : index < highestReachedIndex,
+  }));
+}
+
+function buildBossBattleSummary(
+  levelId: string,
+  debug: FantasyLaneDebugSnapshot | undefined,
+  currentPhaseId: string | undefined,
+  completed: boolean,
+): FantasyLaneBossBattleSummary | undefined {
+  const level = getFantasyLaneLevelById(levelId);
+  if (!level.boss) return undefined;
+
+  const bossEntryIndex = level.phases.findIndex((phase) => phase.id.endsWith('boss-enter'));
+  const currentPhaseIndex = currentPhaseId ? level.phases.findIndex((phase) => phase.id === currentPhaseId) : -1;
+  const enteredBossBattle = completed || currentPhaseIndex >= bossEntryIndex || normalizeStringList(debug?.bossPhaseIds).length > 0;
+  if (!enteredBossBattle) return undefined;
+
+  const orderedPhaseIds = level.boss.phases.map((phase) => phase.id);
+  const triggeredPhaseIds = orderedPhaseIds.filter((phaseId) => normalizeStringList(debug?.bossPhaseIds).includes(phaseId));
+
+  return {
+    bossId: level.boss.id,
+    bossName: level.boss.name,
+    totalPhaseCount: level.boss.phases.length,
+    triggeredPhaseIds,
+    triggeredPhaseCount: triggeredPhaseIds.length,
+    cleared: completed,
+    lastTriggeredPhaseId: triggeredPhaseIds[triggeredPhaseIds.length - 1],
+  };
+}
+
+function buildChapterRecords(
+  levelRecords: Record<string, FantasyLaneLevelRecord>,
+  lastPlayedLevelId: string,
+): Record<string, FantasyLaneChapterRecord> {
+  return Object.fromEntries(
+    FANTASY_LANE_CHAPTERS.map((chapter) => {
+      const levels = getFantasyLaneLevelsByChapter(chapter.id);
+      const records = levels.map((level) => levelRecords[level.id] ?? createLevelRecord(level.id));
+      const bossLevelId = levels[levels.length - 1]?.id ?? `${chapter.order}-6`;
+      const bossRecord = levelRecords[bossLevelId];
+      const lastPlayedInChapter = levels
+        .filter((level) => (levelRecords[level.id]?.lastPlayedAt ?? 0) > 0)
+        .sort((left, right) => (levelRecords[right.id]?.lastPlayedAt ?? 0) - (levelRecords[left.id]?.lastPlayedAt ?? 0))[0];
+
+      return [
+        chapter.id,
+        {
+          chapterId: chapter.id,
+          chapterName: chapter.name,
+          totalLevels: levels.length,
+          completedLevels: records.filter((record) => record.completed).length,
+          stars: records.reduce((sum, record) => sum + record.bestStars, 0),
+          maxStars: levels.length * 3,
+          bestScore: records.reduce((max, record) => Math.max(max, record.bestScore), 0),
+          bossLevelId,
+          bossCleared: Boolean(bossRecord?.completed),
+          bestBossScore: bossRecord?.bestScore ?? 0,
+          lastPlayedLevelId:
+            lastPlayedInChapter?.id ??
+            (getFantasyLaneLevelById(lastPlayedLevelId).chapterId === chapter.id ? lastPlayedLevelId : undefined),
+          lastBossLevelId: bossRecord?.lastPlayedAt ? bossLevelId : undefined,
+        } satisfies FantasyLaneChapterRecord,
+      ];
+    }),
+  ) as Record<string, FantasyLaneChapterRecord>;
+}
+
+function buildBattleTotalsFromRecords(levelRecords: Record<string, FantasyLaneLevelRecord>): FantasyLaneBattleTotals {
+  const totals = createEmptyBattleTotals();
+
+  Object.values(levelRecords).forEach((record) => {
+    const level = getFantasyLaneLevelById(record.levelId);
+    totals.totalRuns += record.attempts;
+    if (level.boss) {
+      totals.bossRuns += record.attempts;
+      if (record.completed) {
+        totals.bossClears += 1;
+      }
+    }
+    if (record.completed) {
+      totals.wins += 1;
+    } else if (record.attempts > 0) {
+      totals.losses += 1;
+    }
+    record.phaseSnapshots.forEach((phase) => {
+      if (phase.reached) incrementCounter(totals.phaseEntries, phase.phaseId);
+    });
+    record.latestBossBattle?.triggeredPhaseIds.forEach((phaseId) => incrementCounter(totals.bossPhaseTriggers, phaseId));
+  });
+
+  return totals;
+}
+
 function createInitialProgress(): FantasyLaneProgressData {
+  const lastPlayedLevelId = '1-1';
   return {
     completedLevels: [],
     levelRecords: {},
     totalCompleted: 0,
     totalStars: 0,
     bestScore: 0,
-    highestUnlockedLevelId: '1-1',
+    highestUnlockedLevelId: lastPlayedLevelId,
     highestChapterId: 'chapter-1',
-    lastPlayedLevelId: '1-1',
+    lastPlayedLevelId,
     updatedAt: Date.now(),
+    runtimeTotals: createEmptyRuntimeStats(),
+    telemetryRunCount: 0,
+    chapterRecords: buildChapterRecords({}, lastPlayedLevelId),
+    battleTotals: createEmptyBattleTotals(),
+    unlockedUnits: [],
+    unitFragments: {},
+    unitStars: {},
   };
 }
 
@@ -66,17 +421,255 @@ function getNextLevelId(levelId: string): string | null {
   return FANTASY_LANE_LEVELS[current + 1]?.id ?? null;
 }
 
+function clampStars(stars: number) {
+  return Math.max(0, Math.min(3, stars || 0));
+}
+
+function normalizeStringList(input: unknown): string[] {
+  return Array.isArray(input) ? input.filter((item): item is string => typeof item === 'string' && item.length > 0) : [];
+}
+
+function normalizeCounterMap(input: unknown, fallback: Record<string, number> = {}): Record<string, number> {
+  if (!input || typeof input !== 'object') return { ...fallback };
+  return Object.fromEntries(
+    Object.entries(input).flatMap(([key, value]) =>
+      typeof value === 'number' && Number.isFinite(value) && value >= 0 ? [[key, Math.round(value)]] : [],
+    ),
+  ) as Record<string, number>;
+}
+
+function normalizeRuntimeStats(input: Partial<FantasyLaneRuntimeStatsSnapshot> | null | undefined): FantasyLaneRuntimeStatsSnapshot {
+  const base = createEmptyRuntimeStats();
+  if (!input || typeof input !== 'object') return base;
+  const engagedUnits = typeof input.engagedUnits === 'number' ? Math.max(0, input.engagedUnits) : base.engagedUnits;
+  const totalEngageDelayMs =
+    typeof input.totalEngageDelayMs === 'number' ? Math.max(0, input.totalEngageDelayMs) : base.totalEngageDelayMs;
+  return {
+    summoned: typeof input.summoned === 'number' ? Math.max(0, input.summoned) : base.summoned,
+    defeated: typeof input.defeated === 'number' ? Math.max(0, input.defeated) : base.defeated,
+    queueBlocked: typeof input.queueBlocked === 'number' ? Math.max(0, input.queueBlocked) : base.queueBlocked,
+    projectilesFired: typeof input.projectilesFired === 'number' ? Math.max(0, input.projectilesFired) : base.projectilesFired,
+    aoeHits: typeof input.aoeHits === 'number' ? Math.max(0, input.aoeHits) : base.aoeHits,
+    frontlineSummons: typeof input.frontlineSummons === 'number' ? Math.max(0, input.frontlineSummons) : base.frontlineSummons,
+    antiAirSummons: typeof input.antiAirSummons === 'number' ? Math.max(0, input.antiAirSummons) : base.antiAirSummons,
+    aoeSummons: typeof input.aoeSummons === 'number' ? Math.max(0, input.aoeSummons) : base.aoeSummons,
+    goldSpent: typeof input.goldSpent === 'number' ? Math.max(0, input.goldSpent) : base.goldSpent,
+    goldCappedMs: typeof input.goldCappedMs === 'number' ? Math.max(0, input.goldCappedMs) : base.goldCappedMs,
+    congestionMs: typeof input.congestionMs === 'number' ? Math.max(0, input.congestionMs) : base.congestionMs,
+    engagedUnits,
+    totalEngageDelayMs,
+    heroSkillCast: typeof input.heroSkillCast === 'number' ? Math.max(0, input.heroSkillCast) : base.heroSkillCast,
+    tacticalSkillCast: typeof input.tacticalSkillCast === 'number' ? Math.max(0, input.tacticalSkillCast) : base.tacticalSkillCast,
+    lastSkillCastAtMs: typeof input.lastSkillCastAtMs === 'number' ? input.lastSkillCastAtMs : base.lastSkillCastAtMs,
+    averageEngageTimeMs: getAverageEngageTimeMs(
+      engagedUnits,
+      totalEngageDelayMs,
+      typeof input.averageEngageTimeMs === 'number' ? input.averageEngageTimeMs : base.averageEngageTimeMs,
+    ),
+  };
+}
+
+function normalizeReplayCheckpoint(input: unknown): FantasyLaneReplayCheckpoint | null {
+  if (!input || typeof input !== 'object') return null;
+  const data = input as Partial<FantasyLaneReplayCheckpoint>;
+  if (typeof data.atMs !== 'number' || typeof data.label !== 'string' || typeof data.frontline !== 'number' || typeof data.airControl !== 'number') {
+    return null;
+  }
+  return {
+    atMs: data.atMs,
+    label: data.label,
+    frontline: data.frontline,
+    airControl: data.airControl,
+  };
+}
+
+function normalizeReplayEvent(input: unknown): FantasyLaneReplayEvent | null {
+  if (!input || typeof input !== 'object') return null;
+  const data = input as Partial<FantasyLaneReplayEvent>;
+  if (typeof data.atMs !== 'number' || typeof data.type !== 'string' || typeof data.detail !== 'string') return null;
+  return {
+    atMs: data.atMs,
+    type: data.type,
+    detail: data.detail,
+  };
+}
+
+function normalizeReplaySnapshot(input: FantasyLaneReplaySnapshot | null | undefined): FantasyLaneReplaySnapshot | undefined {
+  if (!input || typeof input !== 'object' || typeof input.version !== 'string' || typeof input.seed !== 'number') return undefined;
+  const checkpoints = Array.isArray(input.checkpoints)
+    ? input.checkpoints
+        .map(normalizeReplayCheckpoint)
+        .filter((checkpoint): checkpoint is FantasyLaneReplayCheckpoint => Boolean(checkpoint))
+    : [];
+  const events = Array.isArray(input.events)
+    ? input.events
+        .map(normalizeReplayEvent)
+        .filter((event): event is FantasyLaneReplayEvent => Boolean(event))
+    : [];
+  return {
+    version: input.version,
+    seed: input.seed,
+    checkpoints,
+    events,
+  };
+}
+
+function normalizeDebugSnapshot(input: FantasyLaneDebugSnapshot | null | undefined): FantasyLaneDebugSnapshot | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+  const frontlineRange =
+    input.frontlineRange && typeof input.frontlineRange.min === 'number' && typeof input.frontlineRange.max === 'number'
+      ? { min: input.frontlineRange.min, max: input.frontlineRange.max }
+      : { min: 0, max: 0 };
+  return {
+    warnings: normalizeStringList(input.warnings),
+    congestionPeak: typeof input.congestionPeak === 'number' ? Math.max(0, input.congestionPeak) : 0,
+    frontlineRange,
+    bossPhaseIds: normalizeStringList(input.bossPhaseIds),
+  };
+}
+
+function isValidLevelId(levelId: string, validIds: Set<string>) {
+  return validIds.has(levelId);
+}
+
+function normalizeRunSetup(input: FantasyLaneRunSetup | null | undefined, validIds: Set<string>): FantasyLaneRunSetup | undefined {
+  if (!input || typeof input !== 'object' || !isValidLevelId(input.levelId, validIds)) return undefined;
+  return {
+    levelId: input.levelId,
+    runId: typeof input.runId === 'string' && input.runId.length > 0 ? input.runId : `${input.levelId}-run`,
+    heroId: typeof input.heroId === 'string' ? input.heroId : undefined,
+    tacticalSkillId: typeof input.tacticalSkillId === 'string' ? input.tacticalSkillId : undefined,
+    loadoutUnitIds: normalizeStringList(input.loadoutUnitIds),
+    runtimeSeed: typeof input.runtimeSeed === 'number' ? input.runtimeSeed : undefined,
+    startedAt: typeof input.startedAt === 'number' ? input.startedAt : Date.now(),
+  };
+}
+
+function normalizeRunRecord(input: FantasyLaneRunRecord | null | undefined, validIds: Set<string>): FantasyLaneRunRecord | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+  const setup = normalizeRunSetup(input, validIds);
+  if (!setup || typeof input.finishedAt !== 'number' || typeof input.currentPhaseId !== 'string' || typeof input.resultTitle !== 'string') return undefined;
+  return {
+    ...setup,
+    finishedAt: input.finishedAt,
+    currentPhaseId: input.currentPhaseId,
+    completed: Boolean(input.completed),
+    resultTitle: input.resultTitle,
+    stars: clampStars(input.stars),
+    score: typeof input.score === 'number' ? Math.max(0, input.score) : 0,
+    baseHpPercent: typeof input.baseHpPercent === 'number' ? Math.max(0, input.baseHpPercent) : 0,
+    runtimeStats: normalizeRuntimeStats(input.runtimeStats),
+    replay: normalizeReplaySnapshot(input.replay),
+    debug: normalizeDebugSnapshot(input.debug),
+  };
+}
+
+function normalizeLevelRecord(input: Partial<FantasyLaneLevelRecord> | undefined, levelId: string, validIds: Set<string>): FantasyLaneLevelRecord {
+  const base = createLevelRecord(levelId);
+  if (!input || typeof input !== 'object') return base;
+  const recentRuns = Array.isArray(input.recentRuns)
+    ? input.recentRuns.map((run) => normalizeRunRecord(run, validIds)).filter((run): run is FantasyLaneRunRecord => Boolean(run)).slice(0, RECENT_RUN_LIMIT)
+    : [];
+  const latestRun = normalizeRunRecord(input.latestRun, validIds);
+  const latestReplay = normalizeReplaySnapshot(input.latestReplay) ?? latestRun?.replay;
+  const latestDebug = normalizeDebugSnapshot(input.latestDebug) ?? latestRun?.debug;
+  const phaseSnapshots = buildPhaseSnapshots(levelId, latestRun?.currentPhaseId, latestRun?.replay ?? latestReplay, latestRun?.completed ?? Boolean(input.completed));
+  const latestBossBattle = buildBossBattleSummary(
+    levelId,
+    latestRun?.debug ?? latestDebug,
+    latestRun?.currentPhaseId,
+    latestRun?.completed ?? Boolean(input.completed),
+  );
+
+  return {
+    ...base,
+    attempts: typeof input.attempts === 'number' ? Math.max(0, input.attempts) : base.attempts,
+    completed: Boolean(input.completed),
+    bestStars: clampStars(input.bestStars ?? 0),
+    bestScore: typeof input.bestScore === 'number' ? Math.max(0, input.bestScore) : 0,
+    bestBaseHpPercent: typeof input.bestBaseHpPercent === 'number' ? Math.max(0, input.bestBaseHpPercent) : 0,
+    completedAt: typeof input.completedAt === 'number' ? input.completedAt : undefined,
+    lastPlayedAt: typeof input.lastPlayedAt === 'number' ? input.lastPlayedAt : undefined,
+    lastStart: normalizeRunSetup(input.lastStart, validIds),
+    latestRun,
+    recentRuns,
+    latestReplay,
+    latestDebug,
+    lastRuntimeStats: normalizeRuntimeStats(input.lastRuntimeStats),
+    phaseSnapshots,
+    latestBossBattle,
+  };
+}
+
+function normalizeBattleTotals(
+  input: Partial<FantasyLaneBattleTotals> | undefined,
+  levelRecords: Record<string, FantasyLaneLevelRecord>,
+): FantasyLaneBattleTotals {
+  const fallback = buildBattleTotalsFromRecords(levelRecords);
+  if (!input || typeof input !== 'object') return fallback;
+  return {
+    totalRuns: typeof input.totalRuns === 'number' ? Math.max(0, Math.round(input.totalRuns)) : fallback.totalRuns,
+    wins: typeof input.wins === 'number' ? Math.max(0, Math.round(input.wins)) : fallback.wins,
+    losses: typeof input.losses === 'number' ? Math.max(0, Math.round(input.losses)) : fallback.losses,
+    bossRuns: typeof input.bossRuns === 'number' ? Math.max(0, Math.round(input.bossRuns)) : fallback.bossRuns,
+    bossClears: typeof input.bossClears === 'number' ? Math.max(0, Math.round(input.bossClears)) : fallback.bossClears,
+    phaseEntries: normalizeCounterMap(input.phaseEntries, fallback.phaseEntries),
+    bossPhaseTriggers: normalizeCounterMap(input.bossPhaseTriggers, fallback.bossPhaseTriggers),
+  };
+}
+
+function mergeRuntimeTotals(
+  totals: FantasyLaneRuntimeStatsSnapshot,
+  nextStats: FantasyLaneRuntimeStatsSnapshot,
+  telemetryRunCount: number,
+) {
+  const nextRunCount = telemetryRunCount + 1;
+  const engagedUnits = totals.engagedUnits + nextStats.engagedUnits;
+  const totalEngageDelayMs = totals.totalEngageDelayMs + nextStats.totalEngageDelayMs;
+  return {
+    totals: {
+      summoned: totals.summoned + nextStats.summoned,
+      defeated: totals.defeated + nextStats.defeated,
+      queueBlocked: totals.queueBlocked + nextStats.queueBlocked,
+      projectilesFired: totals.projectilesFired + nextStats.projectilesFired,
+      aoeHits: totals.aoeHits + nextStats.aoeHits,
+      frontlineSummons: totals.frontlineSummons + nextStats.frontlineSummons,
+      antiAirSummons: totals.antiAirSummons + nextStats.antiAirSummons,
+      aoeSummons: totals.aoeSummons + nextStats.aoeSummons,
+      goldSpent: totals.goldSpent + nextStats.goldSpent,
+      goldCappedMs: totals.goldCappedMs + nextStats.goldCappedMs,
+      congestionMs: totals.congestionMs + nextStats.congestionMs,
+      engagedUnits,
+      totalEngageDelayMs,
+      heroSkillCast: totals.heroSkillCast + nextStats.heroSkillCast,
+      tacticalSkillCast: totals.tacticalSkillCast + nextStats.tacticalSkillCast,
+      lastSkillCastAtMs:
+        typeof nextStats.lastSkillCastAtMs === 'number'
+          ? Math.max(totals.lastSkillCastAtMs ?? 0, nextStats.lastSkillCastAtMs)
+          : totals.lastSkillCastAtMs,
+      averageEngageTimeMs: getAverageEngageTimeMs(
+        engagedUnits,
+        totalEngageDelayMs,
+        nextRunCount <= 0
+          ? 0
+          : Math.round(((totals.averageEngageTimeMs * telemetryRunCount) + nextStats.averageEngageTimeMs) / nextRunCount),
+      ),
+    },
+    telemetryRunCount: nextRunCount,
+  };
+}
+
 function normalize(data: Partial<FantasyLaneProgressData> | null | undefined): FantasyLaneProgressData {
   const base = createInitialProgress();
-  const levelRecords = data?.levelRecords && typeof data.levelRecords === 'object' ? data.levelRecords : {};
   const validIds = new Set(FANTASY_LANE_LEVELS.map((level) => level.id));
-  const completedLevels = Array.isArray(data?.completedLevels) ? data!.completedLevels.filter((levelId) => validIds.has(levelId)) : [];
-
+  const completedLevels = Array.isArray(data?.completedLevels) ? data.completedLevels.filter((levelId) => validIds.has(levelId)) : [];
   const cleanedRecords = Object.fromEntries(
-    Object.entries(levelRecords).filter(([levelId]) => validIds.has(levelId)),
+    Object.entries(data?.levelRecords ?? {})
+      .filter(([levelId]) => validIds.has(levelId))
+      .map(([levelId, record]) => [levelId, normalizeLevelRecord(record, levelId, validIds)]),
   ) as Record<string, FantasyLaneLevelRecord>;
 
-  const totalStars = Object.values(cleanedRecords).reduce((sum, record) => sum + Math.max(0, Math.min(3, record.bestStars || 0)), 0);
+  const totalStars = Object.values(cleanedRecords).reduce((sum, record) => sum + clampStars(record.bestStars), 0);
   const bestScore = Object.values(cleanedRecords).reduce((max, record) => Math.max(max, record.bestScore || 0), 0);
   const highestUnlockedLevelId =
     data?.highestUnlockedLevelId && validIds.has(data.highestUnlockedLevelId)
@@ -86,6 +679,9 @@ function normalize(data: Partial<FantasyLaneProgressData> | null | undefined): F
         : base.highestUnlockedLevelId;
   const highestChapterId = getFantasyLaneLevelById(highestUnlockedLevelId).chapterId;
   const lastPlayedLevelId = data?.lastPlayedLevelId && validIds.has(data.lastPlayedLevelId) ? data.lastPlayedLevelId : highestUnlockedLevelId;
+  const telemetryRunCount = typeof data?.telemetryRunCount === 'number' ? Math.max(0, data.telemetryRunCount) : 0;
+  const chapterRecords = buildChapterRecords(cleanedRecords, lastPlayedLevelId);
+  const battleTotals = normalizeBattleTotals(data?.battleTotals, cleanedRecords);
 
   return {
     ...base,
@@ -99,6 +695,14 @@ function normalize(data: Partial<FantasyLaneProgressData> | null | undefined): F
     highestChapterId,
     lastPlayedLevelId,
     updatedAt: typeof data?.updatedAt === 'number' ? data.updatedAt : Date.now(),
+    activeRun: normalizeRunSetup(data?.activeRun, validIds),
+    runtimeTotals: normalizeRuntimeStats(data?.runtimeTotals),
+    telemetryRunCount,
+    chapterRecords,
+    battleTotals,
+    unlockedUnits: Array.isArray(data?.unlockedUnits) ? data.unlockedUnits : [],
+    unitFragments: data?.unitFragments && typeof data.unitFragments === 'object' ? { ...data.unitFragments } : {},
+    unitStars: data?.unitStars && typeof data.unitStars === 'object' ? { ...data.unitStars } : {},
   };
 }
 
@@ -115,7 +719,8 @@ export function loadFantasyLaneProgress(): FantasyLaneProgressData {
 
 export function saveFantasyLaneProgress(progress: FantasyLaneProgressData) {
   if (!canUseStorage()) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...progress, updatedAt: Date.now() }));
+  const normalized = normalize(progress);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...normalized, updatedAt: Date.now() }));
 }
 
 export function resetFantasyLaneProgress() {
@@ -123,48 +728,92 @@ export function resetFantasyLaneProgress() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export function recordFantasyLaneLevelStart(levelId: string) {
+export function recordFantasyLaneLevelStart(levelId: string, setup?: Omit<FantasyLaneRunSetup, 'levelId'>) {
   const progress = loadFantasyLaneProgress();
-  const currentRecord = progress.levelRecords[levelId];
-  progress.levelRecords[levelId] = {
+  const currentRecord = progress.levelRecords[levelId] ?? createLevelRecord(levelId);
+  const startedAt = typeof setup?.startedAt === 'number' ? setup.startedAt : Date.now();
+  const activeRun: FantasyLaneRunSetup = {
     levelId,
-    attempts: (currentRecord?.attempts ?? 0) + 1,
-    completed: currentRecord?.completed ?? false,
-    bestStars: currentRecord?.bestStars ?? 0,
-    bestScore: currentRecord?.bestScore ?? 0,
-    bestBaseHpPercent: currentRecord?.bestBaseHpPercent ?? 0,
-    completedAt: currentRecord?.completedAt,
-    lastPlayedAt: Date.now(),
+    runId: typeof setup?.runId === 'string' && setup.runId.length > 0 ? setup.runId : `${levelId}-${startedAt}`,
+    heroId: setup?.heroId,
+    tacticalSkillId: setup?.tacticalSkillId,
+    loadoutUnitIds: normalizeStringList(setup?.loadoutUnitIds),
+    runtimeSeed: typeof setup?.runtimeSeed === 'number' ? setup.runtimeSeed : undefined,
+    startedAt,
   };
+
+  progress.levelRecords[levelId] = {
+    ...currentRecord,
+    attempts: currentRecord.attempts + 1,
+    lastPlayedAt: startedAt,
+    lastStart: activeRun,
+    recentRuns: currentRecord.recentRuns ?? [],
+  };
+  progress.activeRun = activeRun;
   progress.lastPlayedLevelId = levelId;
+  progress.chapterRecords = buildChapterRecords(progress.levelRecords, progress.lastPlayedLevelId);
   saveFantasyLaneProgress(progress);
   return progress;
 }
 
-export function recordFantasyLaneLevelResult(levelId: string, result: FantasyLaneBattleResult, playerBaseHpPercent: number) {
+export function recordFantasyLaneLevelResult(
+  levelId: string,
+  result: FantasyLaneBattleResult,
+  playerBaseHpPercent: number,
+  payload?: FantasyLaneLevelResultPayload,
+) {
   const progress = loadFantasyLaneProgress();
-  const currentRecord = progress.levelRecords[levelId] ?? {
-    levelId,
-    attempts: 0,
-    completed: false,
-    bestStars: 0,
-    bestScore: 0,
-    bestBaseHpPercent: 0,
-  };
-
+  const currentRecord = progress.levelRecords[levelId] ?? createLevelRecord(levelId);
   const completed = result.title.includes('成功');
+  const finishedAt = typeof payload?.finishedAt === 'number' ? payload.finishedAt : Date.now();
+  const runtimeStats = payload?.runtimeStats ? normalizeRuntimeStats(payload.runtimeStats) : undefined;
+  const replay = normalizeReplaySnapshot(payload?.replay);
+  const debug = normalizeDebugSnapshot(payload?.debug);
+  const activeRun =
+    progress.activeRun && progress.activeRun.levelId === levelId
+      ? progress.activeRun
+      : ({
+          levelId,
+          runId: `${levelId}-${finishedAt}`,
+          loadoutUnitIds: [],
+          startedAt: currentRecord.lastPlayedAt ?? finishedAt,
+        } satisfies FantasyLaneRunSetup);
+  const latestRun: FantasyLaneRunRecord = {
+    ...activeRun,
+    finishedAt,
+    currentPhaseId: payload?.currentPhaseId ?? `${levelId}-result`,
+    completed,
+    resultTitle: result.title,
+    stars: result.stars,
+    score: result.score,
+    baseHpPercent: Math.round(playerBaseHpPercent),
+    runtimeStats,
+    replay,
+    debug,
+  };
+  const phaseSnapshots = buildPhaseSnapshots(levelId, latestRun.currentPhaseId, replay, completed);
+  const latestBossBattle = buildBossBattleSummary(levelId, debug, latestRun.currentPhaseId, completed);
+
   const record: FantasyLaneLevelRecord = {
     ...currentRecord,
     completed: currentRecord.completed || completed,
     bestStars: Math.max(currentRecord.bestStars, result.stars),
     bestScore: Math.max(currentRecord.bestScore, result.score),
     bestBaseHpPercent: Math.max(currentRecord.bestBaseHpPercent, Math.round(playerBaseHpPercent)),
-    completedAt: completed ? currentRecord.completedAt ?? Date.now() : currentRecord.completedAt,
-    lastPlayedAt: Date.now(),
+    completedAt: completed ? currentRecord.completedAt ?? finishedAt : currentRecord.completedAt,
+    lastPlayedAt: finishedAt,
+    latestRun,
+    recentRuns: [latestRun, ...(currentRecord.recentRuns ?? [])].slice(0, RECENT_RUN_LIMIT),
+    latestReplay: replay ?? currentRecord.latestReplay,
+    latestDebug: debug ?? currentRecord.latestDebug,
+    lastRuntimeStats: runtimeStats ?? currentRecord.lastRuntimeStats,
+    phaseSnapshots,
+    latestBossBattle,
   };
 
   progress.levelRecords[levelId] = record;
   progress.lastPlayedLevelId = levelId;
+  progress.activeRun = undefined;
 
   if (completed && !progress.completedLevels.includes(levelId)) {
     progress.completedLevels.push(levelId);
@@ -179,9 +828,30 @@ export function recordFantasyLaneLevelResult(levelId: string, result: FantasyLan
   progress.totalStars = Object.values(progress.levelRecords).reduce((sum, item) => sum + item.bestStars, 0);
   progress.bestScore = Object.values(progress.levelRecords).reduce((max, item) => Math.max(max, item.bestScore), 0);
 
+  if (runtimeStats) {
+    const merged = mergeRuntimeTotals(progress.runtimeTotals, runtimeStats, progress.telemetryRunCount);
+    progress.runtimeTotals = merged.totals;
+    progress.telemetryRunCount = merged.telemetryRunCount;
+  }
+
+  progress.battleTotals = {
+    totalRuns: progress.battleTotals.totalRuns + 1,
+    wins: progress.battleTotals.wins + (completed ? 1 : 0),
+    losses: progress.battleTotals.losses + (completed ? 0 : 1),
+    bossRuns: progress.battleTotals.bossRuns + (latestBossBattle ? 1 : 0),
+    bossClears: progress.battleTotals.bossClears + (latestBossBattle && completed ? 1 : 0),
+    phaseEntries: { ...progress.battleTotals.phaseEntries },
+    bossPhaseTriggers: { ...progress.battleTotals.bossPhaseTriggers },
+  };
+  phaseSnapshots.forEach((phase) => {
+    if (phase.reached) incrementCounter(progress.battleTotals.phaseEntries, phase.phaseId);
+  });
+  latestBossBattle?.triggeredPhaseIds.forEach((phaseId) => incrementCounter(progress.battleTotals.bossPhaseTriggers, phaseId));
+
   const nextLevelId = completed ? getNextLevelId(levelId) : null;
   progress.highestUnlockedLevelId = nextLevelId ?? progress.highestUnlockedLevelId;
   progress.highestChapterId = getFantasyLaneLevelById(progress.highestUnlockedLevelId).chapterId;
+  progress.chapterRecords = buildChapterRecords(progress.levelRecords, progress.lastPlayedLevelId);
 
   saveFantasyLaneProgress(progress);
   return progress;
@@ -239,4 +909,53 @@ export function getFantasyLaneProgressSummary(progress: FantasyLaneProgressData 
     lastPlayedLevelId: progress.lastPlayedLevelId,
     lastPlayedLevelName: `${lastPlayedLevel.id} ${lastPlayedLevel.name}`,
   };
+}
+
+// 解锁单位
+export function unlockUnit(progress: FantasyLaneProgressData, unitId: string): FantasyLaneProgressData {
+  if (progress.unlockedUnits.includes(unitId)) return progress;
+  return {
+    ...progress,
+    unlockedUnits: [...progress.unlockedUnits, unitId],
+  };
+}
+
+// 添加单位碎片
+export function addUnitFragment(progress: FantasyLaneProgressData, unitId: string, count: number): FantasyLaneProgressData {
+  const currentCount = progress.unitFragments[unitId] || 0;
+  return {
+    ...progress,
+    unitFragments: {
+      ...progress.unitFragments,
+      [unitId]: currentCount + count,
+    },
+  };
+}
+
+// 升级单位星级
+export function upgradeUnitStar(progress: FantasyLaneProgressData, unitId: string): FantasyLaneProgressData {
+  const currentStar = progress.unitStars[unitId] || 0;
+  if (currentStar >= 3) return progress;
+  return {
+    ...progress,
+    unitStars: {
+      ...progress.unitStars,
+      [unitId]: currentStar + 1,
+    },
+  };
+}
+
+// 检查单位是否已解锁
+export function isUnitUnlocked(progress: FantasyLaneProgressData, unitId: string): boolean {
+  // 已解锁列表中的单位
+  if (progress.unlockedUnits.includes(unitId)) return true;
+  // 没有解锁条件的单位默认解锁（原有兵种）
+  const unit = FANTASY_LANE_UNIT_MAP[unitId];
+  if (!unit || !unit.unlockCondition) return true;
+  return false;
+}
+
+// 获取单位碎片数量
+export function getUnitFragmentCount(progress: FantasyLaneProgressData, unitId: string): number {
+  return progress.unitFragments[unitId] || 0;
 }

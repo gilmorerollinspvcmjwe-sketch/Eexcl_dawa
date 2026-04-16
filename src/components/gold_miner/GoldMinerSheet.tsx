@@ -9,7 +9,7 @@ import {
   restartGoldMinerLevel,
   resumeGoldMiner,
   tickGoldMinerBoardState,
-  useGoldMinerDynamite,
+  useGoldMinerDynamite as applyGoldMinerDynamite,
 } from '../../features/gold_miner/goldMinerBoardState.ts';
 import {
   buildGoldMinerFormulaText,
@@ -68,7 +68,7 @@ export const GoldMinerSheet: React.FC<GoldMinerSheetProps> = ({
   const hudViewModel = useMemo(() => buildGoldMinerHudViewModel(state), [state]);
   const overlayViewModel = useMemo(() => buildGoldMinerOverlayViewModel(state), [state]);
   const resultSummary = useMemo(() => buildGoldMinerResultSummary(state), [state]);
-  const progressSummary = useMemo(() => getGoldMinerProgressSummary(), [state.levelId, state.status, state.score]);
+  const progressSummary = useMemo(() => getGoldMinerProgressSummary(), []);
 
   const togglePauseState = () => {
     setState((current) => (current.status === 'paused' ? resumeGoldMiner(current) : pauseGoldMiner(current)));
@@ -123,7 +123,7 @@ export const GoldMinerSheet: React.FC<GoldMinerSheetProps> = ({
       }
       if (key === 'arrowup' || key === 'd') {
         event.preventDefault();
-        setState((current) => useGoldMinerDynamite(current));
+        setState((current) => applyGoldMinerDynamite(current));
         return;
       }
       if (key === 'p') {
@@ -163,7 +163,7 @@ export const GoldMinerSheet: React.FC<GoldMinerSheetProps> = ({
       <GoldMinerHud
         viewModel={hudViewModel}
         onPause={togglePauseState}
-        onUseDynamite={() => setState((current) => useGoldMinerDynamite(current))}
+        onUseDynamite={() => setState((current) => applyGoldMinerDynamite(current))}
         onOpenGuide={onOpenGuide}
       />
 

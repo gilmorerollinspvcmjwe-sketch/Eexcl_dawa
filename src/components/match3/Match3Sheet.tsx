@@ -98,6 +98,27 @@ function getModeLabel(modeId: Match3ModeId): string {
   return 'Adventure';
 }
 
+function getGoalSetupLabel(state: Match3BoardState): string[] {
+  return state.goals.map((goal) => {
+    switch (goal.type) {
+      case 'score':
+        return `分数达到 ${goal.target}`;
+      case 'collectColor':
+        return `收集 ${goal.colorTarget ?? '红'}色 ${goal.target}`;
+      case 'clearOverlay':
+        return `清掉覆盖层 ${goal.target}`;
+      case 'dropCollect':
+        return `送出 ${goal.target} 个掉落目标`;
+      case 'clearObstacle':
+        return `拆掉 ${goal.target} 个障碍`;
+      case 'triggerCombo':
+        return `触发 ${goal.target} 次组合`;
+      default:
+        return `完成 ${goal.target} 个目标`;
+    }
+  });
+}
+
 export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExit, initialSnapshot, onSnapshotChange }) => {
   const snapshot = initialSnapshot as {
     state?: Match3BoardState;
@@ -134,6 +155,11 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
     () => (selectedModeId === 'adventure' ? getLevelsByPack(selectedPackId) : getModeLevelsByChapter(selectedModeId, selectedPackId)),
     [selectedModeId, selectedPackId]
   );
+  const setupGoalLabels = useMemo(() => getGoalSetupLabel(state), [state]);
+  const setupPrimaryLimit = state.maxTimeMs !== null ? `${Math.floor(state.maxTimeMs / 1000)} 秒倒计时` : `${state.maxMoves ?? '无限'} 步`;
+  const setupObstacleSummary = selectedLevel?.initialObstacles?.length
+    ? selectedLevel.initialObstacles.map((obstacle) => `${obstacle.type} ${obstacle.positions.length}处`).join(' / ')
+    : '无额外障碍';
 
   const previewSetupBoard = useCallback((modeId: Match3ModeId, level: Match3LevelScript | Match3ModeLevel | undefined) => {
     if (state.phase !== 'setup' || !level) return;
@@ -535,17 +561,26 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
           {!setupCollapsed && (
             <>
               <div className="match3-setup-copy" id="match3-setup-content">
-                <strong>{selectedLevel?.name ?? '选择关卡'}</strong>
-                <span>当前模式：{getModeLabel(selectedModeId)} · {selectedPack?.name ?? '未知章节'}</span>
-                <span>{selectedLevel?.tutorialHint ?? '点击两个相邻色块进行交换'}</span>
+                <div className="match3-setup-hero">
+                  <div className="match3-setup-hero-copy">
+                    <strong>{selectedLevel?.name ?? '选择关卡'}</strong>
+                    <span>当前模式：{getModeLabel(selectedModeId)} · {selectedPack?.name ?? '未知章节'}</span>
+                    <span>{selectedLevel?.tutorialHint ?? '点击两个相邻色块进行交换'}</span>
+                  </div>
+                  <div className="match3-setup-facts">
+                    <span className="match3-setup-fact"><strong>棋盘</strong>{state.rows}×{state.cols}</span>
+                    <span className="match3-setup-fact"><strong>限制</strong>{setupPrimaryLimit}</span>
+                    <span className="match3-setup-fact"><strong>障碍</strong>{setupObstacleSummary}</span>
+                  </div>
+                </div>
                 {selectedModeId !== 'adventure' && selectedLevel && 'description' in selectedLevel && typeof selectedLevel.description === 'string' && (
                   <span>{selectedLevel.description}</span>
                 )}
-                <span>目标：{getGoalSummary(state)}</span>
-                <span>棋盘大小：{state.rows}×{state.cols} · {state.maxTimeMs !== null ? `时间限制：${Math.floor(state.maxTimeMs / 1000)}秒` : `步数限制：${state.maxMoves ?? '无限'}`}</span>
-                {selectedLevel?.initialObstacles && selectedLevel.initialObstacles.length > 0 && (
-                  <span>障碍：{selectedLevel.initialObstacles.map((o) => `${o.type}${o.positions.length}处`).join(' / ')}</span>
-                )}
+                <div className="match3-setup-goals">
+                  {setupGoalLabels.map((goalLabel) => (
+                    <span key={goalLabel} className="match3-setup-goal-pill">{goalLabel}</span>
+                  ))}
+                </div>
               </div>
 
               <div className="match3-mode-panel">
@@ -597,16 +632,20 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
                         onClick={() => handleLevelSelect(level.id)}
                         disabled={!unlocked}
                       >
-                        <strong>{level.orderInPack}. {level.name}</strong>
+                        <div className="match3-level-card-head">
+                          <strong>{level.orderInPack}. {level.name}</strong>
+                          <span className="match3-level-card-difficulty">{level.difficulty}</span>
+                        </div>
                         <span>{level.tutorialHint ?? ('description' in level ? level.description : '完成目标即可通关')}</span>
-                        <small>
-                          难度：{level.difficulty}
-                          {'maxTimeMs' in level && typeof level.maxTimeMs === 'number'
-                            ? ` · ${Math.floor(level.maxTimeMs / 1000)}秒`
-                            : ` · ${level.maxMoves ?? 0}步`}
-                        </small>
-                        {completed && <small className="match3-completed-hint">✅ 已通关 {'⭐'.repeat(stars)}</small>}
-                        {!unlocked && <small className="match3-lock-hint">🔒 需通过前置关卡</small>}
+                        <div className="match3-level-card-meta">
+                          <small>
+                            {'maxTimeMs' in level && typeof level.maxTimeMs === 'number'
+                              ? `${Math.floor(level.maxTimeMs / 1000)} 秒冲刺`
+                              : `${level.maxMoves ?? 0} 步`}
+                          </small>
+                          {completed && <small className="match3-completed-hint">✅ 已通关 {'⭐'.repeat(stars)}</small>}
+                          {!unlocked && <small className="match3-lock-hint">🔒 需通过前置关卡</small>}
+                        </div>
                       </button>
                     );
                   })}
@@ -658,7 +697,7 @@ export const Match3Sheet: React.FC<Match3SheetProps> = ({ onFormulaChange, onExi
         </div>
       ) : (
         <div className="match3-setup-board-placeholder">
-          先选模式，再选章节与关卡后点击“开始游戏”。方向键移动焦点，Enter 或空格选中并确认交换，让三个相同颜色的色块连成一线即可消除。
+          先选模式、章节和关卡，再点击“开始游戏”。开局后用方向键移动焦点，Enter 或空格选中并确认交换，先做目标线，再追额外分数。
         </div>
       )}
     </div>

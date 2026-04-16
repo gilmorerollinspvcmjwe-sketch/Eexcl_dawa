@@ -55,3 +55,15 @@ test('createInitialSaveSlot seeds gold miner with adventure run defaults', () =>
     phase: 'swinging',
   });
 });
+
+test('createInitialSaveSlot seeds 2048 with a classic board payload', () => {
+  const slot = createInitialSaveSlot('2048存档', 'game2048', 'game2048');
+
+  assert.equal(slot.gameType, 'game2048');
+  assert.equal(slot.data.currentSheet, 'game2048');
+  assert.deepEqual(slot.data.payload, {
+    mode: 'classic',
+    gridSize: 4,
+    targetTile: 2048,
+  });
+});

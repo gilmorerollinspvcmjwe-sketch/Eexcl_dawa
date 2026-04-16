@@ -7,6 +7,7 @@ import {
   launchGoldMinerHook,
   pauseGoldMiner,
   resumeGoldMiner,
+  shouldHighlightGoldMinerItem,
   tickGoldMinerBoardState,
   useGoldMinerDynamite,
 } from '../src/features/gold_miner/goldMinerBoardState.ts';
@@ -90,4 +91,16 @@ test('advanceGoldMinerToLevel carries banked score into the next level', () => {
   assert.equal(next.levelId, 2);
   assert.equal(next.totalBank, 2100);
   assert.equal(next.score, 0);
+});
+
+test('detector effects only highlight matching gold miner targets', () => {
+  const state = createGoldMinerBoardState({ level: getGoldMinerLevel(3), rngSeed: 41 });
+  const diamond = state.items.find((item) => item.kind === 'diamond');
+  const rock = state.items.find((item) => item.kind === 'rock_small' || item.kind === 'rock_large');
+
+  assert.ok(diamond);
+  assert.ok(rock);
+  assert.equal(shouldHighlightGoldMinerItem({ ...state, activeEffects: ['diamond_detector'] }, diamond), true);
+  assert.equal(shouldHighlightGoldMinerItem({ ...state, activeEffects: ['diamond_detector'] }, rock), false);
+  assert.equal(shouldHighlightGoldMinerItem({ ...state, activeEffects: ['rock_detector'] }, rock), true);
 });

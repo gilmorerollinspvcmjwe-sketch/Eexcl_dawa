@@ -18,6 +18,13 @@ export { drawGriffinKnight, drawBatSwarm, drawYoungDragon } from './drawAir';
 // 高费终结兵
 export { drawTreeAncient, drawOgreLord, drawFireDragon } from './drawBoss';
 
+// 新兵种（15个）
+export {
+  drawHolyKnight, drawDruid, drawSiegeRam, drawShadowHunter, drawElementalist,
+  drawHeavyCrossbow, drawFieldMedic, drawMammoth, drawDemolitionist, drawBladeMaster,
+  drawWindSpirit, drawGargoyle, drawPhoenix, drawThunderEagle, drawAngel,
+} from './drawNewUnits';
+
 // 兵种配置
 export { UNIT_CONFIGS } from './unitConfigs';
 export type { UnitRenderConfig, UnitRole, UnitFaction } from './unitConfigs';
@@ -31,6 +38,7 @@ import * as drawRanged from './drawRanged';
 import * as drawMagic from './drawMagic';
 import * as drawAir from './drawAir';
 import * as drawBoss from './drawBoss';
+import * as drawNewUnits from './drawNewUnits';
 
 // 兵种ID到绘制函数的映射
 const DRAW_FN_MAP: Record<string, (ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, weaponColor: string, hpPercent: number, isAttacking: boolean) => void> = {
@@ -62,6 +70,22 @@ const DRAW_FN_MAP: Record<string, (ctx: CanvasRenderingContext2D, size: number, 
   tree_ancient: drawBoss.drawTreeAncient,
   ogre_lord: drawBoss.drawOgreLord,
   fire_dragon: drawBoss.drawFireDragon,
+  // 新兵种（15个）
+  holy_knight: drawNewUnits.drawHolyKnight,
+  druid: drawNewUnits.drawDruid,
+  siege_ram: drawNewUnits.drawSiegeRam,
+  shadow_hunter: drawNewUnits.drawShadowHunter,
+  elementalist: drawNewUnits.drawElementalist,
+  heavy_crossbow: drawNewUnits.drawHeavyCrossbow,
+  field_medic: drawNewUnits.drawFieldMedic,
+  mammoth: drawNewUnits.drawMammoth,
+  demolitionist: drawNewUnits.drawDemolitionist,
+  blade_master: drawNewUnits.drawBladeMaster,
+  wind_spirit: drawNewUnits.drawWindSpirit,
+  gargoyle: drawNewUnits.drawGargoyle,
+  phoenix: drawNewUnits.drawPhoenix,
+  thunder_eagle: drawNewUnits.drawThunderEagle,
+  angel: drawNewUnits.drawAngel,
 };
 
 export interface DrawUnitOnCanvasOptions {

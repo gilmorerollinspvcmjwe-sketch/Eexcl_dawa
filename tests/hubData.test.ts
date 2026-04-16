@@ -12,16 +12,17 @@ test('buildHubSnapshot prefers unfinished perler work for quick resume', () => {
   assert.match(snapshot.quickResume.label, /62%/);
 });
 
-test('buildHubSnapshot returns seven game rows with gold miner included', () => {
+test('buildHubSnapshot returns eight game rows with 2048 included', () => {
   const snapshot = buildHubSnapshot({
     perlerProgress: null,
     stats: { totalGames: 0, totalScore: 0 },
   });
 
-  assert.equal(snapshot.games.length, 7);
+  assert.equal(snapshot.games.length, 8);
   assert.ok(snapshot.games.some((item) => item.id === 'perler'));
   assert.ok(snapshot.games.some((item) => item.id === 'fantasy_lane'));
   assert.ok(snapshot.games.some((item) => item.id === 'gold_miner'));
+  assert.ok(snapshot.games.some((item) => item.id === 'game2048'));
   assert.ok(snapshot.games.some((item) => item.id === 'snake'));
   assert.ok(snapshot.games.some((item) => item.id === 'tetris'));
 });

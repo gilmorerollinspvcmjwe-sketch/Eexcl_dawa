@@ -2,10 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getFantasyLaneLevelById } from '../../features/fantasy_lane/fantasyLaneLevelCatalog.ts';
 import {
   getFantasyLaneLevelStatus,
-  getFantasyLaneProgressSummary,
   loadFantasyLaneProgress,
   recordFantasyLaneLevelResult,
   recordFantasyLaneLevelStart,
+  saveFantasyLaneProgress,
+  unlockUnit,
+  addUnitFragment,
 } from '../../features/fantasy_lane/fantasyLaneProgressStorage.ts';
 import {
   emitFantasyLaneLevelSelection,
@@ -19,6 +21,7 @@ import { FantasyLaneBoard } from './FantasyLaneBoard';
 import { FantasyLaneHud } from './FantasyLaneHud';
 import { FantasyLaneLoadoutPanel } from './FantasyLaneLoadoutPanel';
 import { FantasyLaneResultPanel } from './FantasyLaneResultPanel';
+import { getBossPhaseVisualState } from './fantasyLaneUiMeta.ts';
 import '../../styles/fantasy-lane.css';
 
 interface FantasyLaneSheetProps {
@@ -34,9 +37,9 @@ interface FantasyLaneSheetProps {
 export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
   onFormulaChange,
   onStatusChange,
-  onExit,
-  onOpenRoster,
-  onOpenChapters,
+  onExit: _onExit,
+  onOpenRoster: _onOpenRoster,
+  onOpenChapters: _onOpenChapters,
   initialSnapshot,
   onSnapshotChange,
 }) => {
@@ -47,7 +50,6 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
     return fantasyLaneRuntimeAdapter.selectLevel(fantasyLaneRuntimeAdapter.createInitialState(), selectedLevelId);
   });
   const [setupCollapsed, setSetupCollapsed] = useState(snapshot?.setupCollapsed ?? false);
-  const [selectedTab, setSelectedTab] = useState<'levels' | 'loadout'>(snapshot?.selectedTab ?? 'levels');
   const [progress, setProgress] = useState(() => loadFantasyLaneProgress());
   const previousPhaseRef = useRef(state.phase);
   const latestStateRef = useRef(state);
@@ -57,10 +59,6 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
   const warnings = useMemo(
     () => getFantasyLaneRecommendedLoadoutWarnings(state.loadoutUnitIds, state.selectedLevelId),
     [state.loadoutUnitIds, state.selectedLevelId],
-  );
-  const progressSummary = useMemo(
-    () => getFantasyLaneProgressSummary(progress),
-    [progress],
   );
   const canEditSetup = state.phase === 'setup' || state.phase === 'won' || state.phase === 'lost';
 
@@ -78,17 +76,24 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
   }, [onFormulaChange, onStatusChange, state]);
 
   useEffect(() => {
+    // 战斗开始时自动收起侧边栏，战斗结束/暂停时保持收起状态
+    if (state.phase === 'playing') {
+      setSetupCollapsed(true);
+    }
+  }, [state.phase]);
+
+  useEffect(() => {
     if (state.phase === 'playing') return;
-    onSnapshotChange?.({ state, setupCollapsed, selectedTab });
-  }, [onSnapshotChange, selectedTab, setupCollapsed, state]);
+    onSnapshotChange?.({ state, setupCollapsed });
+  }, [onSnapshotChange, setupCollapsed, state]);
 
   useEffect(() => {
     if (!onSnapshotChange || state.phase !== 'playing') return;
     const timer = window.setInterval(() => {
-      onSnapshotChange({ state: latestStateRef.current, setupCollapsed, selectedTab });
+      onSnapshotChange({ state: latestStateRef.current, setupCollapsed });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [onSnapshotChange, selectedTab, setupCollapsed, state.phase]);
+  }, [onSnapshotChange, setupCollapsed, state.phase]);
 
   useEffect(() => {
     const unsubscribe = subscribeFantasyLaneLevelSelection((levelId) => {
@@ -105,7 +110,27 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
     }
     if (previousPhase !== state.phase && (state.phase === 'won' || state.phase === 'lost') && state.result) {
       const baseHpPercent = (state.playerBaseHp / Math.max(1, state.playerBaseHpMax)) * 100;
-      setProgress(recordFantasyLaneLevelResult(state.selectedLevelId, state.result, baseHpPercent));
+      const result = recordFantasyLaneLevelResult(state.selectedLevelId, state.result, baseHpPercent);
+      setProgress(result);
+
+      // 应用奖励到进度
+      if (state.result.rewards) {
+        let updatedProgress = result;
+
+        // 解锁单位
+        for (const unitId of state.result.rewards.unlockedUnits) {
+          updatedProgress = unlockUnit(updatedProgress, unitId);
+        }
+
+        // 添加碎片
+        for (const [unitId, count] of Object.entries(state.result.rewards.fragments)) {
+          updatedProgress = addUnitFragment(updatedProgress, unitId, count);
+        }
+
+        // 保存更新后的进度
+        saveFantasyLaneProgress(updatedProgress);
+        setProgress(updatedProgress);
+      }
     }
     previousPhaseRef.current = state.phase;
   }, [state.phase, state.playerBaseHp, state.playerBaseHpMax, state.result, state.selectedLevelId]);
@@ -172,6 +197,8 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
     <div className="fantasy-lane-sheet">
       <FantasyLaneHud
         state={state}
+        onCastHero={() => setState((current) => fantasyLaneRuntimeAdapter.castSkill(current, current.heroSkill.id))}
+        onCastTactical={() => setState((current) => fantasyLaneRuntimeAdapter.castSkill(current, current.tacticalSkill.id))}
         onTogglePause={() =>
           setState((current) =>
             current.phase === 'paused'
@@ -180,71 +207,59 @@ export const FantasyLaneSheet: React.FC<FantasyLaneSheetProps> = ({
           )
         }
         onRestart={() => setState((current) => fantasyLaneRuntimeAdapter.restartBattle(current))}
-        onExit={onExit}
+        onStart={() => setState((current) => fantasyLaneRuntimeAdapter.startBattle(current))}
+        onExitLevel={() => setState((current) => fantasyLaneRuntimeAdapter.selectLevel(current, current.selectedLevelId))}
       />
 
-      <div className="fantasy-lane-layout">
+      <div className={`fantasy-lane-layout${setupCollapsed ? ' has-collapsed-sidebar' : ''}`}>
         <FantasyLaneLoadoutPanel
           state={state}
           chapters={chapters}
-          selectedTab={selectedTab}
           warnings={warnings}
           canEditSetup={canEditSetup}
           getLevelStatus={(levelId) => getFantasyLaneLevelStatus(progress, levelId)}
-          onSelectedTabChange={setSelectedTab}
           onLevelSelect={handleLevelSelect}
           onHeroSelect={(heroId) => setState((current) => fantasyLaneRuntimeAdapter.selectHero(current, heroId))}
-          onTacticalSelect={(skillId) => setState((current) => fantasyLaneRuntimeAdapter.selectTacticalSkill(current, skillId))}
           onToggleLoadout={(unitId) => setState((current) => fantasyLaneRuntimeAdapter.toggleLoadoutUnit(current, unitId))}
           onQueueUnit={(unitId) => setState((current) => fantasyLaneRuntimeAdapter.queueUnit(current, unitId))}
-          onStart={() => setState((current) => fantasyLaneRuntimeAdapter.startBattle(current))}
           onToggleCollapse={() => setSetupCollapsed((current) => !current)}
-          onOpenRoster={onOpenRoster}
-          onOpenChapters={onOpenChapters}
           collapsed={setupCollapsed}
         />
 
         <main className="fantasy-lane-main">
           <div className="fantasy-lane-main-head">
-            <div>
+            <div className="fantasy-lane-main-title">
               <span className="fantasy-lane-kicker">{currentLevel.chapterName}</span>
               <h2>{currentLevel.id} {currentLevel.name}</h2>
-              <p>{currentLevel.description}</p>
-            </div>
-
-            <div className="fantasy-lane-skill-stack">
-              <button
-                type="button"
-                className="fantasy-lane-skill-btn"
-                onClick={() => setState((current) => fantasyLaneRuntimeAdapter.castSkill(current, current.heroSkill.id))}
-                disabled={state.phase !== 'playing' || state.heroSkill.remainingMs > 0}
-              >
-                <strong>{state.heroSkill.name}</strong>
-                <span>{state.heroSkill.remainingMs > 0 ? `${Math.ceil(state.heroSkill.remainingMs / 1000)}s` : '英雄技能'}</span>
-              </button>
-              <button
-                type="button"
-                className="fantasy-lane-skill-btn fantasy-lane-skill-btn--tactical"
-                onClick={() => setState((current) => fantasyLaneRuntimeAdapter.castSkill(current, current.tacticalSkill.id))}
-                disabled={state.phase !== 'playing' || state.tacticalSkill.remainingMs > 0}
-              >
-                <strong>{state.tacticalSkill.name}</strong>
-                <span>{state.tacticalSkill.remainingMs > 0 ? `${Math.ceil(state.tacticalSkill.remainingMs / 1000)}s` : '战术技能'}</span>
-              </button>
+              <div className="fantasy-lane-main-stripes">
+                {currentLevel.phases.map((phase) => (
+                  <span
+                    key={phase.id}
+                    className={`fantasy-lane-phase-pill${state.currentPhaseId === phase.id ? ' is-active' : ''}`}
+                  >
+                    {phase.label}
+                  </span>
+                ))}
+                {currentLevel.boss && (
+                  <>
+                    <span className="fantasy-lane-strip-sep">·</span>
+                    {currentLevel.boss.phases.map((phase, index) => (
+                      <span
+                        key={phase.id}
+                        className={`fantasy-lane-boss-phase-pill is-${getBossPhaseVisualState(currentLevel, state, phase.id)}`}
+                      >
+                        P{index + 1}
+                      </span>
+                    ))}
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
           <FantasyLaneBoard state={state} />
 
           <div className="fantasy-lane-footer-note">
-            <strong>当前阶段：</strong>
-            <span>{state.phaseLabel}</span>
-            <span>推荐标签：{currentLevel.recommendedTags.join(' / ')}</span>
-            <span>提示：{currentLevel.hint}</span>
-            <span>战场反馈：{state.lastHint}</span>
-            <span>主线进度：{progressSummary.completedLevels}/{progressSummary.totalLevels}</span>
-            <span>空优：{state.airControl > 0 ? '+' : ''}{state.airControl}</span>
-            <span>拥堵：{state.congestion}%</span>
             <span>快捷键：Space 开始/暂停，1-8 出兵，Q/W 技能，R 重开</span>
           </div>
         </main>

@@ -1,3 +1,5 @@
+/* 奇幻战线核心类型。统一约束单位标准字段、运行时状态和运行时调试留口。 */
+
 import type { WorkbookStatusSummary } from '../../types/workbook.ts';
 
 export type FantasyLaneBattlePhase = 'setup' | 'playing' | 'paused' | 'won' | 'lost';
@@ -8,56 +10,115 @@ export type FantasyLaneRangeBand = 'melee' | 'ranged';
 export type FantasyLaneFootprint = 'small' | 'medium' | 'large' | 'giant';
 export type FantasyLaneDamageProfile = 'single' | 'aoe';
 export type FantasyLaneTargetRule = 'ground_only' | 'air_only' | 'both';
-export type FantasyLaneArmorClass = 'light' | 'heavy' | 'swarm' | 'structure';
+export type FantasyLaneArmorType = 'light' | 'heavy' | 'swarm' | 'structure' | 'air';
+export type FantasyLaneArmorClass = Exclude<FantasyLaneArmorType, 'air'>;
 export type FantasyLaneCombatRole = 'tank' | 'fighter' | 'sniper' | 'caster' | 'siege' | 'air_sup' | 'finisher';
 export type FantasyLaneRoleGroup = 'tank' | 'melee' | 'ranged' | 'magic' | 'air' | 'finisher';
 export type FantasyLaneDamageType = 'physical' | 'pierce' | 'blast' | 'magic' | 'siege' | 'antiAir';
-export type FantasyLaneTargetClass = 'light' | 'heavy' | 'swarm' | 'air' | 'structure';
+export type FantasyLaneTargetClass = FantasyLaneArmorType;
 export type FantasyLaneUnitSize = 'S' | 'M' | 'L' | 'XL';
 export type FantasyLanePressure = 'read' | 'contest' | 'pressure' | 'boss' | 'overtime';
-export type FantasyLaneEffectKind = 'haste' | 'freeze' | 'burnline' | 'shield';
+export type FantasyLaneEffectKind = 'haste' | 'freeze' | 'burnline' | 'shield' | 'rage' | 'fortify';
+export type FantasyLaneBehaviorProtocolId = 'melee' | 'ranged' | 'air';
 export type FantasyLaneHeroId = 'warlord' | 'archmage' | 'dragon_rider';
 export type FantasyLaneTacticalSkillId = 'fireball' | 'heal' | 'haste' | 'freeze' | 'shield';
+export type FantasyLaneIntentMode = 'advance' | 'hold' | 'retreat' | 'attackTarget' | 'attackBase';
+export type FantasyLaneDebugEventType = 'spawn' | 'defeat' | 'skill' | 'bossPhase' | 'phase' | 'overtime';
+export type FantasyLaneScheduledEventSource = 'phaseSpawn' | 'script' | 'bossPhaseSpawn' | 'bossSkill';
+export type FantasyLaneRuntimeEventType =
+  | 'levelPhaseEnter'
+  | 'bossPhaseEnter'
+  | 'bossSkillCast'
+  | 'scheduledSpawn'
+  | 'modifierApply'
+  | 'warning'
+  | 'bossDefeated'
+  | 'overtime';
+
+export interface FantasyLaneIncomeTier {
+  untilMs: number | null;
+  incomePerSecond: number;
+}
+
+export interface FantasyLaneCombatProtocol {
+  id: FantasyLaneBehaviorProtocolId;
+  advanceFactor: number;
+  idleAdvanceFactor: number;
+  holdRangeBuffer: number;
+  retreatFactor: number;
+  driftStrength: number;
+  blockedDrift: number;
+  allowRetreat: boolean;
+}
+
+export interface FantasyLaneSoftCollisionProfile {
+  laneMinY: number;
+  laneMaxY: number;
+  trackThreshold: number;
+  blockWeight: number;
+  slipBonus: number;
+  blockedDrift: number;
+}
+
+// 单位解锁条件类型
+export interface FantasyLaneUnitUnlockCondition {
+  type: 'level_clear' | 'boss_clear' | 'star_reward' | 'fragment_synthesis';
+  levelId?: string;
+  stars?: number;
+  fragmentCount?: number;
+}
+
+// 战斗奖励类型
+export interface FantasyLaneBattleRewards {
+  unlockedUnits: string[];
+  fragments: Record<string, number>;
+}
 
 export interface FantasyLaneUnitDefinition {
   id: string;
   name: string;
   shortName: string;
-  icon: string;
+  cost: number;
+  pop: number;
+  maxHp: number;
+  armorHp: number;
   layer: FantasyLaneLayer;
   rangeBand: FantasyLaneRangeBand;
   footprint: FantasyLaneFootprint;
+  role: FantasyLaneCombatRole;
+  damageType: FantasyLaneDamageType;
   damageProfile: FantasyLaneDamageProfile;
   targetRule: FantasyLaneTargetRule;
-  armorClass: FantasyLaneArmorClass;
-  role: FantasyLaneCombatRole;
-  pop: number;
-  collisionRadius: number;
+  moveSpeed: number;
+  acquireRange: number;
   preferredRange: number;
   minimumRange: number;
-  projectileSpeed: number;
+  attackIntervalMs: number;
   attackWindupMs: number;
   attackAnimMs: number;
+  projectileSpeed: number;
+  collisionRadius: number;
+  splashRadius: number;
+  damage: number;
+  armorType: FantasyLaneArmorType;
+  icon: string;
   attackColor: string;
+  cooldownMs: number;
+  armorClass: FantasyLaneArmorClass;
   roleGroup: FantasyLaneRoleGroup;
   lane: FantasyLaneLaneId;
-  cost: number;
-  cooldownMs: number;
-  maxHp: number;
-  armorHp: number;
-  damage: number;
-  damageType: FantasyLaneDamageType;
   targetClass: FantasyLaneTargetClass;
   size: FantasyLaneUnitSize;
   attackRange: number;
-  moveSpeed: number;
-  attackIntervalMs: number;
-  splashRadius: number;
   canAttackGround: boolean;
   canAttackAir: boolean;
   tags: string[];
   summary: string;
   signature: string;
+  // 解锁条件（可选）
+  unlockCondition?: FantasyLaneUnitUnlockCondition;
+  // 基础单位ID（用于碎片合成后的升级单位）
+  baseUnit?: string;
 }
 
 export interface FantasyLaneHeroDefinition {
@@ -176,6 +237,12 @@ export interface FantasyLaneLevelDefinition {
   ratingRules: FantasyLaneRatingRules;
   failureHints: FantasyLaneFailureHintMap;
   unlockReward?: string;
+  // 通关解锁的单位ID列表
+  unlockRewards?: string[];
+  // 碎片奖励（单位ID -> 数量）
+  fragmentRewards?: Record<string, number>;
+  // 星级奖励（星数 -> 单位ID列表）
+  starRewards?: Record<number, string[]>;
 }
 
 export interface FantasyLaneSkillState {
@@ -194,6 +261,15 @@ export interface FantasyLaneEffectState {
   remainingMs: number;
 }
 
+export interface FantasyLaneUnitCombatState {
+  currentTargetId: string | null;
+  pendingTargetId: string | null;
+  pendingTargetBase: boolean;
+  windupRemainingMs: number;
+  retargetLockMs: number;
+  firstContactAtMs: number | null;
+}
+
 export interface FantasyLaneUnitInstance {
   instanceId: string;
   templateId: string;
@@ -210,6 +286,7 @@ export interface FantasyLaneUnitInstance {
   blockedMs: number;
   lastTargetId: string | null;
   spawnedAtMs: number;
+  combatState?: FantasyLaneUnitCombatState;
 }
 
 export interface FantasyLaneProjectile {
@@ -250,12 +327,22 @@ export interface FantasyLaneBattleResult {
   score: number;
   summary: string;
   tips: string[];
+  // 战斗奖励
+  rewards?: FantasyLaneBattleRewards;
 }
 
 export interface FantasyLaneScheduledEvent {
   id: string;
   triggerAtMs: number;
   type: 'spawn' | 'warning' | 'grantGold' | 'modifier';
+  source?: FantasyLaneScheduledEventSource;
+  phaseId?: string;
+  phaseLabel?: string;
+  pressure?: FantasyLanePressure;
+  bossPhaseId?: string;
+  bossPhaseLabel?: string;
+  skillId?: string;
+  skillLabel?: string;
   spawnGroup?: FantasyLaneSpawnGroup;
   text?: string;
   amount?: number;
@@ -269,6 +356,71 @@ export interface FantasyLaneActiveWarning {
   id: string;
   text: string;
   remainingMs: number;
+}
+
+export interface FantasyLaneDebugEvent {
+  id: string;
+  atMs: number;
+  type: FantasyLaneDebugEventType;
+  text: string;
+}
+
+export interface FantasyLaneRuntimeEvent {
+  id: string;
+  atMs: number;
+  type: FantasyLaneRuntimeEventType;
+  phaseId?: string;
+  phaseLabel?: string;
+  pressure?: FantasyLanePressure;
+  bossPhaseId?: string;
+  bossPhaseLabel?: string;
+  skillId?: string;
+  skillLabel?: string;
+  scheduledEventId?: string;
+  scheduledEventSource?: FantasyLaneScheduledEventSource;
+  side?: FantasyLaneSide;
+  unitId?: string;
+  modifierId?: FantasyLaneEffectKind;
+  amount?: number;
+  durationMs?: number;
+  text?: string;
+}
+
+export interface FantasyLanePhaseTimelineEntry {
+  id: string;
+  source: 'level' | 'boss';
+  phaseId: string;
+  label: string;
+  pressure: FantasyLanePressure;
+  startedAtMs: number;
+  endedAtMs: number | null;
+  bossPhaseId?: string;
+  thresholdPercent?: number;
+}
+
+export interface FantasyLaneBattleStats {
+  summoned: number;
+  enemySummoned: number;
+  defeated: number;
+  heroSkillCast: number;
+  tacticalSkillCast: number;
+  queueBlocked: number;
+  projectilesFired: number;
+  aoeHits: number;
+  frontlineSummons: number;
+  antiAirSummons: number;
+  aoeSummons: number;
+  goldSpent: number;
+  goldCappedMs: number;
+  congestionMs: number;
+  levelPhasesEntered: number;
+  bossPhasesEntered: number;
+  bossSkillActivations: number;
+  bossPhaseSummons: number;
+  scriptedModifiersApplied: number;
+  engagedUnits: number;
+  totalEngageDelayMs: number;
+  lastSkillCastAtMs: number | null;
 }
 
 export interface FantasyLaneRuntimeState {
@@ -307,6 +459,10 @@ export interface FantasyLaneRuntimeState {
   pressureLabel: string;
   phaseLabel: string;
   currentPhaseId: string;
+  currentPhaseStartedAtMs: number;
+  currentBossPhaseId: string | null;
+  currentBossPhaseLabel: string | null;
+  currentBossPhaseStartedAtMs: number | null;
   lastHint: string;
   activeWarning: FantasyLaneActiveWarning | null;
   result: FantasyLaneBattleResult | null;
@@ -314,21 +470,10 @@ export interface FantasyLaneRuntimeState {
   scheduledEvents: FantasyLaneScheduledEvent[];
   triggeredBossPhases: string[];
   bossUnitInstanceId: string | null;
-  stats: {
-    summoned: number;
-    defeated: number;
-    heroSkillCast: number;
-    tacticalSkillCast: number;
-    queueBlocked: number;
-    projectilesFired: number;
-    aoeHits: number;
-    frontlineSummons: number;
-    antiAirSummons: number;
-    aoeSummons: number;
-    goldSpent: number;
-    goldCappedMs: number;
-    lastSkillCastAtMs: number | null;
-  };
+  debugEvents: FantasyLaneDebugEvent[];
+  runtimeEvents: FantasyLaneRuntimeEvent[];
+  phaseTimeline: FantasyLanePhaseTimelineEntry[];
+  stats: FantasyLaneBattleStats;
 }
 
 export interface FantasyLaneSheetSnapshot {

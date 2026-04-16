@@ -17,6 +17,7 @@ const DEFAULT_SAVE_ADAPTERS: Record<ArcadeGameId, WorkbookSaveAdapter> = {
   zuma: { gameId: 'zuma', createInitialPayload: () => ({ difficulty: 'normal' }) },
   match3: { gameId: 'match3', createInitialPayload: () => ({ level: 1 }) },
   gold_miner: { gameId: 'gold_miner', createInitialPayload: () => ({ mode: 'adventure', levelId: 1, phase: 'swinging' }) },
+  game2048: { gameId: 'game2048', createInitialPayload: () => ({ mode: 'classic', gridSize: 4, targetTile: 2048 }) },
   fantasy_lane: {
     gameId: 'fantasy_lane',
     createInitialPayload: () => ({

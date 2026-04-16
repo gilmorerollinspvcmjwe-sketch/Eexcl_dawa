@@ -1,0 +1,28 @@
+# ??????????
+
+- ?????68
+- ??????????? collect / obstacle / drop / special / combo bot
+- ?? seed ??16
+
+## ????
+
+- P0?3
+- P1?8
+- P2?11
+- P3?46
+
+## ????????P0 / P1?
+
+| ?? | ?? | ?? | ?? | ?? | ??? | ???? | ???? |
+| --- | --- | --- | --- | --- | ---: | --- | --- |
+| P0 | jelly-14 | 果冻清理包 | hard | obstacleGreedy | 6% | 覆盖层还差 2 格没有清干净 | - |
+| P0 | jelly-15 | 果冻清理包 | hard | obstacleGreedy | 6% | 障碍还差 1 个没有清掉 | - |
+| P0 | jelly-16 | 果冻清理包 | expert | obstacleGreedy | 13% | 障碍还差 1 个没有清掉 | - |
+| P1 | drop-05 | 掉落收集包 | hard | dropGreedy | 19% | 护送目标还差 1 份没有送到出口 | - |
+| P1 | jelly-18 | 果冻清理包 | expert | obstacleGreedy | 19% | 障碍还差 2 个没有清掉 | - |
+| P1 | move-03 | 步数策略包 | medium | comboGreedy | 19% | 分数不足，还差 2970 分 | - |
+| P1 | obstacle-05 | 障碍压制包 | expert | obstacleGreedy | 19% | 障碍还差 1 个没有清掉 | - |
+| P1 | jelly-07 | 果冻清理包 | medium | obstacleGreedy | 25% | 障碍还差 2 个没有清掉 | - |
+| P1 | jelly-10 | 果冻清理包 | medium | obstacleGreedy | 25% | 障碍还差 2 个没有清掉 | - |
+| P1 | move-04 | 步数策略包 | medium | comboGreedy | 25% | 分数不足，还差 2685 分 | - |
+| P1 | move-13 | 步数策略包 | expert | comboGreedy | 31% | 分数不足，还差 1740 分 | - |

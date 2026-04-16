@@ -6,6 +6,16 @@ import {
   type GoldMinerItem,
 } from '../../features/gold_miner/goldMinerTypes.ts';
 import {
+  drawGoldMinerBlastEffect,
+  drawGoldMinerClaw,
+  drawGoldMinerCreature,
+  drawGoldMinerDynamiteIndicator,
+  drawGoldMinerGrabPulse,
+  drawGoldMinerHighlight,
+  drawGoldMinerLoot,
+  drawGoldMinerRope,
+} from '../../features/gold_miner/assets/index.ts';
+import {
   getGoldMinerItemById,
   getHookTipPosition,
   shouldHighlightGoldMinerItem,
@@ -17,54 +27,13 @@ export interface GoldMinerBoardProps {
   onLaunch?: () => void;
 }
 
-function itemFill(item: GoldMinerItem): string {
-  switch (item.kind) {
-    case 'gold_small':
-    case 'gold_medium':
-    case 'gold_large':
-      return '#f5c542';
-    case 'diamond':
-      return '#5eead4';
-    case 'money_bag':
-      return '#22c55e';
-    case 'mystery_bag':
-      return '#8b5cf6';
-    case 'rock_small':
-    case 'rock_large':
-      return '#94a3b8';
-    case 'mole':
-      return '#92400e';
-    case 'bat':
-      return '#334155';
-    default:
-      return '#cbd5e1';
+// 根据物件类型分派到对应的素材绘制函数。
+function drawBoardItem(context: CanvasRenderingContext2D, item: GoldMinerItem): void {
+  if (item.kind === 'mole' || item.kind === 'bat') {
+    drawGoldMinerCreature(context, item);
+    return;
   }
-}
-
-function itemLabel(item: GoldMinerItem): string {
-  switch (item.kind) {
-    case 'gold_small':
-      return '金';
-    case 'gold_medium':
-      return '金';
-    case 'gold_large':
-      return '金';
-    case 'diamond':
-      return '钻';
-    case 'money_bag':
-      return '$';
-    case 'mystery_bag':
-      return '?';
-    case 'rock_small':
-    case 'rock_large':
-      return '石';
-    case 'mole':
-      return '鼠';
-    case 'bat':
-      return '蝠';
-    default:
-      return '';
-  }
+  drawGoldMinerLoot(context, item);
 }
 
 export const GoldMinerBoard: React.FC<GoldMinerBoardProps> = ({ state, reducedMotion = false, onLaunch }) => {
@@ -106,63 +75,51 @@ export const GoldMinerBoard: React.FC<GoldMinerBoardProps> = ({ state, reducedMo
     context.font = '600 14px Segoe UI';
     context.textAlign = 'center';
     context.fillText('数据抓取机', state.hookOrigin.x, 38);
+    drawGoldMinerDynamiteIndicator(context, {
+      x: GOLD_MINER_BOARD_WIDTH - 74,
+      y: 34,
+      count: state.dynamiteCount,
+    });
 
     for (const item of state.items) {
       if (item.isCollected) continue;
+      const highlighted = shouldHighlightGoldMinerItem(state, item);
       context.save();
-      if (state.levelId >= 11 && state.mode === 'adventure' && !shouldHighlightGoldMinerItem(state, item)) {
+      if (state.levelId >= 11 && state.mode === 'adventure' && !highlighted) {
         context.globalAlpha = 0.4;
       }
-      context.beginPath();
-      context.fillStyle = itemFill(item);
-      context.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-      context.fill();
-      context.lineWidth = shouldHighlightGoldMinerItem(state, item) ? 4 : 2;
-      context.strokeStyle = shouldHighlightGoldMinerItem(state, item) ? '#ef4444' : '#1e293b';
-      context.stroke();
-      context.fillStyle = '#0f172a';
-      context.font = `${Math.max(12, item.radius - 2)}px Segoe UI`;
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillText(itemLabel(item), item.x, item.y);
+      drawBoardItem(context, item);
+      if (highlighted) {
+        drawGoldMinerHighlight(context, item, true);
+      }
       context.restore();
     }
 
     const hookTip = getHookTipPosition(state);
     const grabbedItem = getGoldMinerItemById(state, state.hook.grabbedItemId);
-
-    context.save();
-    context.strokeStyle = '#334155';
-    context.setLineDash([8, 4]);
-    context.lineWidth = 3;
-    context.beginPath();
-    context.moveTo(state.hookOrigin.x, state.hookOrigin.y);
-    context.lineTo(hookTip.x, hookTip.y);
-    context.stroke();
-    context.restore();
-
-    context.save();
-    context.translate(hookTip.x, hookTip.y);
-    if (!reducedMotion) {
-      context.rotate((state.hook.angleDeg * Math.PI) / 180);
-    }
-    context.fillStyle = '#475569';
-    context.beginPath();
-    context.moveTo(-10, -4);
-    context.lineTo(0, 15);
-    context.lineTo(10, -4);
-    context.closePath();
-    context.fill();
-    context.restore();
+    drawGoldMinerRope(context, {
+      x: hookTip.x,
+      y: hookTip.y,
+      originX: state.hookOrigin.x,
+      originY: state.hookOrigin.y,
+      angleDeg: state.hook.angleDeg,
+      grabbed: !!grabbedItem,
+    });
 
     if (grabbedItem) {
-      context.beginPath();
-      context.fillStyle = itemFill(grabbedItem);
-      context.arc(grabbedItem.x, grabbedItem.y, grabbedItem.radius, 0, Math.PI * 2);
-      context.fill();
-      context.strokeStyle = '#0f172a';
-      context.lineWidth = 2;
-      context.stroke();
+      drawGoldMinerGrabPulse(context, { x: hookTip.x, y: hookTip.y });
+      drawBoardItem(context, grabbedItem);
+    }
+
+    drawGoldMinerClaw(context, {
+      x: hookTip.x,
+      y: hookTip.y,
+      angleDeg: reducedMotion ? 0 : state.hook.angleDeg,
+      grabbed: !!grabbedItem,
+    });
+
+    if (state.resultTitle === '炸药已投掷') {
+      drawGoldMinerBlastEffect(context, { x: hookTip.x, y: hookTip.y });
     }
 
     context.fillStyle = 'rgba(15, 23, 42, 0.72)';

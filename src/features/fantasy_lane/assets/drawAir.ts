@@ -156,6 +156,7 @@ export function drawGriffinKnight(ctx: CanvasRenderingContext2D, size: number, b
 
 /** 蝙蝠群：5只蝙蝠各自独立飞行动画 */
 export function drawBatSwarm(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, detailColor: string, _weaponColor: string, hpPercent: number, _isAttacking: boolean): void {
+  void _isAttacking;
   const t = Date.now() / 100;
 
   const bats = [

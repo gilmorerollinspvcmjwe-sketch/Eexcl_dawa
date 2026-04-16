@@ -29,6 +29,7 @@ interface GameHubProps {
   onStartMatch3?: () => void;
   onStartFantasyLane?: () => void;
   onStartGoldMiner?: () => void;
+  onStartGame2048?: () => void;
   onSwitchSheet: (sheet: AppSheetId) => void;
   trainingDuration?: 30 | 60 | 120;
   difficulty?: DifficultyLevel;
@@ -55,6 +56,7 @@ export const GameHub: React.FC<GameHubProps> = ({
   onStartMatch3,
   onStartFantasyLane,
   onStartGoldMiner,
+  onStartGame2048,
   onSwitchSheet,
   trainingDuration = 60,
   difficulty = 'normal',
@@ -83,8 +85,9 @@ export const GameHub: React.FC<GameHubProps> = ({
     if (onStartMatch3) enabled.add('match3');
     if (onStartFantasyLane) enabled.add('fantasy_lane');
     if (onStartGoldMiner) enabled.add('gold_miner');
+    if (onStartGame2048) enabled.add('game2048');
     return enabled;
-  }, [onStartFantasyLane, onStartGoldMiner, onStartMatch3, onStartPacman, onStartSnake, onStartTetris, onStartZuma]);
+  }, [onStartFantasyLane, onStartGame2048, onStartGoldMiner, onStartMatch3, onStartPacman, onStartSnake, onStartTetris, onStartZuma]);
 
   useEffect(() => {
     onFormulaChange?.(GAME_DESCRIPTIONS[selectedGame]);
@@ -113,6 +116,10 @@ export const GameHub: React.FC<GameHubProps> = ({
     }
     if (gameId === 'match3' && onStartMatch3) {
       onStartMatch3();
+      return;
+    }
+    if (gameId === 'game2048' && onStartGame2048) {
+      onStartGame2048();
       return;
     }
     if (gameId === 'pacman' && onStartPacman) {
@@ -246,6 +253,9 @@ export const GameHub: React.FC<GameHubProps> = ({
               ) : null}
               {onStartGoldMiner ? (
                 <button className="excel-nav-btn" onClick={() => onSwitchSheet('gold_miner')}>黄金矿工</button>
+              ) : null}
+              {onStartGame2048 ? (
+                <button className="excel-nav-btn" onClick={() => onSwitchSheet('game2048')}>2048</button>
               ) : null}
             </div>
           </div>

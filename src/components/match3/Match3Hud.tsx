@@ -113,29 +113,64 @@ export const Match3Hud: React.FC<Match3HudProps> = ({
 
   const completedGoals = state.goals.filter((g) => g.current >= g.target).length;
   const totalGoals = state.goals.length;
+  const primaryLimitLabel = state.maxMoves !== null ? '剩余步数' : '剩余时间';
+  const primaryLimitValue = state.maxMoves !== null ? `${state.moves}` : formatTime(state.timeMs ?? 0);
+  const primaryLimitHint = state.maxMoves !== null ? (state.moves <= 5 ? '已经进入收尾步数，优先完成主目标' : '还可以继续组织关键交换') : ((state.timeMs ?? 0) <= 30000 ? '时间进入冲刺段，先打高收益消除' : '节奏还算充裕，先做目标线');
+  const isPrimaryLimitCritical = state.maxMoves !== null ? state.moves <= 5 : (state.timeMs ?? 0) <= 30000;
+  const heroScoreLabel = state.maxMoves !== null ? '当前分数' : '冲分表现';
+  const visibleGoals = [...state.goals].sort((a, b) => Number(a.current >= a.target) - Number(b.current >= b.target)).slice(0, 3);
 
   return (
     <div className="match3-hud">
       <section className="match3-hud-bar match3-hud-bar--overview">
-        <div className="match3-hud-identity">
-          <span className="match3-hud-label">关卡概览</span>
-          <strong className="match3-hud-title">{levelName ?? '三消关卡'}</strong>
+        <div className="match3-hud-overview-main">
+          <div className="match3-hud-identity">
+            <span className="match3-hud-label">关卡概览</span>
+            <strong className="match3-hud-title">{levelName ?? '三消关卡'}</strong>
+          </div>
+          <div className="match3-hud-chips">
+            <span className="match3-hud-chip">{packName ?? '关卡包'}</span>
+            <span className="match3-hud-chip">{modeName ?? (modeId === 'blitz' ? 'Blitz' : modeId === 'puzzle' ? 'Puzzle' : 'Adventure')}</span>
+            <span className={`match3-hud-chip match3-hud-chip--status status-${state.phase}`}>
+              {phaseLabel}
+            </span>
+          </div>
         </div>
-        <div className="match3-hud-chips">
-          <span className="match3-hud-chip">{packName ?? '关卡包'}</span>
-          <span className="match3-hud-chip">{modeName ?? (modeId === 'blitz' ? 'Blitz' : modeId === 'puzzle' ? 'Puzzle' : 'Adventure')}</span>
-          <span className={`match3-hud-chip match3-hud-chip--status status-${state.phase}`}>
-            {phaseLabel}
-          </span>
+        <div className="match3-hud-primary">
+          <article className="match3-hud-hero-card match3-hud-hero-card--goal">
+            <span className="match3-hud-hero-label">目标推进</span>
+            <strong className="match3-hud-hero-value">{completedGoals}/{totalGoals}</strong>
+            <span className="match3-hud-hero-caption">优先把未完成目标逐条清掉</span>
+          </article>
+          <article className={`match3-hud-hero-card match3-hud-hero-card--resource${isPrimaryLimitCritical ? ' is-critical' : ''}`}>
+            <span className="match3-hud-hero-label">{primaryLimitLabel}</span>
+            <strong className="match3-hud-hero-value">{primaryLimitValue}</strong>
+            <span className="match3-hud-hero-caption">{primaryLimitHint}</span>
+          </article>
+          <article className="match3-hud-hero-card match3-hud-hero-card--score">
+            <span className="match3-hud-hero-label">{heroScoreLabel}</span>
+            <strong className="match3-hud-hero-value">{state.score}</strong>
+            <span className="match3-hud-hero-caption">{comboLabel ?? '稳定消除也会持续抬高分数'}</span>
+          </article>
         </div>
         <div className="match3-hud-summary">
-          <span className="match3-hud-summary-item"><strong>目标</strong>{completedGoals}/{totalGoals} 完成</span>
-          {state.goals.slice(0, 3).map((goal, index) => (
-            <span key={index} className={`match3-goal-item ${goal.current >= goal.target ? 'match3-goal-item--completed' : ''}`}>
-              <span className="match3-goal-icon">{getGoalIcon(goal)}</span>
-              {getGoalLabel(goal)}
-            </span>
-          ))}
+          {visibleGoals.map((goal, index) => {
+            const progress = Math.min(100, Math.round((goal.current / Math.max(goal.target, 1)) * 100));
+            return (
+              <div key={index} className={`match3-goal-item ${goal.current >= goal.target ? 'match3-goal-item--completed' : ''}`}>
+                <div className="match3-goal-item-copy">
+                  <span className="match3-goal-icon">{getGoalIcon(goal)}</span>
+                  <div className="match3-goal-item-text">
+                    <strong>{getGoalLabel(goal)}</strong>
+                    <span>{goal.current >= goal.target ? '已达成，可以转下一个目标' : `${progress}% 完成`}</span>
+                  </div>
+                </div>
+                <div className="match3-goal-progress-bar" aria-hidden="true">
+                  <span style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -200,8 +235,7 @@ export const Match3Hud: React.FC<Match3HudProps> = ({
 
       <section className="match3-hud-bar match3-hud-bar--metrics">
         <div className="match3-hud-metrics">
-          <span className="match3-hud-metric"><strong>分数</strong>{state.score}</span>
-          <span className="match3-hud-metric"><strong>{state.maxMoves !== null ? '步数' : '模式'}</strong>{movesLabel}</span>
+          <span className="match3-hud-metric"><strong>局面</strong>{movesLabel}</span>
           {timeLabel && <span className="match3-hud-metric"><strong>时间</strong>{timeLabel}</span>}
           {comboLabel && (
             <span className={`match3-combo-indicator ${state.comboLevel > 0 ? 'match3-combo-indicator--active' : ''}`}>
@@ -209,6 +243,7 @@ export const Match3Hud: React.FC<Match3HudProps> = ({
             </span>
           )}
           <span className="match3-hud-metric"><strong>最高连锁</strong>{state.maxComboReached + 1}段</span>
+          <span className="match3-hud-metric"><strong>目标线</strong>{completedGoals}/{totalGoals}</span>
           {spreaderWarning && (
             <span className="match3-threat-warning">
               ⚠️ {spreaderWarning}

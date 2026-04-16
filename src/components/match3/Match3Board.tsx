@@ -1,6 +1,6 @@
 /* 三消棋盘组件。渲染棋盘、色块、障碍物，处理点击交互，集成视觉动画。 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Match3BoardState, Match3Tile, Match3Color, Match3SpecialType, Match3ObstacleType } from '../../features/match3/match3Types';
 
 interface Match3BoardProps {
@@ -14,6 +14,13 @@ interface ChainIndicator {
   level: number;
   row: number;
   col: number;
+}
+
+interface BoardFeedback {
+  id: number;
+  type: 'valid' | 'invalid' | 'match' | 'drop';
+  title: string;
+  detail: string;
 }
 
 const COLOR_EMOJIS: Record<Match3Color, string> = {
@@ -69,6 +76,12 @@ function getTileClass(tile: Match3Tile, isTriggering: boolean): string {
   if (tile.isDropping) {
     classes.push('match3-cell--dropping');
   }
+  if (tile.dropItem) {
+    classes.push('match3-tile--drop-item');
+  }
+  if (tile.isNew) {
+    classes.push('match3-tile--fresh');
+  }
   return classes.join(' ');
 }
 
@@ -89,6 +102,7 @@ function getCellClass(
   chainLevel: number
 ): string {
   const classes: string[] = ['match3-cell'];
+  const tile = state.tiles[row]?.[col];
   if (focusedTile?.row === row && focusedTile?.col === col) {
     classes.push('match3-cell--focused');
   }
@@ -102,7 +116,6 @@ function getCellClass(
       classes.push('match3-cell--adjacent');
     }
   }
-  const tile = state.tiles[row]?.[col];
   if (tile?.isMatched) {
     classes.push('match3-cell--matched');
     if (chainLevel > 0) {
@@ -118,9 +131,21 @@ function getCellClass(
       if (swapAnim.valid) {
         classes.push('match3-cell--swapping');
       } else {
-        classes.push('match3-cell--swap-invalid');
+      classes.push('match3-cell--swap-invalid');
       }
     }
+  }
+  if (tile?.special) {
+    classes.push('match3-cell--special-ready');
+  }
+  if (tile?.dropItem) {
+    classes.push('match3-cell--drop-cargo');
+  }
+  if (tile?.obstacle) {
+    classes.push('match3-cell--blocked');
+  }
+  if (tile?.obstacle === 'portalIn' || tile?.obstacle === 'portalOut') {
+    classes.push('match3-cell--portal');
   }
   return classes.join(' ');
 }
@@ -145,7 +170,29 @@ export const Match3Board: React.FC<Match3BoardProps> = ({ state, onCellClick, fo
   const [swapAnim, setSwapAnim] = useState<{ from: { row: number; col: number }; to: { row: number; col: number }; valid: boolean } | null>(null);
   const [triggeringTiles, setTriggeringTiles] = useState<Set<string>>(new Set());
   const [breakingObstacles, setBreakingObstacles] = useState<Set<string>>(new Set());
+  const [boardFeedback, setBoardFeedback] = useState<BoardFeedback[]>([]);
   const popupIdRef = React.useRef(0);
+  const lastMatchSignatureRef = React.useRef('');
+  const lastDropSignatureRef = React.useRef('');
+
+  const matchedTiles = useMemo(() => state.tiles.flat().filter((tile) => tile.isMatched), [state]);
+  const matchedSignature = useMemo(
+    () => matchedTiles.map((tile) => `${tile.row}-${tile.col}-${tile.special ?? 'normal'}`).join('|'),
+    [matchedTiles]
+  );
+  const droppingTiles = useMemo(() => state.tiles.flat().filter((tile) => tile.isDropping), [state]);
+  const droppingSignature = useMemo(
+    () => droppingTiles.map((tile) => `${tile.row}-${tile.col}-${tile.dropDistance ?? 0}-${tile.dropItem ?? 'none'}`).join('|'),
+    [droppingTiles]
+  );
+
+  const pushBoardFeedback = useCallback((type: BoardFeedback['type'], title: string, detail: string) => {
+    const id = popupIdRef.current++;
+    setBoardFeedback((prev) => [...prev.slice(-1), { id, type, title, detail }]);
+    window.setTimeout(() => {
+      setBoardFeedback((prev) => prev.filter((item) => item.id !== id));
+    }, type === 'drop' ? 520 : 760);
+  }, []);
 
   useEffect(() => {
     if (state.lastSwap) {
@@ -161,8 +208,16 @@ export const Match3Board: React.FC<Match3BoardProps> = ({ state, onCellClick, fo
   }, [state.lastSwap]);
 
   useEffect(() => {
+    if (!state.lastSwap) return;
+    if (state.lastSwap.valid) {
+      pushBoardFeedback('valid', '合法交换', '已经接入消除链，继续看掉落和连锁。');
+      return;
+    }
+    pushBoardFeedback('invalid', '非法交换', '这一步不会形成消除，棋盘已弹回。');
+  }, [state.lastSwap, pushBoardFeedback]);
+
+  useEffect(() => {
     if (state.chainCount > 0 && state.comboLevel > 0) {
-      const matchedTiles = state.tiles.flat().filter(t => t.isMatched);
       if (matchedTiles.length > 0) {
         const centerTile = matchedTiles[Math.floor(matchedTiles.length / 2)];
         const newIndicator: ChainIndicator = {
@@ -183,13 +238,24 @@ export const Match3Board: React.FC<Match3BoardProps> = ({ state, onCellClick, fo
         };
       }
     }
-  }, [state.chainCount, state.comboLevel, state.tiles]);
+  }, [matchedTiles, state.chainCount, state.comboLevel]);
 
   useEffect(() => {
-    const matchedTiles = state.tiles.flat().filter(t => t.isMatched && t.special);
-    if (matchedTiles.length > 0) {
+    if (!matchedSignature || matchedSignature === lastMatchSignatureRef.current) return;
+    lastMatchSignatureRef.current = matchedSignature;
+    const specialCount = matchedTiles.filter((tile) => tile.special).length;
+    const title = state.comboLevel > 0 ? `连锁 ${state.comboLevel + 1} 段` : '完成消除';
+    const detail = specialCount > 0
+      ? `清掉 ${matchedTiles.length} 枚，并点燃 ${specialCount} 个特殊块。`
+      : `清掉 ${matchedTiles.length} 枚，正在进入掉落补位。`;
+    pushBoardFeedback('match', title, detail);
+  }, [matchedSignature, matchedTiles, pushBoardFeedback, state.comboLevel]);
+
+  useEffect(() => {
+    const matchedSpecialTiles = matchedTiles.filter((tile) => tile.special);
+    if (matchedSpecialTiles.length > 0) {
       const newTriggering = new Set<string>();
-      matchedTiles.forEach(t => {
+      matchedSpecialTiles.forEach(t => {
         newTriggering.add(`${t.row}-${t.col}`);
       });
       const startTimer = window.setTimeout(() => setTriggeringTiles(newTriggering), 0);
@@ -199,7 +265,7 @@ export const Match3Board: React.FC<Match3BoardProps> = ({ state, onCellClick, fo
         window.clearTimeout(clearTimer);
       };
     }
-  }, [state.tiles]);
+  }, [matchedSignature, matchedTiles]);
 
   useEffect(() => {
     const breakingTiles = state.tiles.flat().filter(t => t.obstacle && t.obstacleHp === 0);
@@ -217,7 +283,18 @@ export const Match3Board: React.FC<Match3BoardProps> = ({ state, onCellClick, fo
         window.clearTimeout(clearTimer);
       };
     }
-  }, [state.tiles]);
+  }, [state]);
+
+  useEffect(() => {
+    if (!droppingSignature || droppingSignature === lastDropSignatureRef.current) return;
+    lastDropSignatureRef.current = droppingSignature;
+    const longestDrop = Math.max(...droppingTiles.map((tile) => tile.dropDistance ?? 0), 0);
+    const cargoCount = droppingTiles.filter((tile) => tile.dropItem).length;
+    const detail = cargoCount > 0
+      ? `${cargoCount} 个目标物正在下落，最长掉落 ${longestDrop} 格。`
+      : `共有 ${droppingTiles.length} 枚色块补位，最长掉落 ${longestDrop} 格。`;
+    pushBoardFeedback('drop', '掉落补位', detail);
+  }, [droppingSignature, droppingTiles, pushBoardFeedback]);
 
   const renderChainIndicators = () => {
     return chainIndicators.map(indicator => (
@@ -236,6 +313,14 @@ export const Match3Board: React.FC<Match3BoardProps> = ({ state, onCellClick, fo
 
   return (
     <div className="match3-board-shell">
+      <div className="match3-board-feedback" aria-live="polite">
+        {boardFeedback.map((feedback) => (
+          <div key={feedback.id} className={`match3-board-feedback-item match3-board-feedback-item--${feedback.type}`}>
+            <strong>{feedback.title}</strong>
+            <span>{feedback.detail}</span>
+          </div>
+        ))}
+      </div>
       <div className="match3-board">
         {renderChainIndicators()}
         {Array.from({ length: state.rows }, (_, row) => (
@@ -261,18 +346,24 @@ export const Match3Board: React.FC<Match3BoardProps> = ({ state, onCellClick, fo
                 <button
                   key={`cell-${row}-${col}`}
                   type="button"
-                  className={`${getCellClass(state, row, col, focusedTile, swapAnim, state.comboLevel)}${state.dropExits.some((exit) => exit.row === row && exit.col === col) ? ' match3-cell--drop-exit' : ''}`}
+                  className={`${getCellClass(state, row, col, focusedTile, swapAnim, state.comboLevel)}${(state.dropExits ?? []).some((exit) => exit.row === row && exit.col === col) ? ' match3-cell--drop-exit' : ''}`}
                   onClick={() => onCellClick(row, col)}
                   aria-label={getCellAriaLabel(state, row, col)}
                   aria-pressed={state.selectedTile?.row === row && state.selectedTile?.col === col}
                 >
-                    <div className={getTileClass(tile, isTriggering)}>
-                      {tile.dropItem
-                        ? DROP_ITEM_ICONS[tile.dropItem]
-                        : tile.color
-                          ? (tile.special ? SPECIAL_ICONS[tile.special] : COLOR_EMOJIS[tile.color])
-                          : ''}
-                    </div>
+                  <div className={getTileClass(tile, isTriggering)}>
+                    {tile.dropItem
+                      ? DROP_ITEM_ICONS[tile.dropItem]
+                      : tile.color
+                        ? (tile.special ? SPECIAL_ICONS[tile.special] : COLOR_EMOJIS[tile.color])
+                        : ''}
+                  </div>
+
+                  {tile.dropItem && (
+                    <span className="match3-cell-badge match3-cell-badge--cargo">
+                      目标件
+                    </span>
+                  )}
 
                   {tile.obstacle && (
                     <div className={getObstacleClass(tile.obstacle, isBreaking)}>

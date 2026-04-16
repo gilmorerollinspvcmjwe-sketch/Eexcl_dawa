@@ -1,10 +1,13 @@
 import type {
   FantasyLaneArmorClass,
+  FantasyLaneBossPhaseDef,
   FantasyLaneCombatRole,
   FantasyLaneDamageProfile,
   FantasyLaneFootprint,
   FantasyLaneLayer,
+  FantasyLaneLevelDefinition,
   FantasyLaneRangeBand,
+  FantasyLaneRuntimeState,
   FantasyLaneTargetRule,
 } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
 
@@ -60,12 +63,67 @@ export function formatCooldownMs(cooldownMs: number) {
 export function getUnitSpriteScale(footprint: FantasyLaneFootprint) {
   switch (footprint) {
     case 'small':
-      return 0.76;
+      return 0.70;
     case 'medium':
-      return 0.88;
+      return 0.85;
     case 'large':
       return 1;
     default:
-      return 1.12;
+      return 1.2;
   }
+}
+
+export function getPhaseNarrativeTone(pressureLabel: string) {
+  if (pressureLabel.includes('终局') || pressureLabel.includes('Boss')) return 'critical';
+  if (pressureLabel.includes('加压') || pressureLabel.includes('高压')) return 'warning';
+  if (pressureLabel.includes('对推') || pressureLabel.includes('压制')) return 'contest';
+  return 'steady';
+}
+
+export function getClashZoneLabel(frontline: number, airControl: number) {
+  if (frontline >= 12) return '我方压到敌堡前';
+  if (frontline <= -12) return '敌军已压到我方半场';
+  if (airControl >= 3) return '空优领先，适合逼近';
+  if (airControl <= -3) return '空层失衡，优先补对空';
+  return '交战胶着，稳线等窗口';
+}
+
+export function getUnitCombatAccent(unit: { hitFlashMs: number; attackAnimMs: number; blockedMs: number; side: 'player' | 'enemy' }) {
+  if (unit.hitFlashMs > 0) return unit.side === 'player' ? '#60a5fa' : '#f87171';
+  if (unit.attackAnimMs > 0) return '#f59e0b';
+  if (unit.blockedMs > 340) return '#fbbf24';
+  return unit.side === 'player' ? '#2563eb' : '#dc2626';
+}
+
+export function getCurrentBossPhase(level: FantasyLaneLevelDefinition, state: FantasyLaneRuntimeState): FantasyLaneBossPhaseDef | null {
+  if (!level.boss) return null;
+  for (let index = level.boss.phases.length - 1; index >= 0; index -= 1) {
+    const phase = level.boss.phases[index];
+    if (phase && state.triggeredBossPhases.includes(phase.id)) {
+      return phase;
+    }
+  }
+  if (state.bossUnitInstanceId) {
+    return level.boss.phases[0] ?? null;
+  }
+  return null;
+}
+
+export function getReachedBossPhaseCount(level: FantasyLaneLevelDefinition, state: FantasyLaneRuntimeState) {
+  if (!level.boss) return 0;
+  return level.boss.phases.filter((phase) => state.triggeredBossPhases.includes(phase.id)).length;
+}
+
+export function getBossPhaseVisualState(
+  level: FantasyLaneLevelDefinition,
+  state: FantasyLaneRuntimeState,
+  phaseId: string,
+): 'active' | 'cleared' | 'queued' | 'idle' {
+  if (!level.boss) return 'idle';
+  const currentPhase = getCurrentBossPhase(level, state);
+  if (currentPhase?.id === phaseId) return 'active';
+  if (state.triggeredBossPhases.includes(phaseId)) return 'cleared';
+  const nextPhase = level.boss.phases.find((phase) => !state.triggeredBossPhases.includes(phase.id));
+  if (nextPhase?.id === phaseId) return 'queued';
+  return 'idle';
 }

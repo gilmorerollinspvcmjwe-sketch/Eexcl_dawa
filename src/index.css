@@ -854,7 +854,7 @@ body {
   display: flex;
   background: #f3f3f3;
   border-top: 1px solid var(--excel-border);
-  height: 24px;
+  height: 22px;
   align-items: center;
   user-select: none;
 }
@@ -863,23 +863,28 @@ body {
   display: flex;
   height: 100%;
   align-items: flex-end;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .excel-sheet-tab {
-  padding: 2px 12px;
+  padding: 2px 8px;
   background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
   border: 1px solid var(--excel-border);
   border-bottom: none;
   border-radius: 3px 3px 0 0;
-  font-size: var(--excel-font-size);
+  font-size: 11px;
   color: #444;
   cursor: pointer;
   margin-right: -1px;
   position: relative;
-  height: 20px;
+  height: 18px;
   display: flex;
   align-items: center;
   transition: all 0.1s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .excel-sheet-tab:hover {
@@ -890,7 +895,7 @@ body {
   background: white;
   border-bottom: 1px solid white;
   margin-bottom: -1px;
-  height: 21px;
+  height: 19px;
   color: var(--excel-green);
   font-weight: 500;
 }

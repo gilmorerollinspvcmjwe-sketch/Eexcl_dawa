@@ -114,6 +114,18 @@ function buildGoldMinerRow(progress: GoldMinerHubSummary | null | undefined): Hu
   };
 }
 
+function buildGame2048Row(): HubGameRow {
+  return {
+    id: 'game2048',
+    title: ARCADE_MODULE_MAP.game2048.title,
+    status: '聚合',
+    bestRecord: '2048',
+    todayCount: 0,
+    actionLabel: '启动',
+    accent: ARCADE_MODULE_MAP.game2048.accent,
+  };
+}
+
 export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
   const { perlerProgress, fantasyLaneProgress, goldMinerProgress, stats } = input;
 
@@ -158,6 +170,7 @@ export function buildHubSnapshot(input: HubBuildInput): HubSnapshot {
       },
       buildFantasyLaneRow(fantasyLaneProgress),
       buildGoldMinerRow(goldMinerProgress),
+      buildGame2048Row(),
       buildPerlerRow(perlerProgress),
       {
         id: 'pvz',

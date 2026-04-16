@@ -29,9 +29,14 @@ test('gold miner workspace keeps battle and guide sheets visible', () => {
   assert.deepEqual(getVisibleSheetsForWorkspace('gold_miner'), ['gold_miner', 'gold_miner_guide']);
 });
 
+test('2048 workspace keeps only the main sheet visible', () => {
+  assert.deepEqual(getVisibleSheetsForWorkspace('game2048'), ['game2048']);
+});
+
 test('sheet ids resolve back to the owning game workspace', () => {
   assert.equal(getGameForSheet('pvz_lab'), 'pvz');
   assert.equal(getGameForSheet('perler'), 'perler');
   assert.equal(getGameForSheet('gold_miner_guide'), 'gold_miner');
+  assert.equal(getGameForSheet('game2048'), 'game2048');
   assert.equal(getGameForSheet('hub'), null);
 });

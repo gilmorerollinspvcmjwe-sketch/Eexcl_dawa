@@ -79,4 +79,11 @@ export const WORKSPACE_REGISTRY: Record<ArcadeGameId, WorkbookWorkspaceDefinitio
     extraSheetIds: [],
     visibleSheetIds: ['gold_miner', 'gold_miner_guide'],
   },
+  game2048: {
+    gameId: 'game2048',
+    mainSheetId: 'game2048',
+    configSheetId: 'game2048',
+    extraSheetIds: [],
+    visibleSheetIds: ['game2048'],
+  },
 };

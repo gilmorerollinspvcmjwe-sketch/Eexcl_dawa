@@ -20,6 +20,7 @@ import { ZumaGameSheet } from './components/zuma/ZumaGameSheet';
 import { ZumaCollectionSheet } from './components/zuma/ZumaCollectionSheet';
 import { Match3Sheet } from './components/match3/Match3Sheet';
 import { Match3LabSheet } from './components/match3/Match3LabSheet';
+import { Game2048Sheet } from './components/game2048/Game2048Sheet';
 import { FantasyLaneSheet } from './components/fantasy_lane/FantasyLaneSheet';
 import { FantasyLaneRosterSheet } from './components/fantasy_lane/FantasyLaneRosterSheet';
 import { FantasyLaneChapterSheet } from './components/fantasy_lane/FantasyLaneChapterSheet';
@@ -62,6 +63,7 @@ type ActiveArcadeGame =
   | 'match3'
   | 'fantasy_lane'
   | 'gold_miner'
+  | 'game2048'
   | null;
 type PerlerEntryMode = 'library' | 'resume';
 type FPSConfigMap = Record<string, string | number | boolean | undefined>;
@@ -127,12 +129,14 @@ function AppContent() {
   const [fantasyLaneChapterFormulaText, setFantasyLaneChapterFormulaText] = useState('=章节与关卡总览');
   const [goldMinerFormulaText, setGoldMinerFormulaText] = useState('=黄金矿工矿区已就绪，瞄准高价值目标。');
   const [goldMinerGuideFormulaText, setGoldMinerGuideFormulaText] = useState('=矿工图鉴与商店配置');
+  const [game2048FormulaText, setGame2048FormulaText] = useState('=2048 棋盘已装载，开始聚合。');
   const [perlerSelectedCell, setPerlerSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [perlerProgress, setPerlerProgress] = useState<PerlerProgressSummary | null>(() => readPerlerProgressFromStorage());
   const [snakeStatusSummary, setSnakeStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [tetrisStatusSummary, setTetrisStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [fantasyLaneStatusSummary, setFantasyLaneStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [goldMinerStatusSummary, setGoldMinerStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
+  const [game2048StatusSummary, setGame2048StatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
   const [, setModeConfig] = useState<FPSConfigMap>({});
 
@@ -186,12 +190,12 @@ function AppContent() {
 
   const fantasyLaneProgress = useMemo<FantasyLaneHubSummary>(
     () => getFantasyLaneProgressSummary(),
-    [currentSheet, gameSnapshots.fantasy_lane],
+    [],
   );
 
   const goldMinerProgress = useMemo<GoldMinerHubSummary>(
     () => getGoldMinerProgressSummary(),
-    [currentSheet, gameSnapshots.gold_miner],
+    [],
   );
 
   const { currentFeedback } = useFeedbackSystem({
@@ -322,6 +326,12 @@ function AppContent() {
     switchSheet('gold_miner');
   };
 
+  const handleStartGame2048FromHub = () => {
+    setActiveArcadeGame('game2048');
+    setWorkspaceGameId('game2048');
+    switchSheet('game2048');
+  };
+
   const enterGameWorkspace = (gameId: ArcadeGameId) => {
     const module = ARCADE_MODULE_MAP[gameId];
     if (!module) return;
@@ -347,6 +357,7 @@ function AppContent() {
     setTetrisStatusSummary(undefined);
     setFantasyLaneStatusSummary(undefined);
     setGoldMinerStatusSummary(undefined);
+    setGame2048StatusSummary(undefined);
     exitToHub();
   };
 
@@ -478,9 +489,11 @@ function AppContent() {
       : currentSheet === 'fantasy_lane_chapter'
         ? 'Microsoft Excel - 奇幻战线章节与关卡.xlsx'
       : currentSheet === 'gold_miner'
-        ? 'Microsoft Excel - 榛勯噾鐭垮伐.xlsx'
+        ? 'Microsoft Excel - 黄金矿工.xlsx'
       : currentSheet === 'gold_miner_guide'
-        ? 'Microsoft Excel - 榛勯噾鐭垮伐鍥鹃壌.xlsx'
+        ? 'Microsoft Excel - 黄金矿工图鉴.xlsx'
+      : currentSheet === 'game2048'
+        ? 'Microsoft Excel - 2048.xlsx'
       : currentSheet === 'config'
         ? 'Microsoft Excel - 配置中心.xlsx'
       : 'Microsoft Excel - 练枪数据.xlsx';
@@ -521,6 +534,8 @@ function AppContent() {
                               ? goldMinerFormulaText
                               : currentSheet === 'gold_miner_guide'
                                 ? goldMinerGuideFormulaText
+                              : currentSheet === 'game2048'
+                                ? game2048FormulaText
                             : currentSheet === 'config'
                               ? configFormulaText
                               : undefined;
@@ -537,6 +552,8 @@ function AppContent() {
         ? fantasyLaneStatusSummary
         : currentSheet === 'gold_miner'
           ? goldMinerStatusSummary
+        : currentSheet === 'game2048'
+          ? game2048StatusSummary
       : undefined;
 
   return (
@@ -693,6 +710,7 @@ function AppContent() {
               onStartMatch3={handleStartMatch3FromHub}
               onStartFantasyLane={handleStartFantasyLaneFromHub}
               onStartGoldMiner={handleStartGoldMinerFromHub}
+              onStartGame2048={handleStartGame2048FromHub}
               onSwitchSheet={(sheet) => handleSheetSwitch(sheet)}
               trainingDuration={settings.trainingDuration}
               difficulty={settings.difficulty as DifficultyLevel}
@@ -837,12 +855,10 @@ function AppContent() {
           ) : currentSheet === 'fantasy_lane_roster' ? (
             <FantasyLaneRosterSheet
               onFormulaChange={setFantasyLaneRosterFormulaText}
-              onOpenBattle={() => switchSheet('fantasy_lane')}
             />
           ) : currentSheet === 'fantasy_lane_chapter' ? (
             <FantasyLaneChapterSheet
               onFormulaChange={setFantasyLaneChapterFormulaText}
-              onOpenBattle={() => switchSheet('fantasy_lane')}
             />
           ) : currentSheet === 'gold_miner' ? (
             <GoldMinerSheet
@@ -858,6 +874,15 @@ function AppContent() {
             <GoldMinerGuideSheet
               onFormulaChange={setGoldMinerGuideFormulaText}
               onOpenBattle={() => switchSheet('gold_miner')}
+            />
+          ) : currentSheet === 'game2048' ? (
+            <Game2048Sheet
+              key={`game2048-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setGame2048FormulaText}
+              onStatusChange={setGame2048StatusSummary}
+              onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.game2048 as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={(snapshot) => updateGameSnapshot('game2048', snapshot)}
             />
           ) : (
             <SettingsPanel

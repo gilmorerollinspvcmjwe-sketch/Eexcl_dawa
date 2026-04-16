@@ -95,18 +95,69 @@ export const Match3ResultPanel: React.FC<Match3ResultPanelProps> = ({
       : (state.failureReason ?? '未能完成目标');
 
   const suggestion = state.phase === 'lost' ? (state.failureSuggestion ?? '尝试更高效地利用每一步') : null;
+  const celebrationTitle = state.phase === 'won'
+    ? (result?.stars === 3 ? '完美收官，节奏非常顺。' : result?.stars === 2 ? '稳稳通关，这一局控制得不错。' : '惊险过线，但还是把关卡拿下了。')
+    : '这一局差一点，问题已经暴露出来了。';
+  const celebrationCaption = state.phase === 'won'
+    ? (isNewRecord ? '这次表现已经刷新了你的最好成绩。' : '把这一局的手感记住，下一关能更快进入状态。')
+    : (suggestion ?? '先把主目标做干净，再去追额外分数。');
+  const highlightLabel = state.maxMoves !== null ? '剩余步数' : '剩余时间';
+  const highlightValue = state.maxMoves !== null ? `${state.moves}` : formatDuration(state.timeMs ?? 0);
+  const goalProgress = state.goals.map((goal) => {
+    const progress = Math.min(100, Math.round((goal.current / Math.max(goal.target, 1)) * 100));
+    return {
+      label: goal.type === 'collectColor' ? `${goal.colorTarget ?? '红'}色目标` : goal.type === 'dropCollect' ? '掉落目标' : goal.type === 'clearObstacle' ? '障碍目标' : goal.type === 'triggerCombo' ? '组合目标' : goal.type === 'clearOverlay' ? '覆盖目标' : '分数目标',
+      detail: `${goal.current}/${goal.target}`,
+      progress,
+      completed: goal.current >= goal.target,
+    };
+  });
 
   return (
     <div className="match3-result-overlay" role="dialog" aria-modal="true" aria-label={title}>
       <div className={`match3-result-panel match3-result-panel--${state.phase}`}>
         <div className="match3-result-copy">
-          <strong className="match3-result-title">{title} · {resolvedLevelName}</strong>
-          {state.phase === 'won' && result && renderStars(result.stars)}
-          <span>{subtitle}</span>
-          {isNewRecord && state.phase === 'won' && (
-            <span style={{ color: '#6366f1', fontWeight: 600 }}>🎉 新纪录！</span>
+          <div className="match3-result-hero">
+            <span className={`match3-result-kicker match3-result-kicker--${state.phase}`}>{title}</span>
+            <strong className="match3-result-title">{resolvedLevelName}</strong>
+            <span className="match3-result-emotion">{celebrationTitle}</span>
+            <span>{subtitle}</span>
+            <span>{celebrationCaption}</span>
+            <div className="match3-result-badges">
+              <span className="match3-result-badge">模式：{modeId === 'blitz' ? 'Blitz' : modeId === 'puzzle' ? 'Puzzle' : 'Adventure'}</span>
+              <span className="match3-result-badge">{resolvedGroupName}</span>
+              <span className="match3-result-badge">难度：{resolvedDifficulty}</span>
+              {isNewRecord && state.phase === 'won' && (
+                <span className="match3-result-badge match3-result-badge--record">🎉 新纪录</span>
+              )}
+            </div>
+            {state.phase === 'won' && result && renderStars(result.stars)}
+          </div>
+
+          {result && (
+            <div className="match3-result-highlight-grid">
+              <div className="match3-result-highlight-card match3-result-highlight-card--score">
+                <span>总分</span>
+                <strong>{result.breakdown.total}</strong>
+                <small>基础 {result.breakdown.baseScore} · 连锁 +{result.breakdown.comboBonus}</small>
+              </div>
+              <div className="match3-result-highlight-card">
+                <span>最高连锁</span>
+                <strong>{result.maxCombo + 1}段</strong>
+                <small>特殊块加成 +{result.breakdown.specialBonus}</small>
+              </div>
+              <div className="match3-result-highlight-card">
+                <span>目标完成</span>
+                <strong>{state.goals.filter((g) => g.current >= g.target).length}/{state.goals.length}</strong>
+                <small>{state.phase === 'won' ? '这条目标线已经收干净' : '失败时优先补主目标'}</small>
+              </div>
+              <div className="match3-result-highlight-card">
+                <span>{highlightLabel}</span>
+                <strong>{highlightValue}</strong>
+                <small>{result.timeMs > 0 ? `总用时 ${formatDuration(result.timeMs)}` : '本局没有额外计时压力'}</small>
+              </div>
+            </div>
           )}
-          <span>模式：{modeId === 'blitz' ? 'Blitz' : modeId === 'puzzle' ? 'Puzzle' : 'Adventure'} · {resolvedGroupName} · 难度：{resolvedDifficulty}</span>
 
           {result && (
             <div className="match3-score-breakdown">
@@ -133,16 +184,29 @@ export const Match3ResultPanel: React.FC<Match3ResultPanelProps> = ({
             </div>
           )}
 
-          <span>目标完成：{state.goals.filter((g) => g.current >= g.target).length}/{state.goals.length}</span>
+          <div className="match3-result-goals">
+            {goalProgress.map((goal, index) => (
+              <div key={`${goal.label}-${index}`} className={`match3-result-goal ${goal.completed ? 'is-complete' : ''}`}>
+                <div className="match3-result-goal-copy">
+                  <strong>{goal.label}</strong>
+                  <span>{goal.detail}</span>
+                </div>
+                <div className="match3-result-goal-bar" aria-hidden="true">
+                  <span style={{ width: `${goal.progress}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
           <span>使用步数：{result?.movesUsed ?? 0} · 最高连锁：{(result?.maxCombo ?? 0) + 1}段</span>
           {result && result.timeMs > 0 && <span>用时：{formatDuration(result.timeMs)}</span>}
 
           {suggestion && (
-            <span style={{ color: '#b91c1c', fontWeight: 500 }}>💡 建议：{suggestion}</span>
+            <span className="match3-result-suggestion">💡 建议：{suggestion}</span>
           )}
 
           {nextLevel && state.phase === 'won' && (
-            <span style={{ color: '#166534' }}>下一关：{nextLevel.name}</span>
+            <span className="match3-result-next">下一关：{nextLevel.name}</span>
           )}
         </div>
 
@@ -154,8 +218,8 @@ export const Match3ResultPanel: React.FC<Match3ResultPanelProps> = ({
             返回选关
           </button>
           {onContinue && nextLevel && state.phase === 'won' && (
-            <button type="button" className="match3-hud-btn" onClick={onContinue}>
-              下一关
+            <button type="button" className="match3-hud-btn match3-hud-btn--progress" onClick={onContinue}>
+              乘胜追击
             </button>
           )}
         </div>

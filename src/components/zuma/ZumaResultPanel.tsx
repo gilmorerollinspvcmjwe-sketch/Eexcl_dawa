@@ -137,7 +137,7 @@ export const ZumaResultPanel: React.FC<ZumaResultPanelProps> = ({
       setSettledLevelId(null);
       setIsNewRecord(false);
     }
-  }, [state.phase, state.levelId, state.score, state.mode, state.elapsedMs, settledLevelId]);
+  }, [state.phase, state.levelId, state.score, state.mode, state.elapsedMs, state.currentWave, state.endReason, settledLevelId]);
 
   if (state.phase !== 'won' && state.phase !== 'lost') return null;
 

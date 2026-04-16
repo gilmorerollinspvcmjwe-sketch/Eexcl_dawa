@@ -1,16 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getFantasyLaneLevelById, getFantasyLaneLevelsByChapter } from '../../features/fantasy_lane/fantasyLaneLevelCatalog.ts';
-import { FANTASY_LANE_HEROES, FANTASY_LANE_TACTICAL_SKILLS, FANTASY_LANE_UNITS } from '../../features/fantasy_lane/fantasyLaneUnitRegistry.ts';
+import { FANTASY_LANE_HEROES, FANTASY_LANE_UNITS } from '../../features/fantasy_lane/fantasyLaneUnitRegistry.ts';
 import type { FantasyLaneChapterDefinition, FantasyLaneRuntimeState, FantasyLaneUnitDefinition } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
 import { FantasyLaneUnitSprite } from './FantasyLaneUnitSprite';
 import {
-  ARMOR_CLASS_LABELS,
-  FOOTPRINT_LABELS,
-  LAYER_LABELS,
-  PROFILE_LABELS,
-  RANGE_LABELS,
-  ROLE_LABELS,
-  TARGET_RULE_LABELS,
   formatCooldownMs,
   getUnitSpriteScale,
 } from './fantasyLaneUiMeta.ts';
@@ -18,310 +11,413 @@ import {
 interface FantasyLaneLoadoutPanelProps {
   state: FantasyLaneRuntimeState;
   chapters: FantasyLaneChapterDefinition[];
-  selectedTab: 'levels' | 'loadout';
   warnings: string[];
   canEditSetup: boolean;
   getLevelStatus: (levelId: string) => 'completed' | 'unlocked' | 'locked';
-  onSelectedTabChange: (tab: 'levels' | 'loadout') => void;
   onLevelSelect: (levelId: string) => void;
   onHeroSelect: (heroId: FantasyLaneRuntimeState['selectedHeroId']) => void;
-  onTacticalSelect: (skillId: FantasyLaneRuntimeState['selectedTacticalId']) => void;
   onToggleLoadout: (unitId: string) => void;
   onQueueUnit: (unitId: string) => void;
-  onStart: () => void;
   onToggleCollapse: () => void;
-  onOpenRoster?: () => void;
-  onOpenChapters?: () => void;
   collapsed?: boolean;
 }
 
-function getStatusLabel(status: 'completed' | 'unlocked' | 'locked') {
-  if (status === 'completed') return '已通关';
-  if (status === 'unlocked') return '已解锁';
-  return '未解锁';
-}
+// 角色标签映射（简化版）
+const ROLE_LABELS_SIMPLE: Record<string, string> = {
+  tank: '坦克',
+  fighter: '战士',
+  sniper: '射手',
+  caster: '法师',
+  siege: '攻城',
+  air_sup: '空军',
+  finisher: '终结者',
+};
+
+// 体型标签映射
+const FOOTPRINT_LABELS_SIMPLE: Record<string, string> = {
+  small: '小',
+  medium: '中',
+  large: '大',
+  giant: '巨',
+};
+
+// 攻击方式标签
+const getAttackLabel = (damageProfile: string, rangeBand: string) => {
+  if (damageProfile === 'aoe') return '范围';
+  return rangeBand === 'melee' ? '近战' : '远程';
+};
+
+// 目标规则标签
+const getTargetLabel = (targetRule: string) => {
+  if (targetRule === 'air_only') return '对空';
+  if (targetRule === 'ground_only') return '对地';
+  return '空地';
+};
+
+// 获取核心特性标签（最多2个）
+const getCoreTags = (unit: FantasyLaneUnitDefinition): string[] => {
+  const tags: string[] = [];
+  const priorityTags = ['antiAir', 'heal', 'shield', 'burst', 'pierce', 'stealth', 'frontline'];
+  const tagLabels: Record<string, string> = {
+    antiAir: '对空',
+    heal: '治疗',
+    shield: '护盾',
+    burst: '爆发',
+    pierce: '破甲',
+    stealth: '潜行',
+    frontline: '前排',
+  };
+  
+  for (const tag of priorityTags) {
+    if (unit.tags.includes(tag)) {
+      tags.push(tagLabels[tag]);
+      if (tags.length >= 2) break;
+    }
+  }
+  
+  return tags;
+};
 
 function getUnitBadges(unit: FantasyLaneUnitDefinition) {
-  return [
-    LAYER_LABELS[unit.layer],
-    RANGE_LABELS[unit.rangeBand],
-    FOOTPRINT_LABELS[unit.footprint],
-    PROFILE_LABELS[unit.damageProfile],
-  ];
+  const badges: string[] = [];
+  badges.push(ROLE_LABELS_SIMPLE[unit.role]);
+  badges.push(`${FOOTPRINT_LABELS_SIMPLE[unit.footprint]}·${getAttackLabel(unit.damageProfile, unit.rangeBand)}`);
+  badges.push(...getCoreTags(unit));
+  badges.push(getTargetLabel(unit.targetRule));
+  return badges;
 }
 
 function getUnitDetails(unit: FantasyLaneUnitDefinition) {
   return [
-    `${ROLE_LABELS[unit.role]} / ${ARMOR_CLASS_LABELS[unit.armorClass]}`,
-    TARGET_RULE_LABELS[unit.targetRule],
-    `${unit.cost} 金 / ${formatCooldownMs(unit.cooldownMs)} / 人口 ${unit.pop}`,
+    `${unit.cost}金`,
+    `${formatCooldownMs(unit.cooldownMs)}`,
+    `人口${unit.pop}`,
   ];
 }
+
+// 关卡选择弹窗组件
+const LevelSelectModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  chapters: FantasyLaneChapterDefinition[];
+  selectedChapterId: string;
+  selectedLevelId: string;
+  getLevelStatus: (levelId: string) => 'completed' | 'unlocked' | 'locked';
+  canEditSetup: boolean;
+  onLevelSelect: (levelId: string) => void;
+}> = ({ isOpen, onClose, chapters, selectedChapterId, selectedLevelId, getLevelStatus, canEditSetup, onLevelSelect }) => {
+  const [tempChapterId, setTempChapterId] = useState(selectedChapterId);
+  const visibleLevels = getFantasyLaneLevelsByChapter(tempChapterId);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fantasy-lane-modal-overlay" onClick={onClose}>
+      <div className="fantasy-lane-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="fantasy-lane-modal-header">
+          <h4>选择关卡</h4>
+          <button type="button" className="fantasy-lane-modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="fantasy-lane-modal-body">
+          <div className="fantasy-lane-chapter-strip">
+            {chapters.map((chapter) => (
+              <button
+                key={chapter.id}
+                type="button"
+                className={`fantasy-lane-chip${tempChapterId === chapter.id ? ' is-active' : ''}`}
+                onClick={() => setTempChapterId(chapter.id)}
+              >
+                {chapter.order}. {chapter.name}
+              </button>
+            ))}
+          </div>
+          <div className="fantasy-lane-level-grid">
+            {visibleLevels.map((level) => {
+              const status = getLevelStatus(level.id);
+              const disabled = !canEditSetup || status === 'locked';
+              const isSelected = selectedLevelId === level.id;
+              
+              return (
+                <button
+                  key={level.id}
+                  type="button"
+                  className={`fantasy-lane-level-card${isSelected ? ' is-active' : ''}${status === 'completed' ? ' is-completed' : ''}`}
+                  onClick={() => {
+                    onLevelSelect(level.id);
+                    onClose();
+                  }}
+                  disabled={disabled}
+                >
+                  <strong>{level.id}</strong>
+                  <span>{level.name}</span>
+                  {status === 'completed' && <small className="fantasy-lane-level-status">✓</small>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 英雄选择弹窗组件
+const HeroSelectModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  selectedHeroId: string;
+  canEditSetup: boolean;
+  onHeroSelect: (heroId: FantasyLaneRuntimeState['selectedHeroId']) => void;
+}> = ({ isOpen, onClose, selectedHeroId, canEditSetup, onHeroSelect }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fantasy-lane-modal-overlay" onClick={onClose}>
+      <div className="fantasy-lane-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="fantasy-lane-modal-header">
+          <h4>选择英雄</h4>
+          <button type="button" className="fantasy-lane-modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="fantasy-lane-modal-body">
+          <div className="fantasy-lane-card-grid">
+            {FANTASY_LANE_HEROES.map((hero) => (
+              <button
+                key={hero.id}
+                type="button"
+                className={`fantasy-lane-mini-card${selectedHeroId === hero.id ? ' is-active' : ''}`}
+                onClick={() => {
+                  onHeroSelect(hero.id);
+                  onClose();
+                }}
+                disabled={!canEditSetup}
+              >
+                <strong>{hero.name}</strong>
+                <span>{hero.summary}</span>
+                <small>{hero.passiveSummary}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const FantasyLaneLoadoutPanel: React.FC<FantasyLaneLoadoutPanelProps> = ({
   state,
   chapters,
-  selectedTab,
   warnings,
   canEditSetup,
   getLevelStatus,
-  onSelectedTabChange,
   onLevelSelect,
   onHeroSelect,
-  onTacticalSelect,
   onToggleLoadout,
   onQueueUnit,
-  onStart,
   onToggleCollapse,
-  onOpenRoster,
-  onOpenChapters,
   collapsed = false,
 }) => {
-  const visibleLevels = getFantasyLaneLevelsByChapter(state.selectedChapterId);
   const currentLevel = getFantasyLaneLevelById(state.selectedLevelId);
+  const currentHero = FANTASY_LANE_HEROES.find((h) => h.id === state.selectedHeroId);
+  
+  // 弹窗状态
+  const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
+  const [isHeroModalOpen, setIsHeroModalOpen] = useState(false);
 
   return (
     <aside className={`fantasy-lane-sidebar${collapsed ? ' is-collapsed' : ''}`}>
-      <div className="fantasy-lane-sidebar-toolbar">
-        <div className="fantasy-lane-tabset">
-          <button type="button" className={selectedTab === 'levels' ? 'is-active' : ''} onClick={() => onSelectedTabChange('levels')}>关卡</button>
-          <button type="button" className={selectedTab === 'loadout' ? 'is-active' : ''} onClick={() => onSelectedTabChange('loadout')}>编组</button>
+      {collapsed ? (
+        // 收起状态：窄条模式
+        <div className="fantasy-lane-sidebar-compact">
+          <button type="button" className="fantasy-lane-sidebar-expand-btn" onClick={onToggleCollapse} title="展开">
+            ▶
+          </button>
+          <div className="fantasy-lane-sidebar-compact-info">
+            <strong>{currentLevel.id}</strong>
+            <span>{Math.floor(state.gold)}金</span>
+            <span>{state.activePop}/{state.popLimit}人口</span>
+          </div>
+          {state.phase !== 'setup' && (
+            <div className="fantasy-lane-sidebar-compact-units">
+              {state.loadoutUnitIds.map((unitId, index) => {
+                const unit = FANTASY_LANE_UNITS.find((u) => u.id === unitId);
+                if (!unit) return null;
+                const cooling = state.unitCooldowns[unitId] > 0;
+                const disabled = state.phase !== 'playing' || cooling || state.gold < unit.cost || state.queue.length >= state.queueLimit;
+                return (
+                  <button
+                    key={unit.id}
+                    type="button"
+                    className={`fantasy-lane-compact-unit${cooling ? ' is-cooling' : ''}`}
+                    onClick={() => onQueueUnit(unit.id)}
+                    disabled={disabled}
+                    title={`${index + 1}. ${unit.name} ${unit.cost}金 ${unit.pop}人口`}
+                  >
+                    <div className="fantasy-lane-compact-unit-preview">
+                      <FantasyLaneUnitSprite
+                        unitId={unit.id}
+                        side="player"
+                        hpPercent={1}
+                        isAttacking={false}
+                        animated={false}
+                        scale={0.6}
+                      />
+                    </div>
+                    <div className="fantasy-lane-compact-unit-info">
+                      <div className="fantasy-lane-compact-unit-row">
+                        <span className="fantasy-lane-compact-unit-key">{index + 1}</span>
+                        <strong className="fantasy-lane-compact-unit-name">{unit.shortName}</strong>
+                      </div>
+                      <div className="fantasy-lane-compact-unit-row">
+                        <span className="fantasy-lane-compact-unit-tag">{unit.cost}金</span>
+                        <span className="fantasy-lane-compact-unit-tag">{unit.pop}人口</span>
+                        {cooling && <span className="fantasy-lane-compact-unit-cd">{Math.ceil(state.unitCooldowns[unitId] / 1000)}s</span>}
+                      </div>
+                      <div className="fantasy-lane-compact-unit-badges">
+                        {getUnitBadges(unit).slice(0, 2).map((badge) => (
+                          <span key={badge} className="fantasy-lane-compact-unit-badge">{badge}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-        <button type="button" className="fantasy-lane-btn fantasy-lane-btn--muted" onClick={onToggleCollapse}>
-          {collapsed ? '展开' : '收起'}
-        </button>
-      </div>
-
-      {!collapsed && (
+      ) : (
+        // 展开状态：简化模式
         <>
-          <div className="fantasy-lane-link-row">
-            {onOpenRoster && <button type="button" className="fantasy-lane-link-btn" onClick={onOpenRoster}>Sheet19 兵种与英雄</button>}
-            {onOpenChapters && <button type="button" className="fantasy-lane-link-btn" onClick={onOpenChapters}>Sheet20 章节与关卡</button>}
+          {/* 顶部工具栏 */}
+          <div className="fantasy-lane-sidebar-toolbar">
+            <button type="button" className="fantasy-lane-btn fantasy-lane-btn--muted" onClick={onToggleCollapse}>
+              收起
+            </button>
           </div>
 
-          <section className="fantasy-lane-pick-block fantasy-lane-level-summary">
-            <div className="fantasy-lane-loadout-head">
-              <h4>{currentLevel.id} {currentLevel.name}</h4>
-              <strong>{currentLevel.chapterName}</strong>
-            </div>
-            <p>{currentLevel.description}</p>
-            <div className="fantasy-lane-warning-list">
-              {currentLevel.recommendedTags.map((tag) => (
-                <span key={tag} className="fantasy-lane-warning-chip fantasy-lane-warning-chip--neutral">
-                  {tag}
-                </span>
-              ))}
+          {/* 当前关卡和英雄 - 合并到一行 */}
+          <section className="fantasy-lane-pick-block fantasy-lane-quick-picks">
+            <div className="fantasy-lane-quick-pick-row">
+              <div className="fantasy-lane-quick-pick-item">
+                <span className="fantasy-lane-quick-pick-label">关卡</span>
+                <span className="fantasy-lane-quick-pick-value">{currentLevel.id}</span>
+                <button 
+                  type="button" 
+                  className="fantasy-lane-btn fantasy-lane-btn--small"
+                  onClick={() => setIsLevelModalOpen(true)}
+                  disabled={!canEditSetup}
+                >
+                  切换
+                </button>
+              </div>
+              <div className="fantasy-lane-quick-pick-item">
+                <span className="fantasy-lane-quick-pick-label">英雄</span>
+                <span className="fantasy-lane-quick-pick-value">{currentHero?.name}</span>
+                <button 
+                  type="button" 
+                  className="fantasy-lane-btn fantasy-lane-btn--small"
+                  onClick={() => setIsHeroModalOpen(true)}
+                  disabled={!canEditSetup}
+                >
+                  更换
+                </button>
+              </div>
             </div>
           </section>
 
-          {selectedTab === 'levels' ? (
-            <>
-              <div className="fantasy-lane-chapter-strip">
-                {chapters.map((chapter) => {
-                  const chapterEntryLevelId = `${chapter.order}-1`;
-                  const status = getLevelStatus(chapterEntryLevelId);
-                  const disabled = !canEditSetup || status === 'locked';
-
-                  return (
-                    <button
-                      key={chapter.id}
-                      type="button"
-                      className={`fantasy-lane-chip${state.selectedChapterId === chapter.id ? ' is-active' : ''}`}
-                      onClick={() => onLevelSelect(chapterEntryLevelId)}
-                      disabled={disabled}
-                      title={disabled ? '当前不可切换到该章节' : `${chapter.theme} / ${chapter.focus}`}
-                    >
-                      {chapter.order}. {chapter.name}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="fantasy-lane-level-list">
-                {visibleLevels.map((level) => {
-                  const status = getLevelStatus(level.id);
-                  const disabled = !canEditSetup || status === 'locked';
-
-                  return (
-                    <button
-                      key={level.id}
-                      type="button"
-                      className={`fantasy-lane-level-card${state.selectedLevelId === level.id ? ' is-active' : ''}`}
-                      onClick={() => onLevelSelect(level.id)}
-                      disabled={disabled}
-                    >
-                      <strong>{level.id} {level.name}</strong>
-                      <span>{level.description}</span>
-                      <small>推荐：{level.recommendedTags.join(' / ')}</small>
-                      <small>{getStatusLabel(status)}</small>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            <>
-              <section className="fantasy-lane-pick-block">
-                <h4>英雄</h4>
-                <div className="fantasy-lane-card-grid">
-                  {FANTASY_LANE_HEROES.map((hero) => (
-                    <button
-                      key={hero.id}
-                      type="button"
-                      className={`fantasy-lane-mini-card${state.selectedHeroId === hero.id ? ' is-active' : ''}`}
-                      onClick={() => onHeroSelect(hero.id)}
-                      disabled={!canEditSetup}
-                    >
-                      <strong>{hero.name}</strong>
-                      <span>{hero.summary}</span>
-                      <small>{hero.passiveSummary}</small>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section className="fantasy-lane-pick-block">
-                <h4>战术技能</h4>
-                <div className="fantasy-lane-card-grid">
-                  {FANTASY_LANE_TACTICAL_SKILLS.map((skill) => (
-                    <button
-                      key={skill.id}
-                      type="button"
-                      className={`fantasy-lane-mini-card${state.selectedTacticalId === skill.id ? ' is-active' : ''}`}
-                      onClick={() => onTacticalSelect(skill.id)}
-                      disabled={!canEditSetup}
-                    >
-                      <strong>{skill.name}</strong>
-                      <span>{skill.summary}</span>
-                      <small>冷却 {formatCooldownMs(skill.cooldownMs)}</small>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section className="fantasy-lane-pick-block">
-                <div className="fantasy-lane-loadout-head">
-                  <h4>本局编组</h4>
-                  <strong>{state.loadoutUnitIds.length}/8</strong>
-                </div>
-                <div className="fantasy-lane-unit-grid">
-                  {FANTASY_LANE_UNITS.map((unit) => {
-                    const active = state.loadoutUnitIds.includes(unit.id);
-                    return (
-                      <button
-                        key={unit.id}
-                        type="button"
-                        className={`fantasy-lane-unit-card${active ? ' is-active' : ''}`}
-                        onClick={() => onToggleLoadout(unit.id)}
-                        disabled={!canEditSetup}
-                      >
-                        <div className="fantasy-lane-unit-card-preview">
-                          <FantasyLaneUnitSprite
-                            unitId={unit.id}
-                            side="player"
-                            hpPercent={1}
-                            isAttacking={false}
-                            animated={false}
-                            scale={getUnitSpriteScale(unit.footprint)}
-                          />
-                        </div>
-                        <div className="fantasy-lane-unit-card-body">
-                          <div className="fantasy-lane-unit-card-head">
-                            <strong>{unit.name}</strong>
-                            <small>{unit.shortName}</small>
-                          </div>
-                          <div className="fantasy-lane-unit-flags">
-                            {getUnitBadges(unit).map((badge) => (
-                              <span key={`${unit.id}-${badge}`}>{badge}</span>
-                            ))}
-                          </div>
-                          <span>{unit.summary}</span>
-                          <div className="fantasy-lane-unit-facts">
-                            {getUnitDetails(unit).map((detail) => (
-                              <small key={`${unit.id}-${detail}`}>{detail}</small>
-                            ))}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section className="fantasy-lane-warning-list">
-                <h4>阵容风险</h4>
-                {warnings.length > 0
-                  ? warnings.map((warning) => <span key={warning} className="fantasy-lane-warning-chip">{warning}</span>)
-                  : <span className="fantasy-lane-warning-chip fantasy-lane-warning-chip--ok">结构完整</span>}
-              </section>
-            </>
-          )}
-
-          {state.phase === 'setup' ? (
-            <button type="button" className="fantasy-lane-btn fantasy-lane-btn--primary fantasy-lane-start-btn" onClick={onStart}>
-              开始战线推进
-            </button>
-          ) : (
-            <section className="fantasy-lane-pick-block">
-              <div className="fantasy-lane-loadout-head">
-                <h4>出兵指令</h4>
-                <strong>{state.queue.length}/{state.queueLimit}</strong>
-              </div>
-              <div className="fantasy-lane-queue-list">
-                {state.queue.length > 0 ? (
-                  state.queue.map((unitId, index) => (
-                    <span key={`${unitId}-${index}`} className="fantasy-lane-warning-chip fantasy-lane-warning-chip--neutral">
-                      {index + 1}. {FANTASY_LANE_UNITS.find((item) => item.id === unitId)?.shortName ?? unitId}
-                    </span>
-                  ))
-                ) : (
-                  <span className="fantasy-lane-warning-chip fantasy-lane-warning-chip--neutral">队列为空</span>
-                )}
-              </div>
-              <div className="fantasy-lane-unit-grid fantasy-lane-unit-grid--compact">
-                {state.loadoutUnitIds.map((unitId, index) => {
-                  const unit = FANTASY_LANE_UNITS.find((item) => item.id === unitId);
-                  if (!unit) return null;
-                  const cooling = state.unitCooldowns[unitId] > 0;
-                  const disabled = state.phase !== 'playing' || cooling || state.gold < unit.cost || state.queue.length >= state.queueLimit;
-
-                  return (
-                    <button
-                      key={unit.id}
-                      type="button"
-                      className={`fantasy-lane-unit-card fantasy-lane-unit-card--compact${cooling ? ' is-cooling' : ''}`}
-                      onClick={() => onQueueUnit(unit.id)}
-                      disabled={disabled}
-                    >
-                      <div className="fantasy-lane-unit-card-preview fantasy-lane-unit-card-preview--compact">
+          {/* 本局编组 */}
+          <section className="fantasy-lane-pick-block fantasy-lane-loadout-section">
+            <div className="fantasy-lane-loadout-head">
+              <h4>本局编组</h4>
+              <strong>{state.loadoutUnitIds.length}/8</strong>
+            </div>
+            <div className="fantasy-lane-unit-grid fantasy-lane-unit-grid--compact">
+              {FANTASY_LANE_UNITS.map((unit) => {
+                const active = state.loadoutUnitIds.includes(unit.id);
+                const badges = getUnitBadges(unit);
+                const details = getUnitDetails(unit);
+                
+                return (
+                  <button
+                    key={unit.id}
+                    type="button"
+                    className={`fantasy-lane-unit-card fantasy-lane-unit-card--compact${active ? ' is-active' : ''}`}
+                    onClick={() => onToggleLoadout(unit.id)}
+                    disabled={!canEditSetup}
+                  >
+                    <div className="fantasy-lane-unit-card-header">
+                      <div className="fantasy-lane-unit-card-icon">
                         <FantasyLaneUnitSprite
                           unitId={unit.id}
                           side="player"
                           hpPercent={1}
                           isAttacking={false}
                           animated={false}
-                          scale={Math.max(0.72, getUnitSpriteScale(unit.footprint) * 0.9)}
+                          scale={getUnitSpriteScale(unit.footprint) * 0.7}
                         />
                       </div>
-                      <div className="fantasy-lane-unit-card-body">
-                        <div className="fantasy-lane-unit-card-head">
-                          <strong>{index + 1}. {unit.shortName}</strong>
-                          <small>{unit.cost} 金</small>
+                      <div className="fantasy-lane-unit-card-title">
+                        <div className="fantasy-lane-unit-card-name-row">
+                          <strong>{unit.name}</strong>
+                          <span className="fantasy-lane-unit-card-icon-text">{unit.icon}</span>
                         </div>
-                        <span>{ROLE_LABELS[unit.role]} / 人口 {unit.pop}</span>
-                        <div className="fantasy-lane-unit-facts">
-                          <small>{cooling ? `${Math.ceil(state.unitCooldowns[unitId] / 1000)}s 冷却` : '可下达'}</small>
-                          <small>{unit.signature}</small>
+                        <div className="fantasy-lane-unit-card-tags">
+                          <span className={`fantasy-lane-tag fantasy-lane-tag--primary fantasy-lane-tag--role-${unit.role}`}>
+                            {badges[0]}
+                          </span>
+                          <span className="fantasy-lane-tag fantasy-lane-tag--secondary">
+                            {badges[1]}
+                          </span>
+                          {badges.slice(2).map((badge) => (
+                            <span key={`${unit.id}-${badge}`} className="fantasy-lane-tag fantasy-lane-tag--feature">
+                              {badge}
+                            </span>
+                          ))}
                         </div>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
+                    <div className="fantasy-lane-unit-card-stats">
+                      {details.map((detail) => (
+                        <span key={`${unit.id}-${detail}`} className="fantasy-lane-unit-stat">
+                          <strong>{detail}</strong>
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* 阵容风险 */}
+          {warnings.length > 0 && (
+            <section className="fantasy-lane-warning-list">
+              <h4>阵容风险</h4>
+              {warnings.map((warning) => <span key={warning} className="fantasy-lane-warning-chip">{warning}</span>)}
             </section>
           )}
         </>
       )}
+
+      {/* 关卡选择弹窗 */}
+      <LevelSelectModal
+        isOpen={isLevelModalOpen}
+        onClose={() => setIsLevelModalOpen(false)}
+        chapters={chapters}
+        selectedChapterId={state.selectedChapterId}
+        selectedLevelId={state.selectedLevelId}
+        getLevelStatus={getLevelStatus}
+        canEditSetup={canEditSetup}
+        onLevelSelect={onLevelSelect}
+      />
+
+      {/* 英雄选择弹窗 */}
+      <HeroSelectModal
+        isOpen={isHeroModalOpen}
+        onClose={() => setIsHeroModalOpen(false)}
+        selectedHeroId={state.selectedHeroId}
+        canEditSetup={canEditSetup}
+        onHeroSelect={onHeroSelect}
+      />
     </aside>
   );
 };

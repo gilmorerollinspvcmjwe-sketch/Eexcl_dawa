@@ -20,7 +20,8 @@ export type AppSheetId =
   | 'fantasy_lane_roster'
   | 'fantasy_lane_chapter'
   | 'gold_miner'
-  | 'gold_miner_guide';
+  | 'gold_miner_guide'
+  | 'game2048';
 
 export interface SheetDefinition {
   id: AppSheetId;
@@ -39,7 +40,8 @@ export type ArcadeGameId =
   | 'zuma'
   | 'match3'
   | 'fantasy_lane'
-  | 'gold_miner';
+  | 'gold_miner'
+  | 'game2048';
 
 export interface ArcadeModuleDefinition {
   id: ArcadeGameId;
@@ -76,6 +78,7 @@ export const SHEET_REGISTRY: SheetDefinition[] = [
   { id: 'fantasy_lane_chapter', label: 'Sheet20', icon: '🗺', title: '章节与关卡' },
   { id: 'gold_miner', label: 'Sheet21', icon: '⛏', title: '黄金矿工' },
   { id: 'gold_miner_guide', label: 'Sheet22', icon: '📒', title: '矿工图鉴' },
+  { id: 'game2048', label: 'Sheet23', icon: '🔢', title: '2048' },
 ];
 
 export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
@@ -188,6 +191,17 @@ export const ARCADE_MODULE_REGISTRY: ArcadeModuleDefinition[] = [
     supportsSave: true,
     entrySheetId: 'gold_miner',
     defaultConfigSheetId: 'gold_miner_guide',
+  },
+  {
+    id: 'game2048',
+    sheetId: 'game2048',
+    title: '2048',
+    summary: '=2048 / 数据聚合 / Sheet23。',
+    accent: '#b45309',
+    supportsResume: true,
+    supportsSave: true,
+    entrySheetId: 'game2048',
+    defaultConfigSheetId: 'game2048',
   },
 ];
 

@@ -92,6 +92,7 @@ export function drawFlameWarlock(ctx: CanvasRenderingContext2D, size: number, bo
 
 /** 冰霜女巫 - 冰蓝色长裙，冰晶法杖，冰冠，雪花环绕 */
 export function drawIceWitch(ctx: CanvasRenderingContext2D, size: number, bodyColor: string, _detailColor: string, _weaponColor: string, hpPercent: number, _isAttacking: boolean): void {
+  void _isAttacking;
   const t = Date.now() / 200;
 
   // 冰蓝色长裙
