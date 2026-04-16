@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { getFantasyLaneLevelById, getFantasyLaneLevelsByChapter } from '../../features/fantasy_lane/fantasyLaneLevelCatalog.ts';
 import { FANTASY_LANE_HEROES, FANTASY_LANE_UNITS } from '../../features/fantasy_lane/fantasyLaneUnitRegistry.ts';
 import type { FantasyLaneChapterDefinition, FantasyLaneRuntimeState, FantasyLaneUnitDefinition } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
+import {
+  listFantasyLaneLoadoutPresets,
+  loadFantasyLaneProgress,
+  saveFantasyLaneLoadoutPreset,
+} from '../../features/fantasy_lane/fantasyLaneProgressStorage.ts';
 import { FantasyLaneUnitSprite } from './FantasyLaneUnitSprite';
 import {
   formatCooldownMs,
@@ -206,7 +211,6 @@ const HeroSelectModal: React.FC<{
 export const FantasyLaneLoadoutPanel: React.FC<FantasyLaneLoadoutPanelProps> = ({
   state,
   chapters,
-  warnings,
   canEditSetup,
   getLevelStatus,
   onLevelSelect,
@@ -222,6 +226,40 @@ export const FantasyLaneLoadoutPanel: React.FC<FantasyLaneLoadoutPanelProps> = (
   // 弹窗状态
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
   const [isHeroModalOpen, setIsHeroModalOpen] = useState(false);
+  const [presetProgress, setPresetProgress] = useState(() => loadFantasyLaneProgress());
+  const presets = listFantasyLaneLoadoutPresets(presetProgress);
+
+  const applyPreset = (slotId: number) => {
+    if (!canEditSetup) return;
+    const preset = presets.find((item) => item.slotId === slotId);
+    if (!preset || preset.unitIds.length === 0) return;
+    const targetIds = preset.unitIds
+      .filter((unitId) => Boolean(FANTASY_LANE_UNITS.find((unit) => unit.id === unitId)))
+      .slice(0, 8);
+    const targetSet = new Set(targetIds);
+    const currentSet = new Set(state.loadoutUnitIds);
+
+    state.loadoutUnitIds.forEach((unitId) => {
+      if (!targetSet.has(unitId)) onToggleLoadout(unitId);
+    });
+    targetIds.forEach((unitId) => {
+      if (!currentSet.has(unitId)) onToggleLoadout(unitId);
+    });
+
+    if (preset.heroId && preset.heroId !== state.selectedHeroId) {
+      onHeroSelect(preset.heroId as FantasyLaneRuntimeState['selectedHeroId']);
+    }
+  };
+
+  const savePreset = (slotId: number) => {
+    if (!canEditSetup) return;
+    const next = saveFantasyLaneLoadoutPreset(slotId, {
+      name: `编组${slotId}`,
+      unitIds: state.loadoutUnitIds,
+      heroId: state.selectedHeroId,
+    });
+    setPresetProgress(next);
+  };
 
   return (
     <aside className={`fantasy-lane-sidebar${collapsed ? ' is-collapsed' : ''}`}>
@@ -324,11 +362,49 @@ export const FantasyLaneLoadoutPanel: React.FC<FantasyLaneLoadoutPanelProps> = (
             </div>
           </section>
 
+          <section className="fantasy-lane-level-summary">
+            <div className="fantasy-lane-level-summary-head">
+              <h4>关卡信息</h4>
+              <strong>{currentLevel.id}</strong>
+            </div>
+            <div className="fantasy-lane-roster-meta">
+              <span>名称 {currentLevel.name}</span>
+              <span>时限 {Math.round(currentLevel.battleTimeLimitMs / 1000)}s</span>
+              <span>开局金币 {currentLevel.startingGold}</span>
+              <span>我方基地 {currentLevel.playerBaseHp}</span>
+              <span>敌方基地 {currentLevel.enemyBaseHp}</span>
+              <span>压力 {currentLevel.enemyPressure}</span>
+            </div>
+          </section>
+
           {/* 本局编组 */}
           <section className="fantasy-lane-pick-block fantasy-lane-loadout-section">
             <div className="fantasy-lane-loadout-head">
               <h4>本局编组</h4>
               <strong>{state.loadoutUnitIds.length}/8</strong>
+            </div>
+            <div className="fantasy-lane-loadout-presets">
+              {presets.map((preset) => (
+                <div key={`slot-${preset.slotId}`} className="fantasy-lane-loadout-preset">
+                  <button
+                    type="button"
+                    className="fantasy-lane-chip"
+                    onClick={() => applyPreset(preset.slotId)}
+                    disabled={!canEditSetup || preset.unitIds.length === 0}
+                    title={preset.unitIds.join(' / ')}
+                  >
+                    P{preset.slotId} {preset.unitIds.length > 0 ? `${preset.unitIds.length}/8` : '空'}
+                  </button>
+                  <button
+                    type="button"
+                    className="fantasy-lane-btn fantasy-lane-btn--small"
+                    onClick={() => savePreset(preset.slotId)}
+                    disabled={!canEditSetup}
+                  >
+                    存
+                  </button>
+                </div>
+              ))}
             </div>
             <div className="fantasy-lane-unit-grid fantasy-lane-unit-grid--compact">
               {FANTASY_LANE_UNITS.map((unit) => {
@@ -367,8 +443,8 @@ export const FantasyLaneLoadoutPanel: React.FC<FantasyLaneLoadoutPanelProps> = (
                           <span className="fantasy-lane-tag fantasy-lane-tag--secondary">
                             {badges[1]}
                           </span>
-                          {badges.slice(2).map((badge) => (
-                            <span key={`${unit.id}-${badge}`} className="fantasy-lane-tag fantasy-lane-tag--feature">
+                          {badges.slice(2).map((badge, badgeIndex) => (
+                            <span key={`${unit.id}-feature-${badgeIndex}-${badge}`} className="fantasy-lane-tag fantasy-lane-tag--feature">
                               {badge}
                             </span>
                           ))}
@@ -376,8 +452,8 @@ export const FantasyLaneLoadoutPanel: React.FC<FantasyLaneLoadoutPanelProps> = (
                       </div>
                     </div>
                     <div className="fantasy-lane-unit-card-stats">
-                      {details.map((detail) => (
-                        <span key={`${unit.id}-${detail}`} className="fantasy-lane-unit-stat">
+                      {details.map((detail, detailIndex) => (
+                        <span key={`${unit.id}-detail-${detailIndex}-${detail}`} className="fantasy-lane-unit-stat">
                           <strong>{detail}</strong>
                         </span>
                       ))}
@@ -388,13 +464,6 @@ export const FantasyLaneLoadoutPanel: React.FC<FantasyLaneLoadoutPanelProps> = (
             </div>
           </section>
 
-          {/* 阵容风险 */}
-          {warnings.length > 0 && (
-            <section className="fantasy-lane-warning-list">
-              <h4>阵容风险</h4>
-              {warnings.map((warning) => <span key={warning} className="fantasy-lane-warning-chip">{warning}</span>)}
-            </section>
-          )}
         </>
       )}
 
