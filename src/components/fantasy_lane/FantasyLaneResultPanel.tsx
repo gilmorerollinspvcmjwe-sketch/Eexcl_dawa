@@ -2,7 +2,6 @@ import React from 'react';
 import { getFantasyLaneLevelById } from '../../features/fantasy_lane/fantasyLaneLevelCatalog.ts';
 import {
   getFantasyLaneCollectionSummary,
-  getFantasyLaneChapterProgress,
   loadFantasyLaneProgress,
 } from '../../features/fantasy_lane/fantasyLaneProgressStorage.ts';
 import type { FantasyLaneRuntimeState } from '../../features/fantasy_lane/fantasyLaneTypes.ts';
@@ -13,22 +12,6 @@ interface FantasyLaneResultPanelProps {
   state: FantasyLaneRuntimeState;
   onRetry: () => void;
   onBackToSetup: () => void;
-}
-
-interface ResultCellData {
-  value: string;
-  subValue: string;
-  percent: number;
-  tone: 'red' | 'blue' | 'gold' | 'green';
-}
-
-interface ResultRowData {
-  key: string;
-  label: string;
-  subLabel: string;
-  mainValue: string;
-  mainSubValue: string;
-  cells: [ResultCellData, ResultCellData, ResultCellData];
 }
 
 function clampPercent(value: number) {
@@ -54,15 +37,6 @@ function getRewardCount(state: FantasyLaneRuntimeState) {
   return (state.result?.rewards?.unlockedUnits.length ?? 0) + Object.keys(state.result?.rewards?.fragments ?? {}).length;
 }
 
-function makeCell(value: string, subValue: string, percent: number, tone: ResultCellData['tone']): ResultCellData {
-  return {
-    value,
-    subValue,
-    percent: clampPercent(percent),
-    tone,
-  };
-}
-
 export const FantasyLaneResultPanel: React.FC<FantasyLaneResultPanelProps> = ({ state, onRetry, onBackToSetup }) => {
   if (state.phase !== 'won' && state.phase !== 'lost') return null;
 
@@ -70,157 +44,13 @@ export const FantasyLaneResultPanel: React.FC<FantasyLaneResultPanelProps> = ({ 
   const currentHero = FANTASY_LANE_HEROES.find((hero) => hero.id === state.selectedHeroId);
   const currentTactical = FANTASY_LANE_TACTICAL_SKILLS.find((skill) => skill.id === state.selectedTacticalId);
   const progress = loadFantasyLaneProgress();
-  const chapterProgress = getFantasyLaneChapterProgress(progress, currentLevel.chapterId);
   const collection = getFantasyLaneCollectionSummary(progress);
   const rewardCount = getRewardCount(state);
-  const totalSkillCast = state.stats.heroSkillCast + state.stats.tacticalSkillCast;
-  const averageEngageTimeMs =
-    state.stats.engagedUnits > 0 ? Math.round(state.stats.totalEngageDelayMs / state.stats.engagedUnits) : 0;
-  const enemyBaseBreakPercent = clampPercent(((state.enemyBaseHpMax - state.enemyBaseHp) / Math.max(1, state.enemyBaseHpMax)) * 100);
   const playerBaseRemainPercent = clampPercent((state.playerBaseHp / Math.max(1, state.playerBaseHpMax)) * 100);
   const battleEconomyPercent = clampPercent((state.stats.goldSpent / Math.max(1, state.stats.goldSpent + state.gold)) * 100);
-  const bossPhaseTotal = currentLevel.boss?.phases.length ?? 0;
-  const bossPhaseReached = state.stats.bossPhasesEntered;
   const rewardUnits = state.result?.rewards?.unlockedUnits ?? [];
   const rewardFragments = Object.entries(state.result?.rewards?.fragments ?? {});
-
-  const rows: ResultRowData[] = [
-    {
-      key: 'overall',
-      label: state.phase === 'won' ? 'MVP' : '战报',
-      subLabel: currentHero?.name ?? '当前英雄',
-      mainValue: `${(state.result?.score ?? 0) / 1000}`.replace(/\.0$/, ''),
-      mainSubValue: `得分 ${(state.result?.score ?? 0).toLocaleString()} / ${renderStars(state.result?.stars ?? 1)}`,
-      cells: [
-        makeCell(
-          `${state.stats.defeated.toLocaleString()}`,
-          `敌方出兵 ${state.stats.enemySummoned.toLocaleString()}`,
-          (state.stats.defeated / Math.max(1, state.stats.enemySummoned)) * 100,
-          'red',
-        ),
-        makeCell(
-          `${Math.round(state.stats.goldSpent).toLocaleString()}`,
-          `剩余 ${Math.round(state.gold).toLocaleString()}`,
-          battleEconomyPercent,
-          'gold',
-        ),
-        makeCell(
-          `${formatMsToClock(state.elapsedMs)}`,
-          `时限 ${formatMsToClock(currentLevel.battleTimeLimitMs)}`,
-          (state.elapsedMs / Math.max(1, currentLevel.battleTimeLimitMs)) * 100,
-          'green',
-        ),
-      ],
-    },
-    {
-      key: 'bases',
-      label: '基地',
-      subLabel: `${currentLevel.id} ${currentLevel.name}`,
-      mainValue: `${playerBaseRemainPercent}%`,
-      mainSubValue: `我方 ${state.playerBaseHp}/${state.playerBaseHpMax}`,
-      cells: [
-        makeCell(
-          `${enemyBaseBreakPercent}%`,
-          `敌方 ${state.enemyBaseHp}/${state.enemyBaseHpMax}`,
-          enemyBaseBreakPercent,
-          'red',
-        ),
-        makeCell(
-          `${state.activePop}/${state.popLimit}`,
-          `队列 ${state.queue.length}/${state.queueLimit}`,
-          (state.activePop / Math.max(1, state.popLimit)) * 100,
-          'blue',
-        ),
-        makeCell(
-          `${state.stats.levelPhasesEntered}`,
-          bossPhaseTotal > 0 ? `Boss ${bossPhaseReached}/${bossPhaseTotal}` : 'Boss 0/0',
-          ((state.stats.levelPhasesEntered + bossPhaseReached) / Math.max(1, currentLevel.phases.length + bossPhaseTotal)) * 100,
-          'green',
-        ),
-      ],
-    },
-    {
-      key: 'deployment',
-      label: '编组',
-      subLabel: `${currentTactical?.name ?? '战术'} / 当前编组`,
-      mainValue: `${state.stats.summoned}`,
-      mainSubValue: `我方出兵 / 对空 ${state.stats.antiAirSummons}`,
-      cells: [
-        makeCell(
-          `${state.stats.frontlineSummons}`,
-          `前排人口`,
-          (state.stats.frontlineSummons / Math.max(1, state.stats.summoned)) * 100,
-          'red',
-        ),
-        makeCell(
-          `${state.stats.aoeSummons}`,
-          `AOE 人口`,
-          (state.stats.aoeSummons / Math.max(1, state.stats.summoned)) * 100,
-          'blue',
-        ),
-        makeCell(
-          `${state.stats.engagedUnits}`,
-          averageEngageTimeMs > 0 ? `平均 ${averageEngageTimeMs}ms` : '平均 0ms',
-          (state.stats.engagedUnits / Math.max(1, state.stats.summoned)) * 100,
-          'green',
-        ),
-      ],
-    },
-    {
-      key: 'skills',
-      label: '技能',
-      subLabel: `${currentHero?.name ?? '-'} / ${currentTactical?.name ?? '-'}`,
-      mainValue: `${totalSkillCast}`,
-      mainSubValue: `英雄 ${state.stats.heroSkillCast} / 战术 ${state.stats.tacticalSkillCast}`,
-      cells: [
-        makeCell(
-          `${state.stats.heroSkillCast}`,
-          '英雄技次数',
-          (state.stats.heroSkillCast / Math.max(1, totalSkillCast)) * 100,
-          'red',
-        ),
-        makeCell(
-          `${state.stats.tacticalSkillCast}`,
-          '战术技次数',
-          (state.stats.tacticalSkillCast / Math.max(1, totalSkillCast)) * 100,
-          'blue',
-        ),
-        makeCell(
-          `${state.stats.queueBlocked}`,
-          `拥堵 ${formatSeconds(state.stats.congestionMs)}`,
-          (state.stats.queueBlocked / Math.max(1, state.stats.summoned)) * 100,
-          'green',
-        ),
-      ],
-    },
-    {
-      key: 'pressure',
-      label: '压制',
-      subLabel: '弹道 / 范围 / 收口',
-      mainValue: `${state.stats.projectilesFired}`,
-      mainSubValue: `弹道总数 / AOE ${state.stats.aoeHits}`,
-      cells: [
-        makeCell(
-          `${state.stats.aoeHits}`,
-          '范围命中',
-          (state.stats.aoeHits / Math.max(1, state.stats.projectilesFired)) * 100,
-          'red',
-        ),
-        makeCell(
-          `${Math.round(state.frontline)}`,
-          `空优 ${Math.round(state.airControl)}`,
-          ((Math.abs(state.frontline) + Math.abs(state.airControl)) / 20) * 100,
-          'blue',
-        ),
-        makeCell(
-          `${rewardCount}`,
-          `章节 ${chapterProgress.completed}/${chapterProgress.total}`,
-          (chapterProgress.completed / Math.max(1, chapterProgress.total)) * 100,
-          'green',
-        ),
-      ],
-    },
-  ];
+  const loadoutUnits = state.loadoutUnitIds.map((id) => FANTASY_LANE_UNIT_MAP[id]).filter(Boolean);
 
   return (
     <div className="fantasy-lane-result-overlay">
@@ -239,53 +69,88 @@ export const FantasyLaneResultPanel: React.FC<FantasyLaneResultPanelProps> = ({ 
           </div>
         </div>
 
-        <div className="fantasy-lane-result-table">
-          <div className="fantasy-lane-result-table-header">
-            <span className="fantasy-lane-result-col-player">项目</span>
-            <span className="fantasy-lane-result-col-score">主值</span>
-            <span className="fantasy-lane-result-col-metric">战斗</span>
-            <span className="fantasy-lane-result-col-metric">经济 / 投入</span>
-            <span className="fantasy-lane-result-col-metric">推进 / 阶段</span>
+        <div className="fantasy-lane-result-core-stats">
+          <div className="fantasy-lane-result-stat">
+            <span className="fantasy-lane-result-stat-label">时间</span>
+            <strong>{formatMsToClock(state.elapsedMs)}</strong>
+            <span className="fantasy-lane-result-stat-sub">时限 {formatMsToClock(currentLevel.battleTimeLimitMs)}</span>
           </div>
-
-          {rows.map((row, index) => (
-            <div
-              key={row.key}
-              className={`fantasy-lane-result-table-row${index === 0 ? ' is-highlight' : ''}${index % 2 === 0 ? '' : ' is-alt'}`}
-            >
-              <div className="fantasy-lane-result-player-cell">
-                <div className={`fantasy-lane-result-avatar fantasy-lane-result-avatar--${index === 0 ? 'highlight' : 'normal'}`}>
-                  {index === 0 ? '★' : row.label.slice(0, 1)}
-                </div>
-                <div className="fantasy-lane-result-player-meta">
-                  <strong>{row.label}</strong>
-                  <span>{row.subLabel}</span>
-                </div>
-              </div>
-
-              <div className="fantasy-lane-result-main-cell">
-                <strong>{row.mainValue}</strong>
-                <span>{row.mainSubValue}</span>
-              </div>
-
-              {row.cells.map((cell, cellIndex) => (
-                <div key={`${row.key}-${cellIndex}`} className="fantasy-lane-result-metric-cell">
-                  <div className="fantasy-lane-result-metric-head">
-                    <strong>{cell.value}</strong>
-                    <span>{cell.subValue}</span>
-                  </div>
-                  <div className="fantasy-lane-result-metric-bar">
-                    <span
-                      className={`fantasy-lane-result-metric-fill fantasy-lane-result-metric-fill--${cell.tone}`}
-                      style={{ width: `${cell.percent}%` }}
-                    />
-                    <small>{cell.percent}%</small>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ))}
+          <div className="fantasy-lane-result-stat">
+            <span className="fantasy-lane-result-stat-label">得分</span>
+            <strong>{(state.result?.score ?? 0).toLocaleString()}</strong>
+            <span className="fantasy-lane-result-stat-sub">星级 {renderStars(state.result?.stars ?? 1)}</span>
+          </div>
+          <div className="fantasy-lane-result-stat">
+            <span className="fantasy-lane-result-stat-label">剩余 HP</span>
+            <strong>{state.playerBaseHp}/{state.playerBaseHpMax}</strong>
+            <span className="fantasy-lane-result-stat-sub">{playerBaseRemainPercent}%</span>
+          </div>
         </div>
+
+        <div className="fantasy-lane-result-deployment">
+          <h4>编组表现</h4>
+          <div className="fantasy-lane-result-deployment-grid">
+            {loadoutUnits.map((unit) => (
+              <div key={unit.id} className="fantasy-lane-result-deployment-card">
+                <FantasyLaneUnitSprite unitId={unit.id} side="player" hpPercent={1} isAttacking={false} animated={false} scale={0.56} />
+                <strong>{unit.name}</strong>
+                <span>出兵 {state.stats.summoned} 次</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="fantasy-lane-result-economy">
+          <h4>经济分析</h4>
+          <div className="fantasy-lane-result-economy-items">
+            <div className="fantasy-lane-result-economy-item">
+              <span>金币花费</span>
+              <strong>{Math.round(state.stats.goldSpent).toLocaleString()}</strong>
+            </div>
+            <div className="fantasy-lane-result-economy-item">
+              <span>剩余金币</span>
+              <strong>{Math.round(state.gold).toLocaleString()}</strong>
+            </div>
+            <div className="fantasy-lane-result-economy-item">
+              <span>人口利用率</span>
+              <strong>{Math.round((state.activePop / Math.max(1, state.popLimit)) * 100)}%</strong>
+            </div>
+            <div className="fantasy-lane-result-economy-item">
+              <span>经济效率</span>
+              <strong>{battleEconomyPercent}%</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="fantasy-lane-result-skills">
+          <h4>技能使用</h4>
+          <div className="fantasy-lane-result-skill-items">
+            <div className="fantasy-lane-result-skill-item">
+              <span>英雄技 ({currentHero?.name})</span>
+              <strong>{state.stats.heroSkillCast} 次</strong>
+            </div>
+            <div className="fantasy-lane-result-skill-item">
+              <span>战术技 ({currentTactical?.name})</span>
+              <strong>{state.stats.tacticalSkillCast} 次</strong>
+            </div>
+            <div className="fantasy-lane-result-skill-item">
+              <span>拥堵时间</span>
+              <strong>{formatSeconds(state.stats.congestionMs)}</strong>
+            </div>
+          </div>
+        </div>
+
+        {state.phase === 'lost' && (
+          <div className="fantasy-lane-result-failure-tips">
+            <h4>失败原因</h4>
+            <ul>
+              {playerBaseRemainPercent < 30 && <li>基地血量过低，需要加强防守</li>}
+              {state.gold > state.stats.goldSpent * 0.5 && <li>金币剩余过多，建议增加出兵频率</li>}
+              {state.stats.antiAirSummons === 0 && <li>没有对空单位，建议编组对空兵种</li>}
+              {state.stats.summoned < 10 && <li>出兵次数过少，建议加快出兵节奏</li>}
+            </ul>
+          </div>
+        )}
 
         <div className="fantasy-lane-result-footbar">
           <div className="fantasy-lane-result-footbar-group">

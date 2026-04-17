@@ -324,6 +324,24 @@ export interface FantasyLaneImpactEffect {
   remainingMs: number;
 }
 
+export interface FantasyLaneSkillEffect {
+  id: string;
+  skillName: string;
+  color: string;
+  remainingMs: number;
+  totalMs: number;
+}
+
+export interface FantasyLaneDamageNumber {
+  id: string;
+  x: number;
+  y: number;
+  value: number;
+  color: string;
+  remainingMs: number;
+  totalMs: number;
+}
+
 export interface FantasyLaneBattleResult {
   title: string;
   stars: 1 | 2 | 3;
@@ -507,6 +525,8 @@ export interface FantasyLaneRuntimeState {
   units: FantasyLaneUnitInstance[];
   projectiles: FantasyLaneProjectile[];
   impacts: FantasyLaneImpactEffect[];
+  skillEffects: FantasyLaneSkillEffect[];
+  damageNumbers: FantasyLaneDamageNumber[];
   effects: FantasyLaneEffectState[];
   pressureLabel: string;
   phaseLabel: string;

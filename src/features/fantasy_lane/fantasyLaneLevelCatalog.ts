@@ -45,6 +45,8 @@ interface LevelBlueprint {
   unlockRewards?: string[];
   fragmentRewards?: Record<string, number>;
   starRewards?: Record<number, string[]>;
+  enemyBaseHp?: number;
+  playerBaseHp?: number;
 }
 
 interface ChapterBlueprint {
@@ -162,7 +164,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '第一关先学会补肉盾，不要被最基础的前排推进打穿。',
         recommendedTags: ['frontline', 'aoe'],
         description: '用边境杂兵教玩家“先稳住前线，再让后排开始工作”。',
-        phases: [
+        enemyBaseHp: 300,
+        playerBaseHp: 500,phases: [
           {
             label: '开场读题',
             startAtSec: 0,
@@ -202,7 +205,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这关不是单点解题，得先把潮水速度压下来。',
         recommendedTags: ['aoe', 'frontline'],
         description: '把第一章第二个命题抬出来，要求玩家开始理解群伤价值。',
-        phases: [
+        enemyBaseHp: 300,
+        playerBaseHp: 500,phases: [
           {
             label: '开场读题',
             startAtSec: 0,
@@ -242,7 +246,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '正面不只会堆数量，还会把肉盾和后排串起来。',
         recommendedTags: ['frontline', 'pierce'],
         description: '让玩家面对“前排掩护后排”的正式主线编制。',
-        phases: [
+        enemyBaseHp: 300,
+        playerBaseHp: 600,phases: [
           {
             label: '开场读题',
             startAtSec: 0,
@@ -282,7 +287,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '对面会在你最忙的时候补后排火力，技能别太早交空。',
         recommendedTags: ['frontline', 'heal'],
         description: '通过后排法术压迫，逼玩家开始学会留技能与稳态处理。',
-        phases: [
+        enemyBaseHp: 500,
+        playerBaseHp: 600,phases: [
           {
             label: '开场读题',
             startAtSec: 0,
@@ -322,7 +328,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这一关会把第一章两道题一起压过来，阵容和技能都得成型。',
         recommendedTags: ['frontline', 'aoe', 'burst'],
         description: '第一章考试关，把“站住线”和“清掉潮”合并成一条完整节奏。',
-        phases: [
+        enemyBaseHp: 500,
+        playerBaseHp: 600,phases: [
           {
             label: '开场读题',
             startAtSec: 0,
@@ -362,7 +369,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: 'Boss 会把前排稳线和群伤清潮两道题一起拉满，不要把爆发交在错误节点。',
         recommendedTags: ['frontline', 'aoe', 'burst'],
         description: '第一章 Boss 关，先打前哨战，再顶住骸骨巨王的四段推进。',
-        phases: [
+        enemyBaseHp: 500,
+        playerBaseHp: 700,phases: [
           {
             label: '开场读题',
             startAtSec: 0,
@@ -469,7 +477,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这章开始会反复补线，不能只看第一波。',
         recommendedTags: ['aoe', 'frontline'],
         description: '正式教会玩家把“召唤海”当成独立命题处理。',
-        phases: [
+        enemyBaseHp: 700,
+        playerBaseHp: 700,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：清掉返潮的小怪，不要只盯着第一排。', spawnGroups: [
             { unitId: 'crypt_crawler', firstDelaySec: 5, count: 5, intervalSec: 4, laneOverride: 'mid', note: '墓地返潮开局。' },
             { unitId: 'plague_thrower', firstDelaySec: 14, count: 2, intervalSec: 9, laneOverride: 'rear', note: '投掷者开始拖血。' },
@@ -489,7 +498,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '后排点压会让长线局更难打，不能只清杂兵不管后面。',
         recommendedTags: ['aoe', 'frontline'],
         description: '把召唤和后排消耗拼在一起，要求玩家开始同时看两层压力。',
-        phases: [
+        enemyBaseHp: 700,
+        playerBaseHp: 800,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 52, pressure: 'read', warning: '本关命题：处理投掷消耗，不然召唤海会越打越赚。', spawnGroups: [
             { unitId: 'plague_thrower', firstDelaySec: 8, count: 2, intervalSec: 9.5, laneOverride: 'rear', note: '投掷者先亮相。' },
             { unitId: 'crypt_crawler', firstDelaySec: 15, count: 4, intervalSec: 4.1, laneOverride: 'mid', note: '返潮铺路。' },
@@ -509,7 +519,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这关考的是战线运营，不是打一波爆发就结束。',
         recommendedTags: ['frontline', 'aoe'],
         description: '用更长的波次节奏，让玩家开始重视资源和回费循环。',
-        phases: [
+        enemyBaseHp: 700,
+        playerBaseHp: 800,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 60, pressure: 'read', warning: '本关命题：节奏会被拉长，别空攒资源等完美手。', spawnGroups: [
             { unitId: 'goblin_shield', firstDelaySec: 6, count: 3, intervalSec: 6, laneOverride: 'front', note: '前排起线。' },
             { unitId: 'crypt_crawler', firstDelaySec: 18, count: 3, intervalSec: 4.5, laneOverride: 'mid', note: '返潮试探。' },
@@ -529,7 +540,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '召唤海后面会开始塞硬目标，必须从“清潮”切到“拆墙”。',
         recommendedTags: ['pierce', 'frontline'],
         description: '把章节的第二层考试补上，让玩家在召唤海里寻找破口。',
-        phases: [
+        enemyBaseHp: 900,
+        playerBaseHp: 800,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：先拆骨墙，不然再多清潮也只是原地踏步。', spawnGroups: [
             { unitId: 'orc_heavy', firstDelaySec: 9, count: 2, intervalSec: 12, laneOverride: 'front', note: '骨墙等价目标。' },
             { unitId: 'crypt_crawler', firstDelaySec: 14, count: 4, intervalSec: 4.2, laneOverride: 'mid', note: '小怪继续掩护。' },
@@ -549,7 +561,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这一关会把召唤、消耗、拆墙三件事全混在一起。',
         recommendedTags: ['aoe', 'frontline', 'pierce'],
         description: '第二章考试关，要求玩家在长线里保持结构完整。',
-        phases: [
+        enemyBaseHp: 900,
+        playerBaseHp: 900,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：别被返潮和投掷拆散阵型，先把战线稳住。', spawnGroups: [
             { unitId: 'crypt_crawler', firstDelaySec: 5, count: 5, intervalSec: 3.9, laneOverride: 'mid', note: '返潮先手。' },
             { unitId: 'plague_thrower', firstDelaySec: 13, count: 2, intervalSec: 9.2, laneOverride: 'rear', note: '后排消耗同步到。' },
@@ -569,7 +582,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: 'Boss 关会不断补召唤和后排消耗，你必须抓住真正的停顿点收口。',
         recommendedTags: ['aoe', 'frontline', 'burst'],
         description: '第二章 Boss 关，把“返潮 + 消耗 + 破墙”三条线合并成正式主线 Boss 战。',
-        phases: [
+        enemyBaseHp: 900,
+        playerBaseHp: 900,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 46, pressure: 'read', warning: 'Boss 关开场：先确认返潮密度，不要为了抢节奏丢前排。', spawnGroups: [
             { unitId: 'crypt_crawler', firstDelaySec: 6, count: 5, intervalSec: 4, laneOverride: 'mid', note: '返潮先行。' },
             { unitId: 'goblin_shield', firstDelaySec: 15, count: 2, intervalSec: 6, laneOverride: 'front', note: '前排补位。' },
@@ -631,7 +645,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '空层现在是正式战场，别再拿地面阵容硬凑。',
         recommendedTags: ['antiAir', 'frontline'],
         description: '第三章开门就让玩家确认：对空位不是可选项。',
-        phases: [
+        enemyBaseHp: 1100,
+        playerBaseHp: 1000,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：先补对空，别让第一波蝙蝠免费撞基地。', spawnGroups: [
             { unitId: 'bat_swarm', firstDelaySec: 7, count: 4, intervalSec: 4.2, laneOverride: 'air', note: '空袭起手。' },
             { unitId: 'orc_heavy', firstDelaySec: 18, count: 2, intervalSec: 10, laneOverride: 'front', note: '地面只是辅压。' },
@@ -651,7 +666,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这关不是纯空战，冰控会让你的地面节奏一起变慢。',
         recommendedTags: ['slow', 'frontline'],
         description: '要求玩家开始处理“冻结控场 + 空袭切后排”的复合压力。',
-        phases: [
+        enemyBaseHp: 1100,
+        playerBaseHp: 1000,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：冰控会先手把你前线钉住，别只看天上。', spawnGroups: [
             { unitId: 'ice_witch', firstDelaySec: 8, count: 2, intervalSec: 10, laneOverride: 'rear', note: '冰巫先上控场。' },
             { unitId: 'orc_heavy', firstDelaySec: 15, count: 2, intervalSec: 10.4, laneOverride: 'front', note: '地面配合控场。' },
@@ -671,7 +687,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '空地同时给压时，单一阵容会明显偏科。',
         recommendedTags: ['antiAir', 'slow'],
         description: '把地面重甲和空层中怪一起堆出来，逼玩家补齐阵容短板。',
-        phases: [
+        enemyBaseHp: 1100,
+        playerBaseHp: 1000,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：先认清哪一层是真压力，不要顾此失彼。', spawnGroups: [
             { unitId: 'young_dragon', firstDelaySec: 9, count: 2, intervalSec: 10.4, laneOverride: 'air', note: '空层中压。' },
             { unitId: 'orc_heavy', firstDelaySec: 16, count: 2, intervalSec: 10.2, laneOverride: 'front', note: '地面同步顶脸。' },
@@ -691,7 +708,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这关会持续追问你：空层到底有没有成型。',
         recommendedTags: ['antiAir', 'pierce'],
         description: '第三章考试关前的专项测试，要求对空位真正稳定运作。',
-        phases: [
+        enemyBaseHp: 1300,
+        playerBaseHp: 1100,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 50, pressure: 'read', warning: '本关命题：纯地面阵容会在这里直接暴露。', spawnGroups: [
             { unitId: 'bat_swarm', firstDelaySec: 6, count: 5, intervalSec: 4, laneOverride: 'air', note: '高频空袭。' },
             { unitId: 'elf_shooter', firstDelaySec: 16, count: 2, intervalSec: 7.4, laneOverride: 'rear', note: '地面只是补位。' },
@@ -711,7 +729,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '决战前会把这一章的两道题同时拉满。',
         recommendedTags: ['antiAir', 'slow', 'finisher'],
         description: '第三章考试关，要求阵容能同时处理控场与空袭。',
-        phases: [
+        enemyBaseHp: 1300,
+        playerBaseHp: 1100,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：别被冰控骗走视线，真正决定胜负的还是空层处理。', spawnGroups: [
             { unitId: 'ice_witch', firstDelaySec: 8, count: 2, intervalSec: 9.6, laneOverride: 'rear', note: '冰控开题。' },
             { unitId: 'bat_swarm', firstDelaySec: 12, count: 4, intervalSec: 4.2, laneOverride: 'air', note: '空袭同步到。' },
@@ -731,7 +750,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: 'Boss 关会反复升空、冻结和补空袭，不补对空就没有资格打终局。',
         recommendedTags: ['antiAir', 'slow', 'finisher'],
         description: '第三章 Boss 关，正式把空层与控场做成多阶段 Boss 战。',
-        phases: [
+        enemyBaseHp: 1300,
+        playerBaseHp: 1100,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 46, pressure: 'read', warning: 'Boss 关开场：先把空层补齐，再考虑地面细节。', spawnGroups: [
             { unitId: 'bat_swarm', firstDelaySec: 6, count: 4, intervalSec: 4.2, laneOverride: 'air', note: 'Boss 前空袭。' },
             { unitId: 'ice_witch', firstDelaySec: 16, count: 2, intervalSec: 9.4, laneOverride: 'rear', note: '冰控先手。' },
@@ -793,7 +813,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '从这里开始，没有破甲就会明显打不动。',
         recommendedTags: ['pierce', 'frontline'],
         description: '第四章开门就把破甲命题立住，告诉玩家重甲不是靠磨掉的。',
-        phases: [
+        enemyBaseHp: 1500,
+        playerBaseHp: 1200,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：先认清真正的硬目标，别把输出打散。', spawnGroups: [
             { unitId: 'stone_guard', firstDelaySec: 8, count: 2, intervalSec: 11, laneOverride: 'front', note: '石卫开门见山。' },
             { unitId: 'flame_warlock', firstDelaySec: 18, count: 2, intervalSec: 9.6, laneOverride: 'rear', note: '后排补火。' },
@@ -813,7 +834,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '重甲后面会开始塞范围法术，站住线只是第一步。',
         recommendedTags: ['frontline', 'shield'],
         description: '让玩家理解“能扛住”不等于“能赢”，还得处理后排爆压。',
-        phases: [
+        enemyBaseHp: 1500,
+        playerBaseHp: 1200,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：雷法会把阵线压扁，记得保住中后排。', spawnGroups: [
             { unitId: 'thunder_mage', firstDelaySec: 8, count: 2, intervalSec: 9.2, laneOverride: 'rear', note: '雷法起手。' },
             { unitId: 'stone_guard', firstDelaySec: 16, count: 2, intervalSec: 10.6, laneOverride: 'front', note: '硬墙配雷法。' },
@@ -833,7 +855,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这一关开始会让你真正体会到“高费转折”的价值。',
         recommendedTags: ['siege', 'frontline'],
         description: '用更厚的地面波次，要求玩家主动准备收线方案。',
-        phases: [
+        enemyBaseHp: 1500,
+        playerBaseHp: 1300,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：别把高费都用在补洞，得给真正的转折留资源。', spawnGroups: [
             { unitId: 'tree_ancient', firstDelaySec: 10, count: 2, intervalSec: 12.4, laneOverride: 'front', note: '古树先探路。' },
             { unitId: 'stone_guard', firstDelaySec: 18, count: 2, intervalSec: 10.6, laneOverride: 'front', note: '硬墙补满。' },
@@ -853,7 +876,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '高费转折能不能成立，这关会一眼看出来。',
         recommendedTags: ['finisher', 'pierce'],
         description: '把整章压力拉成一条线，要求玩家在对推里找到总攻时间。 ',
-        phases: [
+        enemyBaseHp: 1700,
+        playerBaseHp: 1300,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：不是扛多久，而是能不能在窗口里完成总攻。', spawnGroups: [
             { unitId: 'stone_guard', firstDelaySec: 8, count: 2, intervalSec: 10.4, laneOverride: 'front', note: '硬墙开场。' },
             { unitId: 'thunder_mage', firstDelaySec: 16, count: 2, intervalSec: 9.2, laneOverride: 'rear', note: '后排雷压。' },
@@ -873,7 +897,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '最后一关前的考试，只测一件事：你的破甲和总攻是不是一套完整逻辑。',
         recommendedTags: ['pierce', 'aoe', 'finisher'],
         description: '第四章考试关，把“破甲拆墙”和“高费转折”合并验证。',
-        phases: [
+        enemyBaseHp: 1700,
+        playerBaseHp: 1300,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：先拆墙，再总攻，顺序错了就会整波浪费。', spawnGroups: [
             { unitId: 'stone_guard', firstDelaySec: 7, count: 3, intervalSec: 10.2, laneOverride: 'front', note: '硬墙先起。' },
             { unitId: 'flame_warlock', firstDelaySec: 16, count: 2, intervalSec: 9.2, laneOverride: 'rear', note: '火法补后排压。' },
@@ -893,7 +918,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: 'Boss 关没有破甲和总攻逻辑就打不完；只会守线也会被一点点耗死。',
         recommendedTags: ['pierce', 'finisher', 'frontline'],
         description: '第四章 Boss 关，正式把重甲推进做成四段 Boss 战。',
-        phases: [
+        enemyBaseHp: 1700,
+        playerBaseHp: 1400,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 46, pressure: 'read', warning: 'Boss 关开场：先读清哪一段是墙，哪一段是机会。', spawnGroups: [
             { unitId: 'stone_guard', firstDelaySec: 7, count: 3, intervalSec: 10.2, laneOverride: 'front', note: 'Boss 前硬墙。' },
             { unitId: 'thunder_mage', firstDelaySec: 16, count: 2, intervalSec: 9, laneOverride: 'rear', note: '雷法补压。' },
@@ -955,7 +981,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '最后一章先考你能不能快速识别“这一波到底哪层最致命”。',
         recommendedTags: ['frontline', 'antiAir'],
         description: '第五章开门就把混编识别拉满，让玩家先学会读整张战场。',
-        phases: [
+        enemyBaseHp: 1900,
+        playerBaseHp: 1400,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：别一股脑补同一种兵，先认清真正的主压层。', spawnGroups: [
             { unitId: 'stone_guard', firstDelaySec: 8, count: 2, intervalSec: 10.4, laneOverride: 'front', note: '地面硬墙开局。' },
             { unitId: 'young_dragon', firstDelaySec: 16, count: 2, intervalSec: 9.2, laneOverride: 'air', note: '空层同步施压。' },
@@ -975,7 +1002,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '空层高压会逼着你一直补位，但地面也不会停。',
         recommendedTags: ['antiAir', 'finisher'],
         description: '强化最终章的空层难度，并开始加入终局节奏判断。',
-        phases: [
+        enemyBaseHp: 1900,
+        playerBaseHp: 1500,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：空层是主轴，但别忘了地面还会给你站位难题。', spawnGroups: [
             { unitId: 'young_dragon', firstDelaySec: 7, count: 3, intervalSec: 8.6, laneOverride: 'air', note: '空袭起手。' },
             { unitId: 'ballista', firstDelaySec: 15, count: 2, intervalSec: 9.2, laneOverride: 'rear', note: '地面远程同步到。' },
@@ -995,7 +1023,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这关会把大体型单位堆到一起，逼你做终结选择。',
         recommendedTags: ['finisher', 'pierce'],
         description: '用大目标混编考验玩家的收口能力。',
-        phases: [
+        enemyBaseHp: 1900,
+        playerBaseHp: 1500,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 58, pressure: 'read', warning: '本关命题：终结位要打在真正的大目标上。', spawnGroups: [
             { unitId: 'stone_guard', firstDelaySec: 8, count: 2, intervalSec: 10.2, laneOverride: 'front', note: '地面大怪先手。' },
             { unitId: 'young_dragon', firstDelaySec: 17, count: 2, intervalSec: 8.8, laneOverride: 'air', note: '空层中怪接力。' },
@@ -1015,7 +1044,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这一关不是拼一个技能爆发，而是拼两个技能能不能交在真节点上。',
         recommendedTags: ['antiAir', 'haste'],
         description: '正式把英雄技和战术技的协同纳入主线考试。',
-        phases: [
+        enemyBaseHp: 2100,
+        playerBaseHp: 1500,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：技能要按节点交，不是见压力就全按。', spawnGroups: [
             { unitId: 'ballista', firstDelaySec: 8, count: 2, intervalSec: 8.8, laneOverride: 'rear', note: '后排先手。' },
             { unitId: 'young_dragon', firstDelaySec: 16, count: 2, intervalSec: 8.6, laneOverride: 'air', note: '空层同步给压。' },
@@ -1035,7 +1065,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '这是总 Boss 前的最终考试，混编识别和收口能力都要成立。',
         recommendedTags: ['finisher', 'pierce', 'antiAir'],
         description: '总决战前的综合考，把第五章两道题合并拉满。',
-        phases: [
+        enemyBaseHp: 2100,
+        playerBaseHp: 1600,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 58, pressure: 'read', warning: '本关命题：先识别主压层，再判断最后该怎么收。', spawnGroups: [
             { unitId: 'young_dragon', firstDelaySec: 7, count: 3, intervalSec: 8.4, laneOverride: 'air', note: '空层开卷。' },
             { unitId: 'stone_guard', firstDelaySec: 15, count: 2, intervalSec: 10, laneOverride: 'front', note: '地面硬墙同步到。' },
@@ -1055,7 +1086,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '最后一战考的是全局节奏：读题、补位、技能、收口，任何一环断掉都会被龙皇拉死。',
         recommendedTags: ['antiAir', 'finisher', 'pierce'],
         description: '第五章总 Boss，把五章主线的所有命题都压进一场正式终局战。',
-        phases: [
+        enemyBaseHp: 2100,
+        playerBaseHp: 1600,phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 48, pressure: 'read', warning: '最终 Boss 开场：先确认主压层，别为了摸龙皇把阵型送掉。', spawnGroups: [
             { unitId: 'young_dragon', firstDelaySec: 6, count: 3, intervalSec: 8.2, laneOverride: 'air', note: '空层起手。' },
             { unitId: 'stone_guard', firstDelaySec: 15, count: 2, intervalSec: 10, laneOverride: 'front', note: '地面硬墙同步到。' },
@@ -1290,7 +1322,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '风灵与幼龙的组合开场，确认对空阵容是否成型。',
         recommendedTags: ['antiAir', 'burst'],
         description: '第七章开门就用空层单位测试对空能力。',
-        unlockRewards: ['thunder_eagle'],
+        enemyBaseHp: 2700,
+        playerBaseHp: 1700,unlockRewards: ['thunder_eagle'],
         fragmentRewards: { young_dragon: 1 },
         phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 52, pressure: 'read', warning: '本关命题：风灵与幼龙同时出现，对空位必须到位。', spawnGroups: [
@@ -1312,7 +1345,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '凤凰的高血量与重生机制考验持续输出能力。',
         recommendedTags: ['antiAir', 'finisher'],
         description: '凤凰登场，测试玩家的持续对空输出。',
-        unlockRewards: ['phoenix'],
+        enemyBaseHp: 2700,
+        playerBaseHp: 1700,unlockRewards: ['phoenix'],
         fragmentRewards: { thunder_eagle: 1 },
         phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：凤凰与风灵的组合，先处理高威胁目标。', spawnGroups: [
@@ -1334,7 +1368,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '天使的高治疗与高血量考验爆发输出。',
         recommendedTags: ['antiAir', 'burst'],
         description: '天使登场，测试玩家的爆发对空能力。',
-        unlockRewards: ['angel'],
+        enemyBaseHp: 2700,
+        playerBaseHp: 2000,unlockRewards: ['angel'],
         fragmentRewards: { phoenix: 1 },
         phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：天使与风灵的组合，优先处理天使。', spawnGroups: [
@@ -1357,7 +1392,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '龙族群集考验对空群伤与单体爆发。',
         recommendedTags: ['antiAir', 'aoe'],
         description: '龙族群集风暴，综合对空能力测试。',
-        fragmentRewards: { young_dragon: 2, phoenix: 1 },
+        enemyBaseHp: 3000,
+        playerBaseHp: 2000,fragmentRewards: { young_dragon: 2, phoenix: 1 },
         phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 54, pressure: 'read', warning: '本关命题：幼龙与雷鹰的组合开场。', spawnGroups: [
             { unitId: 'young_dragon', firstDelaySec: 7, count: 3, intervalSec: 8.5, laneOverride: 'air', note: '幼龙群起手。' },
@@ -1379,7 +1415,8 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: '最终 Boss 前的综合测试，所有天空单位都会出现。',
         recommendedTags: ['antiAir', 'burst', 'finisher'],
         description: '第七章考试关，综合验证对空决战能力。',
-        fragmentRewards: { thunder_eagle: 1, phoenix: 1, angel: 1 },
+        enemyBaseHp: 3000,
+        playerBaseHp: 2000,fragmentRewards: { thunder_eagle: 1, phoenix: 1, angel: 1 },
         phases: [
           { label: '开场读题', startAtSec: 0, endAtSec: 56, pressure: 'read', warning: '本关命题：幼龙与雷鹰组合开场，确认对空阵型。', spawnGroups: [
             { unitId: 'young_dragon', firstDelaySec: 7, count: 3, intervalSec: 8.2, laneOverride: 'air', note: '幼龙群起手。' },
@@ -1401,6 +1438,7 @@ const CHAPTER_BLUEPRINTS: ChapterBlueprint[] = [
         hint: 'Boss 关会分阶段召唤龙族群与天使，天空战场全面爆发。',
         recommendedTags: ['antiAir', 'burst', 'finisher'],
         description: '第七章 Boss 关，风暴巨龙的多阶段空战。',
+        enemyBaseHp: 3000,
         unlockRewards: ['gargoyle'],
         fragmentRewards: { young_dragon: 2, phoenix: 1, angel: 1 },
         starRewards: { 3: ['elementalist'] },
@@ -1459,8 +1497,8 @@ function createLevel(chapter: ChapterBlueprint, levelIndex: number): FantasyLane
     name: blueprint.name,
     description: blueprint.description,
     battleTimeLimitMs: chapter.timeLimitMs,
-    playerBaseHp: chapter.playerBaseHp + (levelIndex > 3 && !isBoss ? 80 : 0),
-    enemyBaseHp: chapter.enemyBaseHp + (levelIndex - 1) * (chapterOrder * 90),
+    playerBaseHp: blueprint.playerBaseHp ?? chapter.playerBaseHp,
+    enemyBaseHp: blueprint.enemyBaseHp ?? chapter.enemyBaseHp,
     startingGold: chapter.startingGold + (levelIndex > 4 ? 10 : 0),
     enemyPressure: Math.min(5, chapterOrder + Math.floor(levelIndex / 2)),
     enemyPool: chapter.enemyPool,

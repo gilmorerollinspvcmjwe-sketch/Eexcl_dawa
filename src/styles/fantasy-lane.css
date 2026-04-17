@@ -328,6 +328,7 @@
 }
 
 .fantasy-lane-hud-skill {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -343,6 +344,14 @@
 .fantasy-lane-hud-skill:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.fantasy-lane-hud-skill-cooldown {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
 }
 
 .fantasy-lane-hud-skill strong {
@@ -3506,4 +3515,261 @@
   .fantasy-lane-result-table-row > :last-child {
     border-bottom: none;
   }
+}
+
+/* 兵种卡片展开/收起样式 */
+.fantasy-lane-unit-card--expanded {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.fantasy-lane-expand-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  color: #64748b;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.fantasy-lane-unit-card--expanded .fantasy-lane-expand-indicator {
+  color: #3b82f6;
+}
+
+.fantasy-lane-unit-details {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--fantasy-lane-border-soft);
+  animation: fantasy-lane-expand-fade 200ms ease-out;
+}
+
+@keyframes fantasy-lane-expand-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 英雄图标样式 */
+.fantasy-lane-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 18px;
+  margin-right: 6px;
+  line-height: 1;
+}
+
+.fantasy-lane-hero-col-name {
+  display: flex;
+  align-items: center;
+}
+
+/* 战术技能图标样式 */
+.fantasy-lane-tactical-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 18px;
+  margin-right: 6px;
+  line-height: 1;
+}
+
+.fantasy-lane-tactical-col-name {
+  display: flex;
+  align-items: center;
+}
+
+/* 战报核心数据区 */
+.fantasy-lane-result-core-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid var(--fantasy-lane-border-soft);
+}
+
+.fantasy-lane-result-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.fantasy-lane-result-stat-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fantasy-lane-result-stat strong {
+  font-size: 20px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.fantasy-lane-result-stat-sub {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* 战报编组表现区 */
+.fantasy-lane-result-deployment {
+  margin: 16px 0;
+}
+
+.fantasy-lane-result-deployment h4 {
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--fantasy-lane-border-soft);
+}
+
+.fantasy-lane-result-deployment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.fantasy-lane-result-deployment-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border: 1px solid var(--fantasy-lane-border);
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.fantasy-lane-result-deployment-card strong {
+  font-size: 11px;
+  color: #0f172a;
+}
+
+.fantasy-lane-result-deployment-card span {
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* 战报经济分析区 */
+.fantasy-lane-result-economy {
+  margin: 16px 0;
+}
+
+.fantasy-lane-result-economy h4 {
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--fantasy-lane-border-soft);
+}
+
+.fantasy-lane-result-economy-items {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.fantasy-lane-result-economy-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.fantasy-lane-result-economy-item span {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.fantasy-lane-result-economy-item strong {
+  font-size: 16px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* 战报技能使用区 */
+.fantasy-lane-result-skills {
+  margin: 16px 0;
+}
+
+.fantasy-lane-result-skills h4 {
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--fantasy-lane-border-soft);
+}
+
+.fantasy-lane-result-skill-items {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.fantasy-lane-result-skill-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.fantasy-lane-result-skill-item span {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.fantasy-lane-result-skill-item strong {
+  font-size: 16px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* 战报失败提示 */
+.fantasy-lane-result-failure-tips {
+  margin: 16px 0;
+  padding: 14px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+}
+
+.fantasy-lane-result-failure-tips h4 {
+  font-size: 13px;
+  color: #b91c1c;
+  margin: 0 0 8px 0;
+}
+
+.fantasy-lane-result-failure-tips ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+  list-style: disc;
+}
+
+.fantasy-lane-result-failure-tips li {
+  font-size: 11px;
+  color: #7f1d1d;
+  margin-bottom: 4px;
+  line-height: 1.5;
 }

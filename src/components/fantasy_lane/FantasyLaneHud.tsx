@@ -90,10 +90,38 @@ export const FantasyLaneHud: React.FC<FantasyLaneHudProps> = ({
 
       <div className="fantasy-lane-hud-skills">
         <button type="button" className="fantasy-lane-hud-skill" onClick={onCastHero} disabled={state.phase !== 'playing' || state.heroSkill.remainingMs > 0}>
+          <svg className="fantasy-lane-hud-skill-cooldown" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
+            <circle
+              cx="18"
+              cy="18"
+              r="16"
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth="3"
+              strokeDasharray={`${(state.heroSkill.remainingMs / state.heroSkill.cooldownMs) * 100.53} 100.53`}
+              strokeLinecap="round"
+              transform="rotate(-90 18 18)"
+            />
+          </svg>
           <strong>Q</strong>
           <small>{state.heroSkill.remainingMs > 0 ? formatCooldown(state.heroSkill.remainingMs) : state.heroSkill.name}</small>
         </button>
         <button type="button" className="fantasy-lane-hud-skill" onClick={onCastTactical} disabled={state.phase !== 'playing' || state.tacticalSkill.remainingMs > 0}>
+          <svg className="fantasy-lane-hud-skill-cooldown" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
+            <circle
+              cx="18"
+              cy="18"
+              r="16"
+              fill="none"
+              stroke="#3b82f6"
+              strokeWidth="3"
+              strokeDasharray={`${(state.tacticalSkill.remainingMs / state.tacticalSkill.cooldownMs) * 100.53} 100.53`}
+              strokeLinecap="round"
+              transform="rotate(-90 18 18)"
+            />
+          </svg>
           <strong>W</strong>
           <small>{state.tacticalSkill.remainingMs > 0 ? formatCooldown(state.tacticalSkill.remainingMs) : state.tacticalSkill.name}</small>
         </button>

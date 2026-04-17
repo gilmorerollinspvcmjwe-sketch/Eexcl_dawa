@@ -1,9 +1,11 @@
 import { drawUnitOnCanvas } from '../../../features/fantasy_lane/assets/index.ts';
 import { FANTASY_LANE_UNIT_MAP } from '../../../features/fantasy_lane/fantasyLaneUnitRegistry.ts';
 import type {
+  FantasyLaneDamageNumber,
   FantasyLaneImpactEffect,
   FantasyLaneProjectile,
   FantasyLaneRuntimeState,
+  FantasyLaneSkillEffect,
   FantasyLaneUnitInstance,
 } from '../../../features/fantasy_lane/fantasyLaneTypes.ts';
 
@@ -15,6 +17,7 @@ interface FantasyLaneCanvasViewport {
 
 interface FantasyLaneRendererOptions {
   debug?: boolean;
+  showDamageNumbers?: boolean;
 }
 
 type ProjectileShapeKind =
@@ -446,6 +449,44 @@ function drawDebugOverlay(ctx: CanvasRenderingContext2D, state: FantasyLaneRunti
   drawDebugDensity(ctx, state, width, height);
 }
 
+function drawSkillEffect(ctx: CanvasRenderingContext2D, effect: FantasyLaneSkillEffect, width: number, height: number) {
+  const life = effect.remainingMs / effect.totalMs;
+  const alpha = life * 0.35;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = effect.color;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.globalAlpha = life * 0.9;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 28px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = effect.color;
+  ctx.shadowBlur = 20;
+  ctx.fillText(effect.skillName, width / 2, height / 2);
+  ctx.restore();
+}
+
+function drawDamageNumber(ctx: CanvasRenderingContext2D, dmg: FantasyLaneDamageNumber, width: number, height: number) {
+  const life = dmg.remainingMs / dmg.totalMs;
+  const x = toCanvasX(width, dmg.x);
+  const startY = toCanvasY(height, dmg.y);
+  const y = startY - (1 - life) * 40;
+
+  ctx.save();
+  ctx.globalAlpha = life;
+  ctx.fillStyle = dmg.color;
+  ctx.font = 'bold 14px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 4;
+  ctx.fillText(`-${dmg.value}`, x, y);
+  ctx.restore();
+}
+
 export function drawFantasyLaneBattlefieldCanvas(
   ctx: CanvasRenderingContext2D,
   state: FantasyLaneRuntimeState,
@@ -457,11 +498,15 @@ export function drawFantasyLaneBattlefieldCanvas(
   const units = asArray(state.units);
   const projectiles = asArray(state.projectiles);
   const impacts = asArray(state.impacts);
+  const skillEffects = asArray(state.skillEffects);
+  const damageNumbers = asArray(state.damageNumbers);
   const renderState: FantasyLaneRuntimeState = {
     ...state,
     units,
     projectiles,
     impacts,
+    skillEffects,
+    damageNumbers,
   };
 
   ctx.save();
@@ -485,6 +530,16 @@ export function drawFantasyLaneBattlefieldCanvas(
 
   for (const unit of sortedUnits) {
     drawUnit(ctx, unit, renderState, width, height);
+  }
+
+  for (const effect of skillEffects) {
+    drawSkillEffect(ctx, effect, width, height);
+  }
+
+  if (options.showDamageNumbers) {
+    for (const dmg of damageNumbers) {
+      drawDamageNumber(ctx, dmg, width, height);
+    }
   }
 
   if (options.debug) {

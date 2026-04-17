@@ -5,6 +5,7 @@ import { drawFantasyLaneBattlefieldCanvas } from './render/fantasyLaneBattlefiel
 
 interface FantasyLaneBoardProps {
   state: FantasyLaneRuntimeState;
+  onToggleDamageNumbers?: () => void;
 }
 
 interface BattlefieldViewport {
@@ -20,7 +21,7 @@ function resolvePixelRatio() {
   return Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
 }
 
-export const FantasyLaneBoard: React.FC<FantasyLaneBoardProps> = ({ state }) => {
+export const FantasyLaneBoard: React.FC<FantasyLaneBoardProps> = ({ state, onToggleDamageNumbers }) => {
   const battlefieldRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const latestStateRef = useRef(state);
@@ -31,6 +32,7 @@ export const FantasyLaneBoard: React.FC<FantasyLaneBoardProps> = ({ state }) => 
   });
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [debugVisible, setDebugVisible] = useState(false);
+  const [showDamageNumbers, setShowDamageNumbers] = useState(true);
 
   useEffect(() => {
     latestStateRef.current = state;
@@ -66,6 +68,11 @@ export const FantasyLaneBoard: React.FC<FantasyLaneBoardProps> = ({ state }) => 
       if (event.key === '`' || event.key === 'F2') {
         event.preventDefault();
         setDebugVisible((current) => !current);
+      }
+      if (event.key === 'd' || event.key === 'D') {
+        event.preventDefault();
+        setShowDamageNumbers((current) => !current);
+        onToggleDamageNumbers?.();
       }
     };
 
@@ -126,12 +133,12 @@ export const FantasyLaneBoard: React.FC<FantasyLaneBoardProps> = ({ state }) => 
     const context = canvas.getContext('2d');
     if (!context) return;
 
-    drawFantasyLaneBattlefieldCanvas(context, latestStateRef.current, viewport, { debug: debugVisible });
+    drawFantasyLaneBattlefieldCanvas(context, latestStateRef.current, viewport, { debug: debugVisible, showDamageNumbers });
   };
 
   useEffect(() => {
     paint();
-  }, [debugVisible, state, viewport.height, viewport.pixelRatio, viewport.width]);
+  }, [debugVisible, showDamageNumbers, state, viewport.height, viewport.pixelRatio, viewport.width]);
 
   useEffect(() => {
     if (state.phase !== 'playing' || prefersReducedMotion) return;

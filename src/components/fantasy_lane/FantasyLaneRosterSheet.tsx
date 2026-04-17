@@ -127,6 +127,20 @@ const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
   { value: 'finisher', label: '终结' },
 ];
 
+const HERO_ICONS: Record<string, string> = {
+  warlord: '⚔️',
+  archmage: '🧙',
+  dragon_rider: '🐉',
+};
+
+const TACTICAL_ICONS: Record<string, string> = {
+  fireball: '🔥',
+  heal: '💚',
+  haste: '⚡',
+  freeze: '❄️',
+  shield: '🛡️',
+};
+
 function getAttackLabel(unit: FantasyLaneUnitDefinition) {
   if (unit.damageProfile === 'aoe') return unit.rangeBand === 'melee' ? '近战AOE' : '远程AOE';
   return unit.rangeBand === 'melee' ? '近战单体' : '远程单体';
@@ -202,6 +216,7 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
   const [draftFilters, setDraftFilters] = useState<RosterFilters>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<RosterFilters>(DEFAULT_FILTERS);
   const [progress, setProgress] = useState(() => loadFantasyLaneProgress());
+  const [expandedUnitIds, setExpandedUnitIds] = useState<Set<string>>(new Set());
 
   const collection = getFantasyLaneCollectionSummary(progress);
 
@@ -223,11 +238,25 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
     const canUpgrade = canUpgradeFantasyLaneUnit(progress, unit.id);
     const upgradeCost = getFantasyLaneUnitUpgradeCost(stars);
     const battleBonus = getFantasyLaneUnitBattleBonus(stars);
+    const isExpanded = expandedUnitIds.has(unit.id);
+
+    const toggleExpand = () => {
+      setExpandedUnitIds((current) => {
+        const next = new Set(current);
+        if (next.has(unit.id)) {
+          next.delete(unit.id);
+        } else {
+          next.add(unit.id);
+        }
+        return next;
+      });
+    };
 
     return (
       <div
         key={unit.id}
-        className={`fantasy-lane-unit-card fantasy-lane-roster-unit-card${index % 2 === 0 ? '' : ' is-alt'}${!unlocked ? ' fantasy-lane-unit--locked' : ''}`}
+        className={`fantasy-lane-unit-card fantasy-lane-roster-unit-card${index % 2 === 0 ? '' : ' is-alt'}${!unlocked ? ' fantasy-lane-unit--locked' : ''}${isExpanded ? ' fantasy-lane-unit-card--expanded' : ''}`}
+        onClick={unlocked ? toggleExpand : undefined}
       >
         <div className="fantasy-lane-unit-card-header">
           <div className="fantasy-lane-unit-card-icon">
@@ -248,6 +277,7 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
             <div className="fantasy-lane-unit-card-name-row">
               <strong>{unlocked ? unit.name : '???'}</strong>
               <span className="fantasy-lane-unit-card-icon-text">{unlocked ? unit.icon : '?'}</span>
+              {unlocked && <span className="fantasy-lane-expand-indicator">{isExpanded ? '▼' : '▶'}</span>}
             </div>
             {unlocked ? (
               <div className="fantasy-lane-unit-card-tags">
@@ -281,36 +311,40 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
               <div className="fantasy-lane-roster-unit-metric"><span>伤害</span><strong>{unit.damage}</strong></div>
               <div className="fantasy-lane-roster-unit-metric"><span>血量</span><strong>{unit.maxHp}</strong></div>
               <div className="fantasy-lane-roster-unit-metric"><span>护甲</span><strong>{unit.armorHp}</strong></div>
-              <div className="fantasy-lane-roster-unit-metric"><span>速度</span><strong>{formatNumber(unit.moveSpeed)}</strong></div>
-              <div className="fantasy-lane-roster-unit-metric"><span>射程</span><strong>{formatNumber(unit.preferredRange)}</strong></div>
-              <div className="fantasy-lane-roster-unit-metric"><span>攻速</span><strong>{formatCooldownMs(unit.attackIntervalMs)}</strong></div>
             </div>
 
-            <div className="fantasy-lane-roster-unit-facts">
-              <span>伤害类型 {DAMAGE_TYPE_LABELS[unit.damageType]}</span>
-              <span>护甲类型 {ARMOR_TYPE_LABELS[unit.armorType]}</span>
-              <span>护甲级别 {ARMOR_TYPE_LABELS[unit.armorClass]}</span>
-              <span>索敌 {formatNumber(unit.acquireRange)}</span>
-              <span>最小射程 {formatNumber(unit.minimumRange)}</span>
-              <span>弹道 {formatNumber(unit.projectileSpeed)}</span>
-              <span>碰撞 {formatNumber(unit.collisionRadius)}</span>
-              <span>AOE {formatNumber(unit.splashRadius)}</span>
-              <span>签名 {unit.signature}</span>
-            </div>
+            {isExpanded && (
+              <div className="fantasy-lane-unit-details">
+                <div className="fantasy-lane-roster-unit-facts">
+                  <span>伤害类型 {DAMAGE_TYPE_LABELS[unit.damageType]}</span>
+                  <span>护甲类型 {ARMOR_TYPE_LABELS[unit.armorType]}</span>
+                  <span>护甲级别 {ARMOR_TYPE_LABELS[unit.armorClass]}</span>
+                  <span>索敌 {formatNumber(unit.acquireRange)}</span>
+                  <span>最小射程 {formatNumber(unit.minimumRange)}</span>
+                  <span>弹道 {formatNumber(unit.projectileSpeed)}</span>
+                  <span>碰撞 {formatNumber(unit.collisionRadius)}</span>
+                  <span>AOE {formatNumber(unit.splashRadius)}</span>
+                  <span>签名 {unit.signature}</span>
+                </div>
 
-            <div className="fantasy-lane-unit-actions">
-              <span className="fantasy-lane-unit-bonus">
-                战斗增益 攻 +{Math.round((battleBonus.damageMultiplier - 1) * 100)}% / 血 +{Math.round((battleBonus.healthMultiplier - 1) * 100)}%
-              </span>
-              <button
-                type="button"
-                className="fantasy-lane-btn fantasy-lane-btn--small"
-                disabled={!canUpgrade}
-                onClick={() => setProgress((current) => upgradeFantasyLaneUnitWithFragments(unit.id, current))}
-              >
-                {stars >= 3 ? '已满星' : `升星 ${upgradeCost} 碎片`}
-              </button>
-            </div>
+                <div className="fantasy-lane-unit-actions">
+                  <span className="fantasy-lane-unit-bonus">
+                    战斗增益 攻 +{Math.round((battleBonus.damageMultiplier - 1) * 100)}% / 血 +{Math.round((battleBonus.healthMultiplier - 1) * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    className="fantasy-lane-btn fantasy-lane-btn--small"
+                    disabled={!canUpgrade}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setProgress((current) => upgradeFantasyLaneUnitWithFragments(unit.id, current));
+                    }}
+                  >
+                    {stars >= 3 ? '已满星' : `升星 ${upgradeCost} 碎片`}
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="fantasy-lane-unit-card-desc">
@@ -463,7 +497,10 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
           </div>
           {FANTASY_LANE_HEROES.map((hero, index) => (
             <div key={hero.id} className={`fantasy-lane-hero-table-row fantasy-lane-hero-table-row--wide${index % 2 === 0 ? '' : ' is-alt'}`}>
-              <span className="fantasy-lane-hero-col-name"><strong>{hero.name}</strong></span>
+              <span className="fantasy-lane-hero-col-name">
+                <span className="fantasy-lane-hero-icon">{HERO_ICONS[hero.id] || '👤'}</span>
+                <strong>{hero.name}</strong>
+              </span>
               <span className="fantasy-lane-hero-col-skillid">{hero.skillId}</span>
               <span className="fantasy-lane-hero-col-summary">{hero.summary}</span>
               <span className="fantasy-lane-hero-col-passive">{hero.passiveSummary}</span>
@@ -483,7 +520,10 @@ export const FantasyLaneRosterSheet: React.FC<FantasyLaneRosterSheetProps> = ({ 
           </div>
           {FANTASY_LANE_TACTICAL_SKILLS.map((skill, index) => (
             <div key={skill.id} className={`fantasy-lane-tactical-table-row${index % 2 === 0 ? '' : ' is-alt'}`}>
-              <span className="fantasy-lane-tactical-col-name"><strong>{skill.name}</strong></span>
+              <span className="fantasy-lane-tactical-col-name">
+                <span className="fantasy-lane-tactical-icon">{TACTICAL_ICONS[skill.id] || '✨'}</span>
+                <strong>{skill.name}</strong>
+              </span>
               <span className="fantasy-lane-tactical-col-summary">{skill.summary}</span>
               <span className="fantasy-lane-tactical-col-cd">{formatCooldownMs(skill.cooldownMs)}</span>
             </div>

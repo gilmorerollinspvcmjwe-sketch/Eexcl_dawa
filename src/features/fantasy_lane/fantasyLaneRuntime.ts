@@ -349,6 +349,28 @@ function pushImpact(state: FantasyLaneRuntimeState, input: Omit<FantasyLaneImpac
   });
 }
 
+function pushSkillEffect(state: FantasyLaneRuntimeState, skillName: string, color: string) {
+  state.skillEffects.push({
+    id: `skill-fx-${state.rngSeed++}`,
+    skillName,
+    color,
+    remainingMs: 800,
+    totalMs: 800,
+  });
+}
+
+function pushDamageNumber(state: FantasyLaneRuntimeState, x: number, y: number, value: number, color: string) {
+  state.damageNumbers.push({
+    id: `dmg-${state.rngSeed++}`,
+    x,
+    y,
+    value: Math.round(value),
+    color,
+    remainingMs: 600,
+    totalMs: 600,
+  });
+}
+
 // 统一处理伤害倍率，主堡视为 structure。
 function getDamageMultiplier(source: FantasyLaneUnitDefinition, target: FantasyLaneUnitDefinition | 'base') {
   return getDamageMultiplierFromMatrix(source.damageType, target === 'base' ? 'structure' : target.armorType);
@@ -359,7 +381,7 @@ function getScaledUnitDamage(unit: FantasyLaneUnitInstance, definition: FantasyL
 }
 
 // 统一给单位扣血，并把护甲先吃掉。
-function applyDamageToUnit(unit: FantasyLaneUnitInstance, amount: number) {
+function applyDamageToUnit(state: FantasyLaneRuntimeState, unit: FantasyLaneUnitInstance, amount: number) {
   let remaining = amount;
   if (unit.armorHp > 0) {
     const absorbed = Math.min(unit.armorHp, remaining);
@@ -370,6 +392,7 @@ function applyDamageToUnit(unit: FantasyLaneUnitInstance, amount: number) {
     unit.hp -= remaining;
   }
   unit.hitFlashMs = 180;
+  pushDamageNumber(state, unit.x, unit.y, amount, unit.side === 'player' ? '#ef4444' : '#3b82f6');
 }
 
 // 把首次接敌时间记到统计里，用于后续平均接敌时间分析。
@@ -894,13 +917,14 @@ function applyAreaDamage(
 
     const multiplier = getDamageMultiplier(definition, targetDefinition);
     if (primaryTargetId && target.instanceId === primaryTargetId) {
-      applyDamageToUnit(target, scaleDamage(state, amount * multiplier, side, target.side));
+      applyDamageToUnit(state, target, scaleDamage(state, amount * multiplier, side, target.side));
       hits += 1;
       return;
     }
 
     const falloff = getAoeFalloff(distance, radius);
     applyDamageToUnit(
+      state,
       target,
       scaleDamage(
         state,
@@ -956,6 +980,7 @@ function resolvePendingAttack(state: FantasyLaneRuntimeState, unit: FantasyLaneU
       );
     } else {
       applyDamageToUnit(
+        state,
         target,
         scaleDamage(state, getScaledUnitDamage(unit, definition) * getDamageMultiplier(definition, targetDefinition), unit.side, target.side),
       );
@@ -1359,6 +1384,26 @@ function processImpacts(state: FantasyLaneRuntimeState, deltaMs: number) {
   });
 
   state.impacts.length = writeIndex;
+
+  // 更新技能特效
+  let skillFxIndex = 0;
+  for (const effect of state.skillEffects) {
+    effect.remainingMs -= deltaMs;
+    if (effect.remainingMs <= 0) continue;
+    state.skillEffects[skillFxIndex] = effect;
+    skillFxIndex += 1;
+  }
+  state.skillEffects.length = skillFxIndex;
+
+  // 更新伤害数字
+  let dmgIndex = 0;
+  for (const dmg of state.damageNumbers) {
+    dmg.remainingMs -= deltaMs;
+    if (dmg.remainingMs <= 0) continue;
+    state.damageNumbers[dmgIndex] = dmg;
+    dmgIndex += 1;
+  }
+  state.damageNumbers.length = dmgIndex;
 }
 
 // 统一处理投射物落点伤害。
@@ -1437,6 +1482,7 @@ function processProjectileHit(state: FantasyLaneRuntimeState, projectile: Fantas
     );
   } else {
     applyDamageToUnit(
+      state,
       target,
       scaleDamage(
         state,
@@ -1463,7 +1509,7 @@ function processBurnline(state: FantasyLaneRuntimeState, deltaMs: number) {
     .forEach((effect) => {
       state.units.forEach((unit) => {
         if (effect.target !== 'both' && unit.side !== effect.target) return;
-        applyDamageToUnit(unit, scaleDamage(state, effect.potency * (deltaMs / 1000), null, unit.side));
+        applyDamageToUnit(state, unit, scaleDamage(state, effect.potency * (deltaMs / 1000), null, unit.side));
       });
       if (effect.target === 'enemy' || effect.target === 'both') {
         state.enemyBaseHp = Math.max(
@@ -1766,6 +1812,7 @@ function applySkill(state: FantasyLaneRuntimeState, skillId: string) {
     state.heroSkill.remainingMs = state.heroSkill.cooldownMs;
     state.stats.heroSkillCast += 1;
     state.stats.lastSkillCastAtMs = state.elapsedMs;
+    pushSkillEffect(state, FANTASY_LANE_HERO_MAP[state.selectedHeroId].name, '#f59e0b');
     state.activeWarning = {
       id: `hero-${state.elapsedMs}`,
       text: `${FANTASY_LANE_HERO_MAP[state.selectedHeroId].name} 发动战场技能`,
@@ -1812,6 +1859,7 @@ function applySkill(state: FantasyLaneRuntimeState, skillId: string) {
   state.tacticalSkill.remainingMs = state.tacticalSkill.cooldownMs;
   state.stats.tacticalSkillCast += 1;
   state.stats.lastSkillCastAtMs = state.elapsedMs;
+  pushSkillEffect(state, state.tacticalSkill.name, '#3b82f6');
   state.activeWarning = {
     id: `tactical-${state.elapsedMs}`,
     text: `战术技能 ${state.tacticalSkill.name} 已执行`,
@@ -1964,6 +2012,8 @@ function createBaseState(
     units: [],
     projectiles: [],
     impacts: [],
+    skillEffects: [],
+    damageNumbers: [],
     effects: [],
     pressureLabel: level.phases[0]?.label ?? '备战阶段',
     phaseLabel: level.phases[0]?.label ?? '备战阶段',
