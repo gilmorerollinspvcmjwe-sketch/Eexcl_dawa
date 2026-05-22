@@ -1,0 +1,1320 @@
+.pvz-sheet {
+  --pvz-font-body: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif;
+  --pvz-font-display: "Bahnschrift SemiCondensed", "Arial Narrow", var(--pvz-font-body);
+  --pvz-text-strong: #10210f;
+  --pvz-text-muted: #4b5e53;
+  --pvz-border-soft: rgba(38, 64, 33, 0.16);
+  --pvz-chip-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 10px;
+  background: #f3f3f3;
+  font-family: var(--pvz-font-body);
+  color: var(--pvz-text-strong);
+}
+
+.pvz-hud {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) auto;
+  grid-template-areas:
+    "overview controls"
+    "metrics metrics";
+  gap: 6px 8px;
+  align-items: stretch;
+}
+
+.pvz-card-tray {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pvz-card-tray-shell {
+  display: grid;
+  gap: 6px;
+}
+
+.pvz-card-tray-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: #54665d;
+}
+
+.pvz-card-tray-meta span {
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #d9e2dc;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.pvz-hud-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: #6f7f77;
+}
+
+.pvz-hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 7px 10px;
+}
+
+.pvz-hud-bar--overview {
+  grid-area: overview;
+}
+
+.pvz-hud-bar--controls {
+  grid-area: controls;
+  justify-content: space-between;
+}
+
+.pvz-hud-bar--metrics {
+  grid-area: metrics;
+}
+
+.pvz-hud-identity,
+.pvz-hud-controls-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pvz-hud-title {
+  font-size: 0.88rem;
+  line-height: 1.1;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.pvz-hud-chips,
+.pvz-hud-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.pvz-hud-summary,
+.pvz-hud-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pvz-hud-summary {
+  flex: 1;
+}
+
+.pvz-hud-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid #d9e2dc;
+  background: rgba(255, 255, 255, 0.88);
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.pvz-hud-chip--status.status-playing {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.pvz-hud-chip--status.status-won {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.pvz-hud-chip--status.status-lost {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.pvz-hud-summary-item,
+.pvz-hud-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  min-width: 0;
+  padding: 0 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  color: #475569;
+}
+
+.pvz-hud-summary-item strong,
+.pvz-hud-metric strong {
+  font-size: 11px;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
+.pvz-hud-metric {
+  font-variant-numeric: tabular-nums;
+}
+
+.pvz-setup-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 12px;
+  border: 1px solid #d4d4d4;
+  background: white;
+  padding: 10px 12px;
+}
+
+.pvz-setup-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pvz-setup-toolbar-copy,
+.pvz-setup-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pvz-setup-toolbar-copy strong {
+  font-size: 13px;
+  color: #10210f;
+}
+
+.pvz-setup-panel.is-collapsed {
+  grid-template-columns: 1fr;
+}
+
+.pvz-setup-copy {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #475569;
+  max-height: 240px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.pvz-scenario-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pvz-scenario-detail-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  font-size: 11px;
+  color: #0f172a;
+}
+
+.pvz-scenario-detail-item span {
+  display: block;
+  font-size: 10px;
+  color: #475569;
+}
+
+.pvz-start-btn {
+  border: 1px solid #0c5a2f;
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: white;
+  min-height: 40px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+.pvz-mode-panel {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.pvz-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pvz-adventure-pack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pvz-mode-tab,
+.pvz-scenario-card {
+  border: 1px solid #d4d4d4;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.pvz-mode-tab {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.pvz-mode-tab.active {
+  border-color: #107c41;
+  background: #edf7f0;
+}
+
+.pvz-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.pvz-scenario-card {
+  padding: 8px 9px;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.pvz-scenario-card-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.pvz-scenario-card.active {
+  border-color: #107c41;
+  background: #edf7f0;
+}
+
+.pvz-scenario-card strong {
+  font-size: 12px;
+}
+
+.pvz-scenario-card span,
+.pvz-scenario-card small {
+  color: #475569;
+}
+
+.pvz-scenario-card span {
+  font-size: 11px;
+}
+
+.pvz-scenario-card small {
+  font-size: 10px;
+}
+
+.pvz-hud-item,
+.pvz-card {
+  border: 1px solid #d4d4d4;
+  background: white;
+  padding: 7px 8px;
+  font-size: 0.74rem;
+}
+
+.pvz-hud-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pvz-wave-alert {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #fbbf24;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+  font-size: 12px;
+  font-weight: 700;
+  color: #9a3412;
+  white-space: nowrap;
+}
+
+.pvz-wave-alert--final {
+  border-color: #fca5a5;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+  color: #b91c1c;
+}
+
+.pvz-card {
+  min-width: 76px;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+  align-content: start;
+}
+
+.pvz-card.selected {
+  border-color: #107c41;
+  background: #edf7f0;
+}
+
+.pvz-card--recommended {
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.18);
+}
+
+.pvz-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pvz-card:focus-visible,
+.pvz-mode-tab:focus-visible,
+.pvz-scenario-card:focus-visible,
+.pvz-start-btn:focus-visible,
+.pvz-cell:focus-visible,
+.pvz-setup-copy select:focus-visible {
+  outline: 2px solid #107c41;
+  outline-offset: 2px;
+}
+
+.pvz-card-name {
+  font-size: 0.82rem;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--pvz-text-strong);
+}
+
+.pvz-card-meta,
+.pvz-card-cooldown {
+  color: #587065;
+  font-size: 0.68rem;
+}
+
+.pvz-card-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.pvz-card-short,
+.pvz-card-role,
+.pvz-unit-meta,
+.pvz-inline-short {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(16, 33, 15, 0.12);
+  border-radius: 999px;
+  box-shadow: var(--pvz-chip-shadow);
+}
+
+.pvz-card-short {
+  min-width: 1.46rem;
+  min-height: 1.46rem;
+  padding: 0 0.3rem;
+  font-family: var(--pvz-font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pvz-card-role,
+.pvz-unit-meta {
+  padding: 0.12rem 0.34rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.05em;
+  color: #3d5248;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.pvz-unit-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.pvz-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.pvz-card-stat,
+.pvz-unit-rate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.32rem;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 33, 15, 0.1);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.6);
+  color: #3d5248;
+}
+
+.pvz-card-stat--timing,
+.pvz-unit-rate {
+  font-variant-numeric: tabular-nums;
+  background: rgba(240, 249, 255, 0.78);
+  color: #155e75;
+}
+
+.pvz-card-stat--recommend {
+  background: rgba(254, 243, 199, 0.88);
+  color: #92400e;
+}
+
+.pvz-board-shell {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #d4d4d4;
+  background: white;
+  position: relative;
+}
+
+.pvz-setup-board-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d4d4d4;
+  background: white;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pvz-board {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
+.pvz-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(9, 84px);
+  gap: 5px;
+  min-height: 70px;
+}
+
+.pvz-lawn-mower {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pvz-lawn-mower--triggered {
+  width: 34px;
+  font-size: 18px;
+}
+
+.pvz-cell {
+  position: relative;
+  border: 1px dotted #d4d4d4;
+  background: linear-gradient(180deg, #d9f99d 0%, #bbf7d0 100%);
+  min-height: 70px;
+}
+
+.pvz-zombie-lane {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pvz-projectile {
+  position: absolute;
+  top: 28px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+}
+
+.pvz-projectile.kind-pea {
+  background: radial-gradient(circle at 30% 30%, #dcfce7 0%, #16a34a 58%, #166534 100%);
+}
+
+.pvz-projectile.kind-double-pea {
+  background: radial-gradient(circle at 30% 30%, #dcfce7 0%, #15803d 56%, #14532d 100%);
+  box-shadow:
+    -8px 0 0 -2px rgba(21, 128, 61, 0.95),
+    8px 0 0 -2px rgba(21, 128, 61, 0.95),
+    0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+.pvz-projectile.kind-snow-pea {
+  width: 13px;
+  height: 13px;
+  background: radial-gradient(circle at 35% 35%, #eff6ff 0%, #67e8f9 55%, #2563eb 100%);
+  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.35);
+}
+
+.pvz-projectile.kind-lobbed {
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, #d9f99d 0%, #84cc16 55%, #4d7c0f 100%);
+  border-radius: 4px;
+  transform: translateX(-50%) rotate(18deg);
+}
+
+.pvz-plant,
+.pvz-zombie {
+  position: absolute;
+  top: 7px;
+  display: grid;
+  gap: 3px;
+  align-items: center;
+  justify-items: center;
+  min-width: 60px;
+  padding: 4px 6px 5px;
+  border: 1px solid var(--pvz-border-soft);
+  border-radius: 12px;
+  backdrop-filter: blur(1px);
+}
+
+.pvz-unit-frame--armor {
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.55),
+    0 0 0 1px rgba(77, 101, 90, 0.28);
+}
+
+.pvz-plant {
+  inset: 7px;
+}
+
+.pvz-zombie {
+  transform: translateX(-50%);
+}
+
+.pvz-unit-short-shell {
+  --pvz-charge-progress: 0;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.88) 58%, transparent 59%),
+    conic-gradient(from -90deg, rgba(148, 163, 184, 0.16) 0turn, rgba(148, 163, 184, 0.16) 1turn);
+  transition: background 180ms linear;
+}
+
+.pvz-charge--sun {
+  background:
+    radial-gradient(circle, rgba(255, 251, 235, 0.94) 58%, transparent 59%),
+    conic-gradient(from -90deg, #facc15 calc(var(--pvz-charge-progress) * 1turn), rgba(250, 204, 21, 0.16) 0);
+}
+
+.pvz-charge--attack {
+  background:
+    radial-gradient(circle, rgba(240, 253, 244, 0.94) 58%, transparent 59%),
+    conic-gradient(from -90deg, #16a34a calc(var(--pvz-charge-progress) * 1turn), rgba(22, 163, 74, 0.16) 0);
+}
+
+.pvz-charge--blast {
+  background:
+    radial-gradient(circle, rgba(255, 247, 237, 0.94) 58%, transparent 59%),
+    conic-gradient(from -90deg, #f97316 calc(var(--pvz-charge-progress) * 1turn), rgba(249, 115, 22, 0.16) 0);
+}
+
+.pvz-unit-short {
+  font-family: var(--pvz-font-display);
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--pvz-text-strong);
+}
+
+.pvz-unit-short-badge {
+  position: absolute;
+  right: -0.12rem;
+  bottom: -0.08rem;
+  min-width: 0.92rem;
+  height: 0.92rem;
+  padding: 0 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 33, 15, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.52rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #33453d;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.pvz-unit-name {
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.05;
+  color: #33453d;
+  text-align: center;
+}
+
+.pvz-health-bar {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.16);
+  display: flex;
+}
+
+.pvz-health-fill {
+  display: block;
+  height: 100%;
+}
+
+.pvz-health-fill--body {
+  background: linear-gradient(90deg, #22c55e 0%, #84cc16 55%, #facc15 82%, #f97316 100%);
+}
+
+.pvz-health-fill--armor {
+  background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 55%, #64748b 100%);
+}
+
+.pvz-health-bar--armored {
+  box-shadow: inset 0 0 0 1px rgba(71, 85, 105, 0.18);
+}
+
+.pvz-trait--tank {
+  color: #334155;
+  background: rgba(226, 232, 240, 0.88);
+}
+
+.pvz-trait--fast {
+  color: #7f1d1d;
+  background: rgba(254, 205, 211, 0.88);
+}
+
+.pvz-trait--ranged {
+  color: #0f766e;
+  background: rgba(153, 246, 228, 0.88);
+}
+
+.pvz-trait--blast {
+  color: #9a3412;
+  background: rgba(254, 215, 170, 0.9);
+}
+
+.pvz-trait--support {
+  color: #365314;
+  background: rgba(217, 249, 157, 0.88);
+}
+
+.pvz-trait--pressure {
+  color: #4c1d95;
+  background: rgba(233, 213, 255, 0.88);
+}
+
+.pvz-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.28rem 0.48rem 0.28rem 0.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--pvz-border-soft);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #294034;
+}
+
+.pvz-inline-short {
+  min-width: 1.4rem;
+  min-height: 1.4rem;
+  padding: 0 0.28rem;
+  font-family: var(--pvz-font-display);
+  font-size: 0.88rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.pvz-inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pvz-plant--sun,
+.pvz-card.pvz-plant--sun,
+.pvz-inline-badge.pvz-plant--sun {
+  background: linear-gradient(180deg, rgba(254, 249, 195, 0.96) 0%, rgba(254, 240, 138, 0.92) 100%);
+}
+
+.pvz-plant--pea,
+.pvz-card.pvz-plant--pea,
+.pvz-inline-badge.pvz-plant--pea {
+  background: linear-gradient(180deg, rgba(220, 252, 231, 0.96) 0%, rgba(134, 239, 172, 0.92) 100%);
+}
+
+.pvz-plant--nut,
+.pvz-card.pvz-plant--nut,
+.pvz-inline-badge.pvz-plant--nut {
+  background: linear-gradient(180deg, rgba(254, 243, 199, 0.96) 0%, rgba(253, 186, 116, 0.92) 100%);
+}
+
+.pvz-plant--bomb,
+.pvz-card.pvz-plant--bomb,
+.pvz-inline-badge.pvz-plant--bomb {
+  background: linear-gradient(180deg, rgba(254, 226, 226, 0.96) 0%, rgba(248, 113, 113, 0.9) 100%);
+}
+
+.pvz-plant--mine,
+.pvz-card.pvz-plant--mine,
+.pvz-inline-badge.pvz-plant--mine {
+  background: linear-gradient(180deg, rgba(250, 232, 255, 0.95) 0%, rgba(216, 180, 254, 0.9) 100%);
+}
+
+.pvz-plant--double,
+.pvz-card.pvz-plant--double,
+.pvz-inline-badge.pvz-plant--double {
+  background: linear-gradient(180deg, rgba(209, 250, 229, 0.96) 0%, rgba(52, 211, 153, 0.9) 100%);
+}
+
+.pvz-plant--ice,
+.pvz-card.pvz-plant--ice,
+.pvz-inline-badge.pvz-plant--ice {
+  background: linear-gradient(180deg, rgba(224, 242, 254, 0.96) 0%, rgba(125, 211, 252, 0.9) 100%);
+}
+
+.pvz-plant--lob,
+.pvz-card.pvz-plant--lob,
+.pvz-inline-badge.pvz-plant--lob {
+  background: linear-gradient(180deg, rgba(236, 253, 245, 0.96) 0%, rgba(132, 204, 22, 0.88) 100%);
+}
+
+.pvz-plant--bite,
+.pvz-card.pvz-plant--bite,
+.pvz-inline-badge.pvz-plant--bite {
+  background: linear-gradient(180deg, rgba(254, 240, 138, 0.95) 0%, rgba(167, 243, 208, 0.88) 100%);
+}
+
+.pvz-plant--triple,
+.pvz-card.pvz-plant--triple,
+.pvz-inline-badge.pvz-plant--triple {
+  background: linear-gradient(180deg, rgba(219, 234, 254, 0.96) 0%, rgba(96, 165, 250, 0.9) 100%);
+}
+
+.pvz-plant--fire,
+.pvz-card.pvz-plant--fire,
+.pvz-inline-badge.pvz-plant--fire {
+  background: linear-gradient(180deg, rgba(255, 237, 213, 0.96) 0%, rgba(251, 146, 60, 0.9) 100%);
+}
+
+.pvz-plant--kernel,
+.pvz-card.pvz-plant--kernel,
+.pvz-inline-badge.pvz-plant--kernel {
+  background: linear-gradient(180deg, rgba(254, 249, 195, 0.96) 0%, rgba(250, 204, 21, 0.9) 100%);
+}
+
+.pvz-zombie--normal,
+.pvz-inline-badge.pvz-zombie--normal {
+  background: linear-gradient(180deg, rgba(241, 245, 249, 0.96) 0%, rgba(203, 213, 225, 0.92) 100%);
+}
+
+.pvz-zombie--flag,
+.pvz-inline-badge.pvz-zombie--flag {
+  background: linear-gradient(180deg, rgba(254, 242, 242, 0.96) 0%, rgba(252, 165, 165, 0.92) 100%);
+}
+
+.pvz-zombie--cone,
+.pvz-inline-badge.pvz-zombie--cone {
+  background: linear-gradient(180deg, rgba(255, 237, 213, 0.96) 0%, rgba(251, 146, 60, 0.9) 100%);
+}
+
+.pvz-zombie--bucket,
+.pvz-inline-badge.pvz-zombie--bucket {
+  background: linear-gradient(180deg, rgba(226, 232, 240, 0.96) 0%, rgba(148, 163, 184, 0.92) 100%);
+}
+
+.pvz-zombie--paper,
+.pvz-inline-badge.pvz-zombie--paper {
+  background: linear-gradient(180deg, rgba(250, 245, 255, 0.96) 0%, rgba(216, 180, 254, 0.9) 100%);
+}
+
+.pvz-zombie--pole,
+.pvz-inline-badge.pvz-zombie--pole {
+  background: linear-gradient(180deg, rgba(224, 231, 255, 0.96) 0%, rgba(129, 140, 248, 0.9) 100%);
+}
+
+.pvz-zombie--football,
+.pvz-inline-badge.pvz-zombie--football {
+  background: linear-gradient(180deg, rgba(255, 228, 230, 0.96) 0%, rgba(244, 63, 94, 0.9) 100%);
+}
+
+.pvz-zombie--door,
+.pvz-inline-badge.pvz-zombie--door {
+  background: linear-gradient(180deg, rgba(240, 249, 255, 0.96) 0%, rgba(125, 211, 252, 0.92) 100%);
+}
+
+.pvz-zombie {
+  border-color: rgba(50, 68, 61, 0.18);
+}
+
+.pvz-zombie .pvz-unit-short {
+  font-size: 1.18rem;
+}
+
+.pvz-zombie .pvz-unit-name {
+  font-size: 0.68rem;
+}
+
+.pvz-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.pvz-info-table th {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #5d6c64;
+}
+
+.pvz-info-table td:nth-child(2),
+.pvz-info-table td:nth-child(3) {
+  font-variant-numeric: tabular-nums;
+}
+
+.pvz-info-sheet {
+  overflow: auto;
+}
+
+.pvz-info-panel {
+  border: 1px solid #d4d4d4;
+  background: white;
+  padding: 12px;
+}
+
+.pvz-info-panel h3 {
+  margin: 0 0 10px;
+  font-size: 0.94rem;
+}
+
+.pvz-info-table th,
+.pvz-info-table td {
+  border: 1px dotted #d4d4d4;
+  padding: 8px;
+  text-align: left;
+}
+
+.pvz-rule-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+@media (max-width: 1100px) {
+  .pvz-hud,
+  .pvz-setup-panel,
+  .pvz-scenario-grid,
+  .pvz-mode-tabs,
+  .pvz-adventure-pack-grid {
+    grid-template-columns: 1fr;
+  }
+  .pvz-hud {
+    grid-template-areas:
+      "overview"
+      "controls"
+      "metrics";
+  }
+
+  .pvz-setup-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pvz-setup-toolbar-actions {
+    justify-content: space-between;
+  }
+
+  .pvz-row {
+    grid-template-columns: repeat(9, minmax(62px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .pvz-hud-bar,
+  .pvz-hud-identity,
+  .pvz-hud-controls-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pvz-hud-chips,
+  .pvz-hud-controls,
+  .pvz-hud-summary,
+  .pvz-hud-metrics {
+    width: 100%;
+  }
+
+  .pvz-hud-btn {
+    flex: 1 1 140px;
+  }
+
+  .pvz-result-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pvz-result-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.24);
+  backdrop-filter: blur(2px);
+}
+
+.pvz-result-panel {
+  width: min(720px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 14px;
+  border: 1px solid #d4d4d4;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+  padding: 16px;
+}
+
+.pvz-result-panel--won {
+  border-color: #107c41;
+}
+
+.pvz-result-panel--lost {
+  border-color: #b91c1c;
+}
+
+.pvz-result-copy,
+.pvz-result-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.pvz-result-title {
+  font-size: 16px;
+  color: #10210f;
+}
+
+.pvz-result-copy span {
+  font-size: 12px;
+  color: #475569;
+}
+
+.pvz-result-actions {
+  align-content: start;
+}
+
+/* ==================== 解锁树 UI ==================== */
+.pvz-progress-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pvz-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pvz-stat-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.pvz-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #107c41;
+}
+
+.pvz-scenario-card--completed {
+  border-left: 3px solid #107c41;
+}
+
+.pvz-scenario-card--unlocked {
+  border-left: 3px solid #f59e0b;
+}
+
+.pvz-scenario-card--locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-left: 3px solid #9ca3af;
+}
+
+.pvz-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.pvz-status-badge {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.pvz-lock-hint {
+  color: #ef4444;
+  font-size: 0.7rem;
+}
+
+.pvz-completed-hint {
+  color: #107c41;
+  font-size: 0.7rem;
+}
+
+.pvz-recommended-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.pvz-card-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  font-size: 0.68rem;
+  color: #374151;
+}
+
+.pvz-small-btn {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+
+.pvz-small-btn:hover {
+  background: #f3f4f6;
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.pvz-card--locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+.pvz-card-cooldown--locked {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.pvz-unlock-notice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pvz-unlock-notice strong {
+  color: #92400e;
+  font-size: 0.85rem;
+}
+
+.pvz-unlock-notice span {
+  color: #78350f;
+  font-size: 0.78rem;
+}
+
+/* ==================== 植物攻击动画 ==================== */
+.pvz-plant--attacking {
+  animation: pvz-attack-pulse 0.3s ease-out;
+}
+
+.pvz-plant--splash-attack {
+  animation: pvz-splash-pulse 0.5s ease-out;
+}
+
+.pvz-plant--range-attack {
+  animation: pvz-range-pulse 0.4s ease-out;
+}
+
+@keyframes pvz-attack-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 8px rgba(16, 124, 65, 0.6); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pvz-splash-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); box-shadow: 0 0 12px rgba(255, 140, 0, 0.7); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pvz-range-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); box-shadow: 0 0 10px rgba(138, 43, 226, 0.5); }
+  100% { transform: scale(1); }
+}
+
+/* ==================== 僵尸状态动画 ==================== */
+.pvz-zombie--stealth {
+  opacity: 0.4;
+  animation: pvz-stealth-wave 1s infinite;
+}
+
+.pvz-zombie--airborne {
+  animation: pvz-fly-bounce 0.5s infinite;
+}
+
+.pvz-zombie--summoning {
+  animation: pvz-summon-glow 1s infinite;
+}
+
+@keyframes pvz-stealth-wave {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50% { opacity: 0.6; transform: translateY(-2px); }
+}
+
+@keyframes pvz-fly-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes pvz-summon-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+}
+
+/* ==================== 弹道特效动画 ==================== */
+.pvz-projectile--snow-pea {
+  filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.6));
+}
+
+.pvz-projectile--fire-pea {
+  filter: drop-shadow(0 0 4px rgba(255, 100, 0, 0.7));
+}
+
+.pvz-projectile--shock {
+  filter: drop-shadow(0 0 3px rgba(250, 204, 21, 0.6));
+}
+
+.pvz-hit-effect--splash {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 140, 0, 0.4) 0%, transparent 70%);
+  animation: pvz-splash-expand 0.3s ease-out forwards;
+}
+
+.pvz-hit-effect--slow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.5) 0%, transparent 60%);
+  animation: pvz-ice-freeze 0.5s ease-out forwards;
+}
+
+.pvz-hit-effect--fire {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 100, 0, 0.6) 0%, transparent 50%);
+  animation: pvz-fire-burst 0.2s ease-out forwards;
+}
+
+.pvz-hit-effect--shock {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.5) 0%, transparent 60%);
+  animation: pvz-shock-chain 0.3s ease-out forwards;
+}
+
+@keyframes pvz-splash-expand {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes pvz-ice-freeze {
+  0% { transform: scale(0.3); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes pvz-fire-burst {
+  0% { transform: scale(0.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes pvz-shock-chain {
+  0% { transform: scale(0.4); opacity: 1; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+/* ==================== Boss 关特效 ==================== */
+.pvz-zombie--boss {
+  animation: pvz-boss-glow 1s infinite;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+}
+
+@keyframes pvz-boss-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.5); }
+  50% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); }
+}

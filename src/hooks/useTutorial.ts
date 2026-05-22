@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 export interface TutorialState {
   hasCompletedTutorial: boolean;
@@ -10,29 +10,29 @@ export interface TutorialState {
 const STORAGE_KEY = 'excel-aim-tutorial-v1';
 
 export function useTutorial() {
-  const [tutorialState, setTutorialState] = useState<TutorialState>({
-    hasCompletedTutorial: false,
-    currentStep: 0,
-    isActive: false,
-    seenModeTutorials: {},
-  });
-
-  // 从 localStorage 加载状态
-  useEffect(() => {
+  const [tutorialState, setTutorialState] = useState<TutorialState>(() => {
+    const baseState: TutorialState = {
+      hasCompletedTutorial: false,
+      currentStep: 0,
+      isActive: false,
+      seenModeTutorials: {},
+    };
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setTutorialState(prev => ({
-          ...prev,
-          hasCompletedTutorial: parsed.hasCompletedTutorial || false,
-          seenModeTutorials: parsed.seenModeTutorials || {},
-        }));
-      } catch {
-        // 解析失败，使用默认值
-      }
+    if (!saved) {
+      return baseState;
     }
-  }, []);
+
+    try {
+      const parsed = JSON.parse(saved) as Partial<TutorialState>;
+      return {
+        ...baseState,
+        hasCompletedTutorial: parsed.hasCompletedTutorial || false,
+        seenModeTutorials: parsed.seenModeTutorials || {},
+      };
+    } catch {
+      return baseState;
+    }
+  });
 
   // 保存到 localStorage
   const saveState = useCallback((newState: Partial<TutorialState>) => {

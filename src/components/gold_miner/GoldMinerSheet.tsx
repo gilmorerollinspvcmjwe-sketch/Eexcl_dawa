@@ -1,0 +1,270 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  applyGoldMinerShopPurchase,
+  advanceGoldMinerToLevel,
+  createGoldMinerBoardState,
+  createGoldMinerSnapshot,
+  launchGoldMinerHook,
+  pauseGoldMiner,
+  restartGoldMinerLevel,
+  resumeGoldMiner,
+  tickGoldMinerBoardState,
+  useGoldMinerDynamite as applyGoldMinerDynamite,
+} from '../../features/gold_miner/goldMinerBoardState.ts';
+import {
+  buildGoldMinerFormulaText,
+  buildGoldMinerHudViewModel,
+  buildGoldMinerOverlayViewModel,
+  buildGoldMinerResultSummary,
+  buildGoldMinerStatusSummary,
+} from '../../features/gold_miner/goldMinerSelectors.ts';
+import {
+  clearGoldMinerActiveRun,
+  getGoldMinerProgressSummary,
+  loadGoldMinerStorage,
+  recordGoldMinerLevelResult,
+  recordGoldMinerLevelStart,
+  saveGoldMinerActiveRun,
+} from '../../features/gold_miner/goldMinerProgressStorage.ts';
+import { createEndlessGoldMinerLevel, getGoldMinerLevel, getGoldMinerMaxAdventureLevel, getGoldMinerStartingLevel } from '../../features/gold_miner/goldMinerLevelCatalog.ts';
+import { GOLD_MINER_SHOP_REGISTRY } from '../../features/gold_miner/goldMinerShopRegistry.ts';
+import type { GoldMinerMode } from '../../features/gold_miner/goldMinerTypes.ts';
+import type { WorkbookStatusSummary } from '../../types';
+import { GoldMinerBoard } from './GoldMinerBoard';
+import { GoldMinerHud } from './GoldMinerHud';
+import { GoldMinerOverlay } from './GoldMinerOverlay';
+import '../../styles/gold-miner.css';
+
+export interface GoldMinerSheetProps {
+  onFormulaChange?: (text: string) => void;
+  onStatusChange?: (summary: WorkbookStatusSummary | undefined) => void;
+  onExit?: () => void;
+  onOpenGuide?: () => void;
+  initialSnapshot?: Record<string, unknown> | null;
+  onSnapshotChange?: (snapshot: Record<string, unknown>) => void;
+}
+
+const TICK_MS = 16;
+
+export const GoldMinerSheet: React.FC<GoldMinerSheetProps> = ({
+  onFormulaChange,
+  onStatusChange,
+  onExit,
+  onOpenGuide,
+  initialSnapshot,
+  onSnapshotChange,
+}) => {
+  const storageSnapshot = useMemo(() => loadGoldMinerStorage(), []);
+  const snapshot = initialSnapshot as { mode?: GoldMinerMode; state?: ReturnType<typeof createGoldMinerBoardState> } | null;
+  const [selectedMode, setSelectedMode] = useState<GoldMinerMode>(snapshot?.mode ?? storageSnapshot.activeRun?.snapshot.mode ?? 'adventure');
+  const [state, setState] = useState(() => {
+    if (snapshot?.state) return snapshot.state;
+    if (storageSnapshot.activeRun?.snapshot.state) return storageSnapshot.activeRun.snapshot.state;
+    return createGoldMinerBoardState({ level: getGoldMinerStartingLevel(selectedMode) });
+  });
+  const runKeyRef = useRef('');
+  const prevStatusRef = useRef(state.status);
+  const stateRef = useRef(state);
+
+  const hudViewModel = useMemo(() => buildGoldMinerHudViewModel(state), [state]);
+  const overlayViewModel = useMemo(() => buildGoldMinerOverlayViewModel(state), [state]);
+  const resultSummary = useMemo(() => buildGoldMinerResultSummary(state), [state]);
+  const progressSummary = useMemo(() => getGoldMinerProgressSummary(), []);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const togglePauseState = () => {
+    setState((current) => (current.status === 'paused' ? resumeGoldMiner(current) : pauseGoldMiner(current)));
+  };
+
+  const restartCurrentLevel = useCallback(() => {
+    setState((current) => restartGoldMinerLevel(
+      current,
+      current.mode === 'endless' ? createEndlessGoldMinerLevel(current.levelId) : getGoldMinerLevel(current.levelId),
+    ));
+  }, []);
+
+  const triggerPrimaryAction = useCallback(() => {
+    const current = stateRef.current;
+    if (current.status === 'paused') {
+      setState((value) => resumeGoldMiner(value));
+      return;
+    }
+    if (current.status === 'shop') {
+      if (current.mode === 'adventure') {
+        if (current.levelId >= getGoldMinerMaxAdventureLevel()) {
+          setSelectedMode('endless');
+          setState(advanceGoldMinerToLevel(current, createEndlessGoldMinerLevel(1)));
+          return;
+        }
+        setState(advanceGoldMinerToLevel(current, getGoldMinerLevel(current.levelId + 1)));
+        return;
+      }
+      setState(advanceGoldMinerToLevel(current, createEndlessGoldMinerLevel(current.levelId + 1)));
+      return;
+    }
+    if (current.status === 'game_over') {
+      restartCurrentLevel();
+      return;
+    }
+    setState((value) => launchGoldMinerHook(value));
+  }, [restartCurrentLevel]);
+
+  const triggerShopPurchase = useCallback((slot: number) => {
+    const item = GOLD_MINER_SHOP_REGISTRY[slot];
+    if (!item) return;
+    setState((current) => applyGoldMinerShopPurchase(current, item.id));
+  }, []);
+
+  const handleHotkey = useCallback((rawKey: string) => {
+    const key = rawKey.toLowerCase();
+
+    if (key >= '1' && key <= '9') {
+      triggerShopPurchase(Number(key) - 1);
+      return true;
+    }
+
+    if (key === ' ' || key === 'space' || key === 'spacebar' || key === 'enter') {
+      triggerPrimaryAction();
+      return true;
+    }
+
+    if (key === 'arrowup' || key === 'd' || key === 'f') {
+      setState((current) => applyGoldMinerDynamite(current));
+      return true;
+    }
+
+    if (key === 'p') {
+      togglePauseState();
+      return true;
+    }
+
+    if (key === 'r') {
+      restartCurrentLevel();
+      return true;
+    }
+
+    if (key === 'escape' && onExit) {
+      onExit();
+      return true;
+    }
+
+    return false;
+  }, [onExit, restartCurrentLevel, triggerPrimaryAction, triggerShopPurchase]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setState((current) => tickGoldMinerBoardState(current, TICK_MS));
+    }, TICK_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    onFormulaChange?.(buildGoldMinerFormulaText(state));
+  }, [onFormulaChange, state]);
+
+  useEffect(() => {
+    onStatusChange?.(buildGoldMinerStatusSummary(state));
+  }, [onStatusChange, state]);
+
+  useEffect(() => {
+    onSnapshotChange?.({ mode: selectedMode, state });
+  }, [selectedMode, state, onSnapshotChange]);
+
+  useEffect(() => {
+    const runKey = `${state.levelId}-${state.rngSeed}`;
+    if (runKeyRef.current !== runKey) {
+      runKeyRef.current = runKey;
+      recordGoldMinerLevelStart(state.levelId);
+    }
+  }, [state.levelId, state.rngSeed]);
+
+  useEffect(() => {
+    const previousStatus = prevStatusRef.current;
+    if ((state.status === 'shop' || state.status === 'game_over') && previousStatus !== state.status) {
+      recordGoldMinerLevelResult(state);
+      clearGoldMinerActiveRun();
+    }
+    if (state.status === 'swinging' || state.status === 'extending' || state.status === 'retracting') {
+      saveGoldMinerActiveRun(createGoldMinerSnapshot(state));
+    }
+    prevStatusRef.current = state.status;
+  }, [state]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+        return;
+      }
+
+      if (handleHotkey(event.key)) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleHotkey]);
+
+  return (
+    <div className="gold-miner-sheet">
+      <GoldMinerHud
+        viewModel={hudViewModel}
+        onPause={togglePauseState}
+        onUseDynamite={() => setState((current) => applyGoldMinerDynamite(current))}
+        onOpenGuide={onOpenGuide}
+      />
+
+      <div className="gold-miner-sheet__meta">
+        <div className="gold-miner-sheet__mode-switch">
+          <button
+            type="button"
+            className={`gold-miner-pill${selectedMode === 'adventure' ? ' active' : ''}`}
+            onClick={() => {
+              setSelectedMode('adventure');
+              setState(createGoldMinerBoardState({ level: getGoldMinerLevel(Math.min(progressSummary.highestLevel, getGoldMinerMaxAdventureLevel())) }));
+            }}
+          >
+            主线模式
+          </button>
+          <button
+            type="button"
+            className={`gold-miner-pill${selectedMode === 'endless' ? ' active' : ''}`}
+            onClick={() => {
+              setSelectedMode('endless');
+              setState(createGoldMinerBoardState({ level: createEndlessGoldMinerLevel(Math.max(1, progressSummary.highestLevel - getGoldMinerMaxAdventureLevel())) }));
+            }}
+          >
+            无尽模式
+          </button>
+        </div>
+        <span>历史最高分 {progressSummary.bestScore.toLocaleString()}</span>
+        <span>总收入 {progressSummary.totalGoldCollected.toLocaleString()}</span>
+      </div>
+
+      <GoldMinerBoard
+        state={state}
+        onLaunch={() => setState((current) => launchGoldMinerHook(current))}
+        onHotkey={handleHotkey}
+      />
+
+      <GoldMinerOverlay
+        overlay={overlayViewModel}
+        result={resultSummary}
+        shopItems={GOLD_MINER_SHOP_REGISTRY}
+        currentBank={state.totalBank + state.score}
+        onBuyShopItem={(itemId) => setState((current) => applyGoldMinerShopPurchase(current, itemId))}
+        onPrimaryAction={triggerPrimaryAction}
+        onSecondaryAction={() => {
+          if (state.status === 'paused' || state.status === 'shop') {
+            restartCurrentLevel();
+            return;
+          }
+          onExit?.();
+        }}
+      />
+    </div>
+  );
+};

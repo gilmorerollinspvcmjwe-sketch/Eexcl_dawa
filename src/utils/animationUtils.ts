@@ -107,13 +107,14 @@ export function generateSpawnAnimationStyle(
         styles.transform = `translateY(${(1 - easedProgress) * 30}px)`;
         styles.opacity = easedProgress;
         break;
-      case 'bounce':
+      case 'bounce': {
         const bounceProgress = easedProgress < 0.5
           ? 4 * easedProgress * easedProgress * easedProgress
           : 1 - Math.pow(-2 * easedProgress + 2, 3) / 2;
         styles.transform = `scale(${0.3 + 0.7 * bounceProgress})`;
         styles.opacity = bounceProgress;
         break;
+      }
       case 'flip':
         styles.transform = `rotateY(${(1 - easedProgress) * 90}deg)`;
         styles.opacity = easedProgress;

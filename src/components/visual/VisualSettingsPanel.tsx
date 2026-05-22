@@ -45,7 +45,7 @@ export const VisualSettingsPanel: React.FC<VisualSettingsPanelProps> = ({
     updateConfig({
       enemyVisual: { ...config.enemyVisual, ...updates },
     });
-  }, [config.enemyVisual, updateConfig]);
+  }, [config, updateConfig]);
 
   const handleReset = useCallback(() => {
     setConfig(DEFAULT_VISUAL_CONFIG);

@@ -42,6 +42,12 @@ interface PartCellProps {
   partIndex?: number;
 }
 
+type EnemyFontWeight = NonNullable<PartCellProps['visualSettings']>['enemyFontWeight'];
+
+function getEnemyFontWeight(weight?: EnemyFontWeight): React.CSSProperties['fontWeight'] {
+  return weight ?? 'normal';
+}
+
 const PartCell: React.FC<PartCellProps> = ({
   part,
   style,
@@ -110,7 +116,7 @@ const PartCell: React.FC<PartCellProps> = ({
       color: '#000000',
       fontFamily: 'SimSun, 宋体, serif',
       fontSize: visualSettings?.enemyFontSize || 14,
-      fontWeight: (visualSettings?.enemyFontWeight as any) || 'normal',
+      fontWeight: getEnemyFontWeight(visualSettings?.enemyFontWeight),
       cursor: 'crosshair',
       pointerEvents: 'auto',
     };
@@ -141,7 +147,7 @@ const PartCell: React.FC<PartCellProps> = ({
     border: `2px solid ${isDamaged ? stateColor : 'rgba(0,0,0,0.3)'}`,
     borderRadius: part.type === 'head' ? '50%' : '4px',
     color: 'white',
-    fontWeight: (visualSettings?.enemyFontWeight as any) || 'bold',
+    fontWeight: getEnemyFontWeight(visualSettings?.enemyFontWeight) || 'bold',
     fontSize: visualSettings?.enemyFontSize || 11,
     textShadow: '0 1px 2px rgba(0,0,0,0.5)',
     transition: 'all 0.15s ease-out',
@@ -291,7 +297,7 @@ export const MultiGridEnemyRenderer: React.FC<MultiGridEnemyRendererProps> = ({
   if (enemy.peekState === 'hidden') return null;
 
   let offsetX = 0;
-  let offsetY = 0;
+  const offsetY = 0;
 
   if (enemy.peekState === 'peeking' || enemy.peekState === 'returning') {
     const progress = enemy.peekProgress ?? 0;

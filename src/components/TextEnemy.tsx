@@ -34,13 +34,15 @@ export const TextEnemy: React.FC<TextEnemyProps> = ({
   anchorRow,
   anchorCol,
   shape = FULL_ENEMY_SHAPE,
-  targetSize: _targetSize = 20,
-  partial: _partial = false,
+  targetSize = 20,
+  partial = false,
   missingParts = [],
   onPartClick,
   isMoving = false,
   hitParts = [],
 }) => {
+  void targetSize;
+  void partial;
   // 检查部位是否被击中
   const isPartHit = (partType: PartType) => hitParts.includes(partType);
   

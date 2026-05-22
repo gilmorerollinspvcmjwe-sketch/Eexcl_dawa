@@ -84,3 +84,12 @@ export {
   DEFAULT_COLOR_GENERATOR,
   DEFAULT_VISUAL_CONFIG,
 } from './visual';
+export type {
+  WorkbookAlertTone,
+  WorkbookStatusSummary,
+  GlobalWorkbookSettings,
+  SnakeSettings,
+  TetrisSettings,
+  PerlerSettings,
+  PvZSettings,
+} from './workbook';

@@ -35,11 +35,24 @@ export interface PrecisionConfig {
   targetCount: number;
 }
 
+export interface FPSModeConfig {
+  speed?: MotionTrackConfig['speed'];
+  pattern?: MotionTrackConfig['pattern'];
+  duration?: MotionTrackConfig['duration'] | PeekShotConfig['duration'];
+  interval?: number;
+  targetCount?: number;
+  showPriority?: boolean;
+  wrongOrderPenalty?: SwitchTrackConfig['wrongOrderPenalty'];
+  targetScale?: number;
+  rounds?: number;
+  warningTime?: number;
+}
+
 interface TrainingModeSelectorProps {
   currentMode: FPSTrainingMode | null;
   onSelectMode: (mode: FPSTrainingMode) => void;
-  config: any;
-  onConfigChange: (config: any) => void;
+  config: FPSModeConfig;
+  onConfigChange: (config: FPSModeConfig) => void;
   onStart: () => void;
   isPlaying: boolean;
 }
@@ -216,8 +229,8 @@ export const TrainingModeSelector: React.FC<TrainingModeSelectorProps> = ({
 // 模式配置面板
 const ModeConfigPanel: React.FC<{
   mode: FPSTrainingMode;
-  config: any;
-  onChange: (config: any) => void;
+  config: FPSModeConfig;
+  onChange: (config: FPSModeConfig) => void;
 }> = ({ mode, config, onChange }) => {
   switch (mode) {
     case 'motion_track':

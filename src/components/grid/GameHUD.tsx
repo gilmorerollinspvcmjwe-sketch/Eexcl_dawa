@@ -37,7 +37,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         {mode === 'timed' && (
           <div className="game-stat">
             <span className={`game-stat-value time ${timeRemaining <= 10 ? 'warning' : ''}`}>
-              {timeRemaining}s
+              {timeRemaining}秒
             </span>
           </div>
         )}

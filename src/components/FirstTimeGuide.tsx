@@ -8,7 +8,7 @@ interface FirstTimeGuideProps {
 
 const GUIDE_STEPS = [
   {
-    title: '欢迎来到 Excel Aim Trainer!',
+    title: '欢迎来到 Excel 练枪中心！',
     content: '一个伪装成 Excel 表格的瞄准训练工具，让你在办公室也能偷偷练枪！',
     icon: '🎮',
   },
@@ -41,16 +41,13 @@ const GUIDE_STEPS = [
 
 export const FirstTimeGuide: React.FC<FirstTimeGuideProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(() => localStorage.getItem('excel-aim-first-time-seen') !== 'true');
 
-  // 检查是否首次进入
   useEffect(() => {
-    const hasSeenGuide = localStorage.getItem('excel-aim-first-time-seen');
-    if (hasSeenGuide === 'true') {
-      setIsVisible(false);
+    if (!isVisible) {
       onComplete();
     }
-  }, [onComplete]);
+  }, [isVisible, onComplete]);
 
   const handleNext = () => {
     if (currentStep < GUIDE_STEPS.length - 1) {

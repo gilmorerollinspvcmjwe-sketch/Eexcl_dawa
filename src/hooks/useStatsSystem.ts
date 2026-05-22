@@ -110,10 +110,10 @@ export function useStatsSystem(): UseStatsSystemReturn {
       const recalculatedAvgScore = newHistory.reduce((sum, g) => sum + g.score, 0) / newHistory.length;
       
       // 累加所有模式的总命中和总点击来计算准确率
-      let totalHits = s.modeStats.timed.totalHits + s.modeStats.endless.totalHits + 
-                      s.modeStats.zen.totalHits + s.modeStats.headshot.totalHits + entry.hits;
-      let totalClicks = s.modeStats.timed.totalClicks + s.modeStats.endless.totalClicks + 
-                        s.modeStats.zen.totalClicks + s.modeStats.headshot.totalClicks + entry.totalClicks;
+      const totalHits = s.modeStats.timed.totalHits + s.modeStats.endless.totalHits + 
+                        s.modeStats.zen.totalHits + s.modeStats.headshot.totalHits + entry.hits;
+      const totalClicks = s.modeStats.timed.totalClicks + s.modeStats.endless.totalClicks + 
+                          s.modeStats.zen.totalClicks + s.modeStats.headshot.totalClicks + entry.totalClicks;
       const recalculatedAccuracy = totalClicks > 0 ? (totalHits / totalClicks) * 100 : 0;
 
       // 更新模式统计

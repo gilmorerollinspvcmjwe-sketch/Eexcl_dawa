@@ -1,21 +1,92 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExcelHeader } from './components/ExcelHeader';
 import { SheetTabs } from './components/SheetTabs';
 import { ExcelGrid } from './components/ExcelGrid';
 import { SettingsPanel } from './components/SettingsPanel';
+import { ConfigCenter } from './components/ConfigCenter';
 import { StatsPanel } from './components/StatsPanel';
 import { StatusBar } from './components/StatusBar';
 import { Crosshair } from './components/Crosshair';
 import { GameHub } from './components/GameHub';
+import { PerlerHub } from './components/perler/PerlerHub';
+import { PvZGameSheet } from './components/pvz/PvZGameSheet';
+import { PvZCollectionSheet } from './components/pvz/PvZCollectionSheet';
+import { PvZLabSheet } from './components/pvz/PvZLabSheet';
+import { SnakeSheet } from './components/snake/SnakeSheet';
+import { TetrisSheet } from './components/tetris/TetrisSheet';
+import { PacmanSheet } from './components/pacman/PacmanSheet';
+import { PacmanGuideSheet } from './components/pacman/PacmanGuideSheet';
+import { ZumaGameSheet } from './components/zuma/ZumaGameSheet';
+import { ZumaCollectionSheet } from './components/zuma/ZumaCollectionSheet';
+import { Match3Sheet } from './components/match3/Match3Sheet';
+import { Match3LabSheet } from './components/match3/Match3LabSheet';
+import { Game2048Sheet } from './components/game2048/Game2048Sheet';
+import { FantasyLaneSheet } from './components/fantasy_lane/FantasyLaneSheet';
+import { FantasyLaneRosterSheet } from './components/fantasy_lane/FantasyLaneRosterSheet';
+import { FantasyLaneChapterSheet } from './components/fantasy_lane/FantasyLaneChapterSheet';
+import { GoldMinerSheet } from './components/gold_miner/GoldMinerSheet';
+import { GoldMinerGuideSheet } from './components/gold_miner/GoldMinerGuideSheet';
 import { FancyFeedback } from './components/FancyFeedback';
 import { FirstTimeGuide } from './components/FirstTimeGuide';
 import { ModeTutorialModal } from './components/ModeTutorialModal';
+import { SaveManager } from './components/SaveManager';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useFeedbackSystem } from './hooks/useFeedbackSystem';
 import { useTutorial } from './hooks/useTutorial';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { CrosshairProvider, useCrosshair } from './contexts/CrosshairContext';
 import type { FPSTrainingMode } from './components/TrainingModeSelector';
+import { getFantasyLaneProgressSummary } from './features/fantasy_lane/fantasyLaneProgressStorage';
+import { getGoldMinerProgressSummary } from './features/gold_miner/goldMinerProgressStorage';
+import type { FantasyLaneHubSummary, GoldMinerHubSummary, PerlerProgressSummary } from './features/hub/hubData';
+import type { DifficultyLevel, GameModeType } from './components/GameHub';
+import type { AppSheetId } from './features/sheets/sheetRegistry';
+import type { WorkbookStatusSummary } from './types';
+import type { SaveSlot } from './types/save';
+import { ARCADE_MODULE_MAP, type ArcadeGameId } from './features/workbook/workbookRegistry';
+import { getGameForSheet, getVisibleSheetsForWorkspace } from './features/workbook/workspaceState';
+import { createInitialSaveSlot } from './features/save/saveAdapters';
+import { loadFromStorage, saveToStorage } from './utils/saveStorage';
+import { loadWorkbookPersistence, saveWorkbookPersistence } from './features/save/workbookPersistence';
+import './styles/save.css';
+
+const PERLER_PROGRESS_KEY = 'excel-aim-perler-state-v1';
+
+type ActiveArcadeGame =
+  | 'aim'
+  | 'perler'
+  | 'pvz'
+  | 'snake'
+  | 'tetris'
+  | 'pacman'
+  | 'zuma'
+  | 'match3'
+  | 'fantasy_lane'
+  | 'gold_miner'
+  | 'game2048'
+  | null;
+type PerlerEntryMode = 'library' | 'resume';
+type FPSConfigMap = Record<string, string | number | boolean | undefined>;
+type HubStartMode = GameModeType | FPSTrainingMode | 'part_training' | 'peek_shot' | 'moving_target';
+
+function readPerlerProgressFromStorage(): PerlerProgressSummary | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem(PERLER_PROGRESS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { workspace?: { id: string; title: string; completion: number } | null };
+    if (!parsed.workspace || parsed.workspace.completion >= 100) return null;
+
+    return {
+      templateId: parsed.workspace.id,
+      title: parsed.workspace.title,
+      completion: parsed.workspace.completion,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function AppContent() {
   const { 
@@ -29,9 +100,45 @@ function AppContent() {
     cancelSettings,
   } = useSettings();
   const { mousePosition, isCrosshairVisible, setCrosshairVisible } = useCrosshair();
+  const persistedWorkbook = useMemo(() => loadWorkbookPersistence(), []);
 
+  const [activeArcadeGame, setActiveArcadeGame] = useState<ActiveArcadeGame>(persistedWorkbook.workspaceGameId as ActiveArcadeGame);
+  const [workspaceGameId, setWorkspaceGameId] = useState<ArcadeGameId | null>(persistedWorkbook.workspaceGameId);
+  const [currentSaveSlot, setCurrentSaveSlot] = useState<SaveSlot | null>(
+    persistedWorkbook.currentSaveSlotId ? loadFromStorage(persistedWorkbook.currentSaveSlotId) : null,
+  );
+  const [gameSnapshots, setGameSnapshots] = useState<Partial<Record<ArcadeGameId, unknown>>>(persistedWorkbook.gameSnapshots);
+  const [perlerEntryMode, setPerlerEntryMode] = useState<PerlerEntryMode>('library');
+  const [showSaveManager, setShowSaveManager] = useState(false);
+  const [hubFormulaText, setHubFormulaText] = useState('=今日建议：先热手，再摸鱼，再伪装');
+  const [configFormulaText, setConfigFormulaText] = useState('=配置中心：独立管理练枪启动工作台，首页不再挤配置内容');
+  const [perlerFormulaText, setPerlerFormulaText] = useState('=拼豆模板库已就绪');
+  const [snakeFormulaText, setSnakeFormulaText] = useState('=数据流待命，按方向键开始。');
+  const [tetrisFormulaText, setTetrisFormulaText] = useState('=待整理数据块已装载');
+  const [pvzFormulaText, setPvZFormulaText] = useState('=PvZ 防线就绪');
+  const [pvzCollectionFormulaText, setPvZCollectionFormulaText] = useState('=植物与僵尸图鉴');
+  const [pvzLabFormulaText, setPvZLabFormulaText] = useState('=章节、规则与实验室');
+  const [pacmanFormulaText, setPacmanFormulaText] = useState('=吃豆人迷宫就绪，按方向键开始');
+  const [pacmanGuideFormulaText, setPacmanGuideFormulaText] = useState('=四鬼行为与练习指南');
+  const [zumaFormulaText, setZumaFormulaText] = useState('=祖玛轨道就绪，瞄准发射');
+  const [zumaCollectionFormulaText, setZumaCollectionFormulaText] = useState('=球种图鉴与练习');
+  const [match3FormulaText, setMatch3FormulaText] = useState('=三消棋盘就绪，交换消除');
+  const [match3LabFormulaText, setMatch3LabFormulaText] = useState('=特殊块与障碍图鉴');
+  const [fantasyLaneFormulaText, setFantasyLaneFormulaText] = useState('=奇幻战线已部署，准备出兵。');
+  const [fantasyLaneRosterFormulaText, setFantasyLaneRosterFormulaText] = useState('=兵种与英雄清单');
+  const [fantasyLaneChapterFormulaText, setFantasyLaneChapterFormulaText] = useState('=章节与关卡总览');
+  const [goldMinerFormulaText, setGoldMinerFormulaText] = useState('=黄金矿工矿区已就绪，瞄准高价值目标。');
+  const [goldMinerGuideFormulaText, setGoldMinerGuideFormulaText] = useState('=矿工图鉴与商店配置');
+  const [game2048FormulaText, setGame2048FormulaText] = useState('=2048 棋盘已装载，开始聚合。');
+  const [perlerSelectedCell, setPerlerSelectedCell] = useState<{ row: number; col: number } | null>(null);
+  const [perlerProgress, setPerlerProgress] = useState<PerlerProgressSummary | null>(() => readPerlerProgressFromStorage());
+  const [snakeStatusSummary, setSnakeStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
+  const [tetrisStatusSummary, setTetrisStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
+  const [fantasyLaneStatusSummary, setFantasyLaneStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
+  const [goldMinerStatusSummary, setGoldMinerStatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
+  const [game2048StatusSummary, setGame2048StatusSummary] = useState<WorkbookStatusSummary | undefined>(undefined);
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
-  const [, setModeConfig] = useState<any>({});
+  const [, setModeConfig] = useState<FPSConfigMap>({});
 
   const {
     gameState,
@@ -61,22 +168,35 @@ function AppContent() {
     currentPriorityTarget,
   } = useGameLogic();
 
-  // 新手引导系统
   useTutorial();
   const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(() => {
-    // 检查是否是首次使用
     return !localStorage.getItem('excel-aim-tutorial-completed');
   });
   const [showModeTutorial, setShowModeTutorial] = useState<string | null>(null);
-  // 保存启动游戏的参数，用于教程关闭后启动
   const [pendingGameStart, setPendingGameStart] = useState<{
-    mode: any;
+    mode: HubStartMode;
     duration?: 30 | 60 | 120;
     level?: number;
-    difficulty?: any;
+    difficulty?: DifficultyLevel;
     isFPSMode?: boolean;
-    fpsConfig?: any;
+    fpsConfig?: FPSConfigMap;
   } | null>(null);
+
+  useEffect(() => {
+    if (persistedWorkbook.workspaceGameId) {
+      switchSheet(persistedWorkbook.currentSheet);
+    }
+  }, [persistedWorkbook, switchSheet]);
+
+  const fantasyLaneProgress = useMemo<FantasyLaneHubSummary>(
+    () => getFantasyLaneProgressSummary(),
+    [],
+  );
+
+  const goldMinerProgress = useMemo<GoldMinerHubSummary>(
+    () => getGoldMinerProgressSummary(),
+    [],
+  );
 
   const { currentFeedback } = useFeedbackSystem({
     combo: gameState.combo,
@@ -89,57 +209,8 @@ function AppContent() {
     feedbackMode: settings.feedbackMode || 'fancy',
   });
 
-  const handleResetStats = () => {
-    if (confirm('确定要重置所有统计数据吗？')) {
-      localStorage.removeItem('excel-aim-stats-v2');
-      window.location.reload();
-    }
-  };
-
-  // 从 GameHub 启动游戏
-  const handleStartGameFromHub = (
-    mode: any,
-    duration?: 30 | 60 | 120,
-    level?: number,
-    difficulty?: any
-  ) => {
-    // 检查是否需要显示模式教程
-    const tutorialKey = `tutorial-shown-${mode}`;
-    if (!localStorage.getItem(tutorialKey)) {
-      // 保存启动参数，显示教程
-      setPendingGameStart({ mode, duration, level, difficulty, isFPSMode: false });
-      setShowModeTutorial(mode);
-      return;
-    }
-    
-    const finalDuration = duration || settings.trainingDuration || 60;
-    startGame(mode, finalDuration as 30 | 60 | 120, level, difficulty || settings.difficulty);
-  };
-
-  // 从 GameHub 启动 FPS 训练
-  const handleStartFPSTrainingFromHub = (mode: FPSTrainingMode, config?: any) => {
-    // 检查是否需要显示模式教程
-    const tutorialKey = `tutorial-shown-${mode}`;
-    if (!localStorage.getItem(tutorialKey)) {
-      // 保存启动参数，显示教程
-      setCurrentMode(mode);
-      const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
-      setModeConfig(finalConfig);
-      setPendingGameStart({ mode, isFPSMode: true, fpsConfig: finalConfig });
-      setShowModeTutorial(mode);
-      return;
-    }
-    
-    setCurrentMode(mode);
-    const finalConfig = { ...config, duration: config?.duration || settings.trainingDuration || 60 };
-    setModeConfig(finalConfig);
-    startGameWithMode(mode, finalConfig);
-  };
-
-  // Control cursor visibility based on current sheet
   useEffect(() => {
-    const shouldHideCursor = currentSheet === 'game' && settings.customCursor && !isHidden;
-    
+    const shouldHideCursor = currentSheet === 'game' && activeArcadeGame === 'aim' && settings.customCursor && !isHidden;
     if (shouldHideCursor) {
       document.body.style.cursor = 'none';
       setCrosshairVisible(true);
@@ -148,20 +219,370 @@ function AppContent() {
       setCrosshairVisible(false);
     }
 
-    // Cleanup on unmount
     return () => {
       document.body.style.cursor = '';
     };
-  }, [currentSheet, settings.customCursor, isHidden, setCrosshairVisible]);
+  }, [currentSheet, activeArcadeGame, settings.customCursor, isHidden, setCrosshairVisible]);
+
+  const handleResetStats = () => {
+    if (confirm('确定要重置所有统计数据吗？')) {
+      localStorage.removeItem('excel-aim-stats-v2');
+      window.location.reload();
+    }
+  };
+
+  const handleStartGameFromHub = (
+    mode: GameModeType | 'part_training' | 'peek_shot' | 'moving_target',
+    duration?: 30 | 60 | 120,
+    level?: number,
+    difficulty?: DifficultyLevel,
+  ) => {
+    setActiveArcadeGame('aim');
+    setWorkspaceGameId('aim');
+    const tutorialKey = `tutorial-shown-${mode}`;
+    if (!localStorage.getItem(tutorialKey)) {
+      setPendingGameStart({ mode, duration, level, difficulty, isFPSMode: false });
+      setShowModeTutorial(mode);
+      return;
+    }
+
+    const finalDuration = duration || settings.trainingDuration || 60;
+    startGame(mode, finalDuration as 30 | 60 | 120, level, difficulty || settings.difficulty);
+  };
+
+  const handleStartFPSTrainingFromHub = (mode: FPSTrainingMode, config?: FPSConfigMap) => {
+    setActiveArcadeGame('aim');
+    setWorkspaceGameId('aim');
+    const finalDuration = typeof config?.duration === 'number' ? config.duration : (settings.trainingDuration || 60);
+    const finalConfig = { ...config, duration: finalDuration };
+    const tutorialKey = `tutorial-shown-${mode}`;
+    if (!localStorage.getItem(tutorialKey)) {
+      setCurrentMode(mode);
+      setModeConfig(finalConfig);
+      setPendingGameStart({ mode, isFPSMode: true, fpsConfig: finalConfig });
+      setShowModeTutorial(mode);
+      return;
+    }
+
+    setCurrentMode(mode);
+    setModeConfig(finalConfig);
+    startGameWithMode(mode, finalConfig);
+  };
+
+  const handleStartPerlerFromHub = (entryMode: PerlerEntryMode = 'library') => {
+    setActiveArcadeGame('perler');
+    setWorkspaceGameId('perler');
+    setPerlerEntryMode(entryMode);
+    setPerlerSelectedCell(null);
+    setPerlerProgress(readPerlerProgressFromStorage());
+    switchSheet('perler');
+  };
+
+  const handleStartPvZFromHub = () => {
+    setActiveArcadeGame('pvz');
+    setWorkspaceGameId('pvz');
+    switchSheet('pvz');
+  };
+
+  const handleStartSnakeFromHub = () => {
+    setActiveArcadeGame('snake');
+    setWorkspaceGameId('snake');
+    switchSheet('snake');
+  };
+
+  const handleStartTetrisFromHub = () => {
+    setActiveArcadeGame('tetris');
+    setWorkspaceGameId('tetris');
+    switchSheet('tetris');
+  };
+
+  const handleStartPacmanFromHub = () => {
+    setActiveArcadeGame('pacman');
+    setWorkspaceGameId('pacman');
+    switchSheet('pacman');
+  };
+
+  const handleStartZumaFromHub = () => {
+    setActiveArcadeGame('zuma');
+    setWorkspaceGameId('zuma');
+    switchSheet('zuma');
+  };
+
+  const handleStartMatch3FromHub = () => {
+    setActiveArcadeGame('match3');
+    setWorkspaceGameId('match3');
+    switchSheet('match3');
+  };
+
+  const handleStartFantasyLaneFromHub = () => {
+    setActiveArcadeGame('fantasy_lane');
+    setWorkspaceGameId('fantasy_lane');
+    switchSheet('fantasy_lane');
+  };
+
+  const handleStartGoldMinerFromHub = () => {
+    setActiveArcadeGame('gold_miner');
+    setWorkspaceGameId('gold_miner');
+    switchSheet('gold_miner');
+  };
+
+  const handleStartGame2048FromHub = () => {
+    setActiveArcadeGame('game2048');
+    setWorkspaceGameId('game2048');
+    switchSheet('game2048');
+  };
+
+  const enterGameWorkspace = (gameId: ArcadeGameId) => {
+    const module = ARCADE_MODULE_MAP[gameId];
+    if (!module) return;
+    setWorkspaceGameId(gameId);
+    setActiveArcadeGame(gameId as ActiveArcadeGame);
+
+    if (gameId === 'perler') {
+      setPerlerEntryMode('library');
+      setPerlerProgress(readPerlerProgressFromStorage());
+      setPerlerSelectedCell(null);
+    }
+
+    switchSheet(module.entrySheetId);
+  };
+
+  const handleExitCurrentGame = () => {
+    setActiveArcadeGame(null);
+    setWorkspaceGameId(null);
+    setCurrentSaveSlot(null);
+    setPerlerEntryMode('library');
+    setPerlerSelectedCell(null);
+    setSnakeStatusSummary(undefined);
+    setTetrisStatusSummary(undefined);
+    setFantasyLaneStatusSummary(undefined);
+    setGoldMinerStatusSummary(undefined);
+    setGame2048StatusSummary(undefined);
+    exitToHub();
+  };
+
+  const handleNewSave = () => {
+    if (!workspaceGameId) {
+      setShowSaveManager(true);
+      return;
+    }
+    const slot = createInitialSaveSlot(`${ARCADE_MODULE_MAP[workspaceGameId].title}存档`, workspaceGameId, currentSheet);
+    saveToStorage(slot);
+    setCurrentSaveSlot(slot);
+    setShowSaveManager(true);
+  };
+
+  const handleSave = () => {
+    if (!workspaceGameId) {
+      setShowSaveManager(true);
+      return;
+    }
+
+    if (currentSaveSlot) {
+      saveToStorage({
+        ...currentSaveSlot,
+        timestamp: Date.now(),
+        data: {
+          gameType: workspaceGameId,
+          workspaceId: workspaceGameId,
+          currentSheet,
+          payload: (gameSnapshots[workspaceGameId] as Record<string, unknown> | undefined) || currentSaveSlot.data.payload || {},
+        },
+      });
+      return;
+    }
+
+    setShowSaveManager(true);
+  };
+
+  const handleLoad = () => {
+    setShowSaveManager(true);
+  };
+
+  const handleDelete = () => {
+    setShowSaveManager(true);
+  };
+
+  const handleSelectGame = (gameId: ArcadeGameId) => {
+    enterGameWorkspace(gameId);
+  };
+
+  const handleLoadSave = (slot: SaveSlot) => {
+    const loaded = loadFromStorage(slot.id);
+    if (loaded) {
+      setCurrentSaveSlot(loaded);
+      setGameSnapshots((current) => ({
+        ...current,
+        [loaded.gameType]: loaded.data.payload,
+      }));
+      enterGameWorkspace(loaded.gameType);
+      switchSheet(loaded.data.currentSheet);
+    }
+  };
+
+  const handleSheetSwitch = (sheet: AppSheetId) => {
+    const owningGame = getGameForSheet(sheet);
+    if (owningGame) {
+      setActiveArcadeGame(owningGame as ActiveArcadeGame);
+      setWorkspaceGameId(owningGame);
+    } else if (sheet !== 'hub' && sheet !== currentSheet) {
+      setActiveArcadeGame(null);
+      setWorkspaceGameId(null);
+    }
+    switchSheet(sheet);
+  };
+
+  const visibleSheets = useMemo<AppSheetId[]>(() => (workspaceGameId ? getVisibleSheetsForWorkspace(workspaceGameId) : ['hub']), [workspaceGameId]);
+
+  useEffect(() => {
+    if (workspaceGameId && !visibleSheets.includes(currentSheet)) {
+      switchSheet(ARCADE_MODULE_MAP[workspaceGameId].entrySheetId);
+    }
+  }, [workspaceGameId, visibleSheets, currentSheet, switchSheet]);
+
+  useEffect(() => {
+    saveWorkbookPersistence({
+      workspaceGameId,
+      currentSheet,
+      currentSaveSlotId: currentSaveSlot?.id ?? null,
+      gameSnapshots,
+    });
+  }, [workspaceGameId, currentSheet, currentSaveSlot, gameSnapshots]);
+
+  const updateGameSnapshot = useCallback((gameId: ArcadeGameId, snapshot: unknown) => {
+    setGameSnapshots((current) => {
+      if (current[gameId] === snapshot) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [gameId]: snapshot,
+      };
+    });
+  }, []);
+
+  const snapshotHandlers = useMemo(
+    () => ({
+      perler: (snapshot: unknown) => updateGameSnapshot('perler', snapshot),
+      pvz: (snapshot: unknown) => updateGameSnapshot('pvz', snapshot),
+      snake: (snapshot: unknown) => updateGameSnapshot('snake', snapshot),
+      tetris: (snapshot: unknown) => updateGameSnapshot('tetris', snapshot),
+      pacman: (snapshot: unknown) => updateGameSnapshot('pacman', snapshot),
+      zuma: (snapshot: unknown) => updateGameSnapshot('zuma', snapshot),
+      match3: (snapshot: unknown) => updateGameSnapshot('match3', snapshot),
+      fantasy_lane: (snapshot: unknown) => updateGameSnapshot('fantasy_lane', snapshot),
+      gold_miner: (snapshot: unknown) => updateGameSnapshot('gold_miner', snapshot),
+      game2048: (snapshot: unknown) => updateGameSnapshot('game2048', snapshot),
+    }),
+    [updateGameSnapshot],
+  );
+
+  const titleText = currentSheet === 'hub'
+    ? 'Microsoft Excel - 工位娱乐中心.xlsx'
+    : currentSheet === 'perler'
+      ? 'Microsoft Excel - 拼豆工位创作.xlsx'
+      : currentSheet === 'pvz'
+      ? 'Microsoft Excel - 植物大战僵尸.xlsx'
+      : currentSheet === 'pvz_collection'
+          ? 'Microsoft Excel - PvZ 图鉴.xlsx'
+          : currentSheet === 'pvz_lab'
+            ? 'Microsoft Excel - PvZ 实验室.xlsx'
+      : currentSheet === 'snake'
+        ? 'Microsoft Excel - 贪吃蛇.xlsx'
+      : currentSheet === 'tetris'
+        ? 'Microsoft Excel - 俄罗斯方块.xlsx'
+      : currentSheet === 'pacman'
+        ? 'Microsoft Excel - 吃豆人.xlsx'
+      : currentSheet === 'pacman_guide'
+        ? 'Microsoft Excel - 吃豆人图鉴.xlsx'
+      : currentSheet === 'zuma'
+        ? 'Microsoft Excel - 祖玛.xlsx'
+      : currentSheet === 'zuma_collection'
+        ? 'Microsoft Excel - 祖玛图鉴.xlsx'
+      : currentSheet === 'match3'
+        ? 'Microsoft Excel - 三消.xlsx'
+      : currentSheet === 'match3_lab'
+        ? 'Microsoft Excel - 三消实验室.xlsx'
+      : currentSheet === 'fantasy_lane'
+        ? 'Microsoft Excel - 奇幻战线.xlsx'
+      : currentSheet === 'fantasy_lane_roster'
+        ? 'Microsoft Excel - 奇幻战线兵种与英雄.xlsx'
+      : currentSheet === 'fantasy_lane_chapter'
+        ? 'Microsoft Excel - 奇幻战线章节与关卡.xlsx'
+      : currentSheet === 'gold_miner'
+        ? 'Microsoft Excel - 黄金矿工.xlsx'
+      : currentSheet === 'gold_miner_guide'
+        ? 'Microsoft Excel - 黄金矿工图鉴.xlsx'
+      : currentSheet === 'game2048'
+        ? 'Microsoft Excel - 2048.xlsx'
+      : currentSheet === 'config'
+        ? 'Microsoft Excel - 配置中心.xlsx'
+      : 'Microsoft Excel - 练枪数据.xlsx';
+
+  const formulaText = currentSheet === 'hub'
+    ? hubFormulaText
+    : currentSheet === 'perler'
+      ? perlerFormulaText
+      : currentSheet === 'pvz'
+        ? pvzFormulaText
+        : currentSheet === 'pvz_collection'
+          ? pvzCollectionFormulaText
+          : currentSheet === 'pvz_lab'
+            ? pvzLabFormulaText
+            : currentSheet === 'snake'
+              ? snakeFormulaText
+              : currentSheet === 'tetris'
+                ? tetrisFormulaText
+                : currentSheet === 'pacman'
+                  ? pacmanFormulaText
+                  : currentSheet === 'pacman_guide'
+                    ? pacmanGuideFormulaText
+                    : currentSheet === 'zuma'
+                      ? zumaFormulaText
+                      : currentSheet === 'zuma_collection'
+                        ? zumaCollectionFormulaText
+                        : currentSheet === 'match3'
+                          ? match3FormulaText
+                          : currentSheet === 'match3_lab'
+                            ? match3LabFormulaText
+                            : currentSheet === 'fantasy_lane'
+                              ? fantasyLaneFormulaText
+                              : currentSheet === 'fantasy_lane_roster'
+                                ? fantasyLaneRosterFormulaText
+                                : currentSheet === 'fantasy_lane_chapter'
+                                  ? fantasyLaneChapterFormulaText
+                            : currentSheet === 'gold_miner'
+                              ? goldMinerFormulaText
+                              : currentSheet === 'gold_miner_guide'
+                                ? goldMinerGuideFormulaText
+                              : currentSheet === 'game2048'
+                                ? game2048FormulaText
+                            : currentSheet === 'config'
+                              ? configFormulaText
+                              : undefined;
+
+  const effectiveSelectedCell = currentSheet === 'perler'
+    ? perlerSelectedCell
+    : selectedCell;
+
+  const workbookStatusSummary = currentSheet === 'snake'
+    ? snakeStatusSummary
+    : currentSheet === 'tetris'
+      ? tetrisStatusSummary
+      : currentSheet === 'fantasy_lane'
+        ? fantasyLaneStatusSummary
+        : currentSheet === 'gold_miner'
+          ? goldMinerStatusSummary
+        : currentSheet === 'game2048'
+          ? game2048StatusSummary
+      : undefined;
 
   return (
     <div 
       className="h-screen flex flex-col" 
-      style={{ 
-        fontFamily: "'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      }}
+      style={{ fontFamily: "'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}
     >
-      {/* Crosshair - rendered at top level for smooth tracking */}
       <Crosshair
         x={mousePosition.x}
         y={mousePosition.y}
@@ -171,13 +592,11 @@ function AppContent() {
         visible={isCrosshairVisible}
       />
 
-      {/* 炫酷反馈 - 仅在炫酷模式下显示 */}
-      {settings.feedbackMode !== 'excel' && currentFeedback && (
+      {activeArcadeGame === 'aim' && settings.feedbackMode !== 'excel' && currentFeedback && (
         <FancyFeedback feedback={currentFeedback} />
       )}
 
-      {/* 紧急隐藏触发区域 */}
-      {!isHidden && currentSheet === 'game' && (
+      {!isHidden && currentSheet === 'game' && activeArcadeGame === 'aim' && (
         <div
           className="fixed top-0 left-0 w-24 h-24 z-50"
           onMouseEnter={handleCornerEnter}
@@ -185,8 +604,7 @@ function AppContent() {
         />
       )}
 
-      {/* 隐藏提示 */}
-      {hoverCorner && !isHidden && (
+      {hoverCorner && !isHidden && activeArcadeGame === 'aim' && (
         <div 
           style={{
             position: 'fixed',
@@ -206,7 +624,6 @@ function AppContent() {
         </div>
       )}
 
-      {/* 隐藏状态覆盖层 */}
       {isHidden && (
         <div 
           style={{
@@ -232,11 +649,7 @@ function AppContent() {
               <img 
                 src={settings.coverImage} 
                 alt="Excel工作表" 
-                style={{ 
-                  maxWidth: '100%', 
-                  maxHeight: '100%',
-                  objectFit: 'contain',
-                }}
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
               />
             </div>
           ) : (
@@ -250,32 +663,8 @@ function AppContent() {
                   gap: 4,
                 }}
               >
-                <div 
-                  style={{
-                    padding: '4px 12px',
-                    fontSize: 11,
-                    cursor: 'pointer',
-                    borderRadius: 2,
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#e6f4ea'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  onClick={toggleHidden}
-                >
-                  文件
-                </div>
-                <div 
-                  style={{
-                    padding: '4px 12px',
-                    fontSize: 11,
-                    cursor: 'pointer',
-                    borderRadius: 2,
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#e6f4ea'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  onClick={toggleHidden}
-                >
-                  打开
-                </div>
+                <div style={{ padding: '4px 12px', fontSize: 11, cursor: 'pointer', borderRadius: 2 }} onClick={toggleHidden}>文件</div>
+                <div style={{ padding: '4px 12px', fontSize: 11, cursor: 'pointer', borderRadius: 2 }} onClick={toggleHidden}>打开</div>
               </div>
               <div 
                 style={{
@@ -288,7 +677,7 @@ function AppContent() {
                 }}
               >
                 <div style={{ textAlign: 'center' }}>
-                  <p style={{ marginBottom: 8 }}>📄 空白工作簿</p>
+                  <p style={{ marginBottom: 8 }}>📫 空白工作簿</p>
                   <p style={{ fontSize: 11, color: '#d1d5db' }}>按 Esc 恢复游戏</p>
                 </div>
               </div>
@@ -297,33 +686,64 @@ function AppContent() {
         </div>
       )}
 
-      {/* Excel 界面 */}
-      <div 
-        className="flex flex-col h-full" 
-        style={{ opacity: isHidden ? 0.5 : 1 }}
-      >
-        <ExcelHeader 
-          isHidden={isHidden} 
-          onToggleHidden={toggleHidden}
-          onExit={currentSheet === 'game' ? exitToHub : undefined}
-          selectedCell={selectedCell}
-          feedbackMessage={currentFeedback}
-        />
+      <div className="flex flex-col h-full" style={{ opacity: isHidden ? 0.5 : 1 }}>
+        <ExcelHeader
+        isHidden={isHidden}
+        onToggleHidden={toggleHidden}
+        onExit={activeArcadeGame ? handleExitCurrentGame : undefined}
+        selectedCell={effectiveSelectedCell}
+        feedbackMessage={activeArcadeGame === 'aim' ? currentFeedback : null}
+        titleText={titleText}
+        formulaText={formulaText}
+        formulaTextColor={
+          currentSheet === 'hub'
+            ? '#107c41'
+            : currentSheet === 'perler'
+              ? '#7c3aed'
+              : currentSheet === 'config'
+                ? '#2563eb'
+                : currentSheet === 'snake'
+                  ? '#0f766e'
+                  : currentSheet === 'tetris'
+                    ? '#334155'
+                    : currentSheet === 'fantasy_lane'
+                      ? '#b45309'
+                      : currentSheet === 'gold_miner' || currentSheet === 'gold_miner_guide'
+                        ? '#d97706'
+                    : undefined
+        }
+        onNewSave={handleNewSave}
+        onSave={handleSave}
+        onLoad={handleLoad}
+        onDelete={handleDelete}
+        onGameSelect={handleSelectGame}
+      />
 
-        {/* 主内容区 */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {currentSheet === 'hub' ? (
-            // Sheet1: 游戏中心
             <GameHub
               onStartGame={handleStartGameFromHub}
-              onStartFPSTraining={handleStartFPSTrainingFromHub}
-              onSwitchSheet={(sheet) => switchSheet(sheet)}
-              selectedFPSMode={currentMode}
+              onStartPerler={handleStartPerlerFromHub}
+              onStartSnake={handleStartSnakeFromHub}
+              onStartTetris={handleStartTetrisFromHub}
+              onStartPvZ={handleStartPvZFromHub}
+              onStartPacman={handleStartPacmanFromHub}
+              onStartZuma={handleStartZumaFromHub}
+              onStartMatch3={handleStartMatch3FromHub}
+              onStartFantasyLane={handleStartFantasyLaneFromHub}
+              onStartGoldMiner={handleStartGoldMinerFromHub}
+              onStartGame2048={handleStartGame2048FromHub}
+              onSwitchSheet={(sheet) => handleSheetSwitch(sheet)}
               trainingDuration={settings.trainingDuration}
-              difficulty={settings.difficulty as any}
+              difficulty={settings.difficulty as DifficultyLevel}
+              totalGames={stats.totalGames}
+              totalScore={stats.totalScore}
+              perlerProgress={perlerProgress}
+              fantasyLaneProgress={fantasyLaneProgress}
+              goldMinerProgress={goldMinerProgress}
+              onFormulaChange={setHubFormulaText}
             />
           ) : currentSheet === 'game' ? (
-            // Sheet2: 训练场
             <ExcelGrid
               key="game-sheet"
               targets={targets}
@@ -340,7 +760,7 @@ function AppContent() {
               hitEffects={hitEffects}
               togglePause={togglePause}
               soundEnabled={settings.soundEnabled}
-              onExit={exitToHub}
+              onExit={handleExitCurrentGame}
               multiGridEnemies={multiGridEnemies}
               currentLevel={currentLevel}
               levelConfig={levelConfig}
@@ -357,10 +777,136 @@ function AppContent() {
               fpsMode={currentMode}
             />
           ) : currentSheet === 'stats' ? (
-            // Sheet3: 统计
-            <StatsPanel stats={stats} onReset={handleResetStats} onExit={() => exitToHub()} />
+            <StatsPanel stats={stats} onReset={handleResetStats} onExit={() => handleExitCurrentGame()} />
+          ) : currentSheet === 'config' ? (
+            <ConfigCenter
+              onStartGame={handleStartGameFromHub}
+              onStartFPSTraining={handleStartFPSTrainingFromHub}
+              onSwitchSheet={handleSheetSwitch}
+              onFormulaChange={setConfigFormulaText}
+            />
+          ) : currentSheet === 'perler' ? (
+            <PerlerHub
+              key={`perler-${currentSaveSlot?.id ?? 'live'}`}
+              entryMode={perlerEntryMode}
+              onExit={handleExitCurrentGame}
+              onFormulaChange={setPerlerFormulaText}
+              onSelectedCellChange={setPerlerSelectedCell}
+              onProgressChange={(progress) => setPerlerProgress(progress)}
+              initialSnapshot={(gameSnapshots.perler as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.perler}
+            />
+          ) : currentSheet === 'pvz' ? (
+            <PvZGameSheet
+              key={`pvz-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setPvZFormulaText}
+              initialSnapshot={(gameSnapshots.pvz as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.pvz}
+            />
+          ) : currentSheet === 'pvz_collection' ? (
+            <PvZCollectionSheet onFormulaChange={setPvZCollectionFormulaText} />
+          ) : currentSheet === 'pvz_lab' ? (
+            <PvZLabSheet onFormulaChange={setPvZLabFormulaText} />
+          ) : currentSheet === 'snake' ? (
+            <SnakeSheet
+              key={`snake-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setSnakeFormulaText}
+              onStatusChange={setSnakeStatusSummary}
+              onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.snake as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.snake}
+            />
+          ) : currentSheet === 'tetris' ? (
+            <TetrisSheet
+              key={`tetris-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setTetrisFormulaText}
+              onStatusChange={setTetrisStatusSummary}
+              onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.tetris as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.tetris}
+            />
+          ) : currentSheet === 'pacman' ? (
+            <PacmanSheet
+              key={`pacman-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setPacmanFormulaText}
+              onExit={handleExitCurrentGame}
+              onReturnToGuide={() => switchSheet('pacman_guide')}
+              initialSnapshot={(gameSnapshots.pacman as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.pacman}
+            />
+          ) : currentSheet === 'pacman_guide' ? (
+            <PacmanGuideSheet
+              onFormulaChange={setPacmanGuideFormulaText}
+              onSwitchToPlay={() => switchSheet('pacman')}
+            />
+          ) : currentSheet === 'zuma' ? (
+            <ZumaGameSheet
+              key={`zuma-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setZumaFormulaText}
+              onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.zuma as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.zuma}
+            />
+          ) : currentSheet === 'zuma_collection' ? (
+            <ZumaCollectionSheet
+              onFormulaChange={setZumaCollectionFormulaText}
+            />
+          ) : currentSheet === 'match3' ? (
+            <Match3Sheet
+              key={`match3-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setMatch3FormulaText}
+              onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.match3 as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.match3}
+            />
+          ) : currentSheet === 'match3_lab' ? (
+            <Match3LabSheet
+              onFormulaChange={setMatch3LabFormulaText}
+            />
+          ) : currentSheet === 'fantasy_lane' ? (
+            <FantasyLaneSheet
+              key={`fantasy-lane-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setFantasyLaneFormulaText}
+              onStatusChange={setFantasyLaneStatusSummary}
+              onExit={handleExitCurrentGame}
+              onOpenRoster={() => switchSheet('fantasy_lane_roster')}
+              onOpenChapters={() => switchSheet('fantasy_lane_chapter')}
+              initialSnapshot={(gameSnapshots.fantasy_lane as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.fantasy_lane}
+            />
+          ) : currentSheet === 'fantasy_lane_roster' ? (
+            <FantasyLaneRosterSheet
+              onFormulaChange={setFantasyLaneRosterFormulaText}
+            />
+          ) : currentSheet === 'fantasy_lane_chapter' ? (
+            <FantasyLaneChapterSheet
+              onFormulaChange={setFantasyLaneChapterFormulaText}
+            />
+          ) : currentSheet === 'gold_miner' ? (
+            <GoldMinerSheet
+              key={`gold-miner-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setGoldMinerFormulaText}
+              onStatusChange={setGoldMinerStatusSummary}
+              onExit={handleExitCurrentGame}
+              onOpenGuide={() => switchSheet('gold_miner_guide')}
+              initialSnapshot={(gameSnapshots.gold_miner as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.gold_miner}
+            />
+          ) : currentSheet === 'gold_miner_guide' ? (
+            <GoldMinerGuideSheet
+              onFormulaChange={setGoldMinerGuideFormulaText}
+              onOpenBattle={() => switchSheet('gold_miner')}
+            />
+          ) : currentSheet === 'game2048' ? (
+            <Game2048Sheet
+              key={`game2048-${currentSaveSlot?.id ?? 'live'}`}
+              onFormulaChange={setGame2048FormulaText}
+              onStatusChange={setGame2048StatusSummary}
+              onExit={handleExitCurrentGame}
+              initialSnapshot={(gameSnapshots.game2048 as Record<string, unknown> | null) ?? null}
+              onSnapshotChange={snapshotHandlers.game2048}
+            />
           ) : (
-            // Sheet4: 设置
             <SettingsPanel
               key="settings-sheet"
               settings={settings}
@@ -368,7 +914,6 @@ function AppContent() {
               onApplyPreset={applyPreset}
               onStartGame={startGame}
               onResetSettings={resetSettings}
-              // 临时设置相关
               tempSettings={tempSettings}
               onUpdateTempSetting={updateTempSetting}
               onSaveSettings={saveSettings}
@@ -377,20 +922,16 @@ function AppContent() {
           )}
         </div>
 
-        <SheetTabs 
-          currentSheet={currentSheet} 
-          onSwitch={switchSheet} 
-          isHidden={isHidden} 
-        />
-        <StatusBar 
-          selectedCell={selectedCell} 
-          isHidden={isHidden} 
+        <SheetTabs currentSheet={currentSheet} visibleSheets={visibleSheets} onSwitch={handleSheetSwitch} isHidden={isHidden} />
+        <StatusBar
+          selectedCell={effectiveSelectedCell}
+          isHidden={isHidden}
           COLS={COLS}
-          gameState={gameState}
+          summary={workbookStatusSummary}
+          gameState={activeArcadeGame === 'aim' ? gameState : undefined}
         />
       </div>
 
-      {/* 首次使用引导 */}
       {showFirstTimeGuide && (
         <FirstTimeGuide
           onComplete={() => {
@@ -400,7 +941,16 @@ function AppContent() {
         />
       )}
 
-      {/* 模式教程弹窗 */}
+      <SaveManager
+        isOpen={showSaveManager}
+        onClose={() => setShowSaveManager(false)}
+        currentGame={activeArcadeGame || undefined}
+        currentSheet={currentSheet}
+        currentSlotId={currentSaveSlot?.id ?? null}
+        onSave={(slot) => setCurrentSaveSlot(slot)}
+        onLoad={handleLoadSave}
+      />
+
       {showModeTutorial && (
         <ModeTutorialModal
           mode={showModeTutorial}
@@ -414,17 +964,17 @@ function AppContent() {
           onStart={() => {
             localStorage.setItem(`tutorial-shown-${showModeTutorial}`, 'true');
             setShowModeTutorial(null);
-            // 使用保存的参数启动游戏
             if (pendingGameStart) {
+              setActiveArcadeGame('aim');
               if (pendingGameStart.isFPSMode && pendingGameStart.fpsConfig) {
-                startGameWithMode(pendingGameStart.mode, pendingGameStart.fpsConfig);
+                startGameWithMode(pendingGameStart.mode as FPSTrainingMode, pendingGameStart.fpsConfig);
               } else {
                 const finalDuration = pendingGameStart.duration || settings.trainingDuration || 60;
                 startGame(
                   pendingGameStart.mode,
                   finalDuration as 30 | 60 | 120,
                   pendingGameStart.level,
-                  pendingGameStart.difficulty || settings.difficulty
+                  pendingGameStart.difficulty || settings.difficulty,
                 );
               }
               setPendingGameStart(null);

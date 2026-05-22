@@ -149,7 +149,7 @@ export interface SpawnAnimationConfig {
 export interface AnimationConfig {
   duration: number;
   easing: EasingType;
-  properties: Record<string, { from: any; to: any }>;
+  properties: Record<string, { from: unknown; to: unknown }>;
 }
 
 export interface EnemyVisualConfig {

@@ -1,7 +1,7 @@
-// 主游戏逻辑协调层 - 整合各子系统
+// ??????? Hook - ??????
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { GameMode, TimedDuration, HitEffect, LevelConfig, MultiGridEnemy, EnemyPart } from '../types';
+import type { Difficulty, GameMode, TimedDuration, HitEffect, LevelConfig, MultiGridEnemy, EnemyPart, LevelDifficulty } from '../types';
 import { DIFFICULTY_SETTINGS } from '../types';
 import { useGameState } from './useGameState';
 import { useMultiGridEnemy } from './useMultiGridEnemy';
@@ -16,19 +16,20 @@ import {
   CORNER_HIDE_DELAY_MS 
 } from '../constants';
 import { generateLevel, checkLevelCompletion } from '../levelGenerator';
-import type { FPSTrainingMode } from '../components/TrainingModeSelector';
+import type { FPSModeConfig, FPSTrainingMode } from '../components/TrainingModeSelector';
+import type { AppSheetId } from '../features/sheets/sheetRegistry';
 
 export function useGameLogic() {
   const { settings, updateSetting } = useSettings();
   
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
-  const [currentSheet, setCurrentSheet] = useState<'hub' | 'game' | 'stats' | 'settings'>('hub');
+  const [currentSheet, setCurrentSheet] = useState<AppSheetId>('hub');
   const [isHidden, setIsHidden] = useState(false);
   const [hoverCorner, setHoverCorner] = useState(false);
   const [hitEffects, setHitEffects] = useState<HitEffect[]>([]);
   
   const [currentMode, setCurrentMode] = useState<FPSTrainingMode | null>(null);
-  const [modeConfig, setModeConfig] = useState<any>({});
+  const [modeConfig, setModeConfig] = useState<FPSModeConfig>({});
   
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [levelConfig, setLevelConfig] = useState<LevelConfig | null>(null);
@@ -38,6 +39,7 @@ export function useGameLogic() {
   const cornerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameStartTimeRef = useRef<number>(0);
   const gameTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endGameRef = useRef<() => void>(() => {});
 
   const {
     gameState,
@@ -97,7 +99,7 @@ export function useGameLogic() {
       gameTimerRef.current = setInterval(() => {
         setGameState(prev => {
           if (prev.timeRemaining <= 1) {
-            endGame();
+            endGameRef.current();
             return { ...prev, timeRemaining: 0, isPlaying: false };
           }
           return { ...prev, timeRemaining: prev.timeRemaining - 1 };
@@ -111,7 +113,7 @@ export function useGameLogic() {
         gameTimerRef.current = null;
       }
     };
-  }, [gameState.isPlaying, gameState.isPaused, gameState.mode]);
+  }, [gameState.isPlaying, gameState.isPaused, gameState.mode, setGameState]);
 
   // FPS mode spawn logic
   const spawnFPSModeEnemy = useCallback(() => {
@@ -120,9 +122,9 @@ export function useGameLogic() {
     const config = modeConfig;
 
     switch (currentMode) {
-      case 'switch_track':
+      case 'switch_track': {
         // Spawn multiple targets with priorities
-        const targetCount = config?.targetCount || 3;
+        const targetCount = typeof config?.targetCount === 'number' ? config.targetCount : 3;
         const priorities = ['A', 'B', 'C', 'D', 'E'] as const;
         for (let i = 0; i < Math.min(targetCount, 5); i++) {
           setTimeout(() => {
@@ -134,8 +136,9 @@ export function useGameLogic() {
           }, i * 200);
         }
         break;
+      }
 
-      case 'reaction':
+      case 'reaction': {
         // Random delay before showing target
         const randomDelay = 1000 + Math.random() * 2000;
         setTimeout(() => {
@@ -146,20 +149,22 @@ export function useGameLogic() {
           });
         }, randomDelay);
         break;
+      }
 
-      case 'precision':
+      case 'precision': {
         // Spawn small targets
-        const precisionCount = config?.targetCount || 3;
+        const precisionCount = typeof config?.targetCount === 'number' ? config.targetCount : 3;
         for (let i = 0; i < precisionCount; i++) {
           setTimeout(() => {
             spawnEnemy({
-              targetScale: config?.targetScale || 0.5,
+              targetScale: typeof config?.targetScale === 'number' ? config.targetScale : 0.5,
               anchorRow: 5 + Math.floor(Math.random() * 15),
               anchorCol: 3 + i * 6 + Math.floor(Math.random() * 3),
             });
           }, i * 300);
         }
         break;
+      }
 
       case 'peek_shot':
         // Peek shot is handled by spawnEnemy with peekState
@@ -188,7 +193,8 @@ export function useGameLogic() {
     // FPS mode: use special spawn logic
     if (currentMode) {
       const scheduleNextSpawn = () => {
-        const interval = (modeConfig?.interval || 2) * 1000;
+        const intervalSeconds = typeof modeConfig?.interval === 'number' ? modeConfig.interval : 2;
+        const interval = intervalSeconds * 1000;
         
         spawnTimerRef.current = setTimeout(() => {
           if (gameState.isPlaying && !gameState.isPaused && !isHidden) {
@@ -255,7 +261,7 @@ export function useGameLogic() {
     setCurrentMode(null);
     
     if (difficulty && difficulty !== settings.difficulty) {
-      updateSetting('difficulty', difficulty as any);
+      updateSetting('difficulty', difficulty as Difficulty);
     }
     
     resetGameState(mode, duration, settings.headshotLineRow);
@@ -264,7 +270,7 @@ export function useGameLogic() {
     setCurrentSheet('game');
     
     if (level) {
-      const config = generateLevel(level as any);
+      const config = generateLevel(level as LevelDifficulty);
       setCurrentLevel(level);
       setLevelConfig(config);
       setLevelStatus('playing');
@@ -275,7 +281,7 @@ export function useGameLogic() {
     }
   }, [resetGameState, clearEnemies, settings.headshotLineRow, settings.difficulty, updateSetting]);
   
-  const startGameWithMode = useCallback((mode: FPSTrainingMode, config?: any) => {
+  const startGameWithMode = useCallback((mode: FPSTrainingMode, config?: FPSModeConfig) => {
     gameStartTimeRef.current = Date.now();
     setCurrentMode(mode);
     if (config) {
@@ -288,7 +294,7 @@ export function useGameLogic() {
       resetPriorityOrder();
     }
     
-    const duration = config?.duration || 60;
+    const duration = typeof config?.duration === 'number' ? config.duration : 60;
     resetGameState('timed', duration as TimedDuration, settings.headshotLineRow);
     clearEnemies();
     setHitEffects([]);
@@ -330,6 +336,10 @@ export function useGameLogic() {
     });
     clearEnemies();
   }, [recordGameEnd, clearEnemies, setGameState, levelConfig, currentLevel, gameState]);
+
+  useEffect(() => {
+    endGameRef.current = endGame;
+  }, [endGame]);
 
   const handleCellClick = useCallback((row: number, col: number) => {
     setSelectedCell({ row, col });
@@ -456,7 +466,7 @@ export function useGameLogic() {
     setSelectedCell({ row, col });
   }, []);
 
-  const switchSheet = useCallback((sheet: 'hub' | 'game' | 'stats' | 'settings') => {
+  const switchSheet = useCallback((sheet: AppSheetId) => {
     setCurrentSheet(sheet);
   }, []);
 
@@ -498,11 +508,11 @@ export function useGameLogic() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && currentSheet === 'game') {
         e.preventDefault();
         toggleHidden();
       }
-      if (e.key === 'p' || e.key === 'P') {
+      if ((e.key === 'p' || e.key === 'P') && currentSheet === 'game') {
         if (!isHidden && gameState.isPlaying) {
           togglePause();
         }
@@ -511,7 +521,7 @@ export function useGameLogic() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleHidden, togglePause, isHidden, gameState.isPlaying]);
+  }, [toggleHidden, togglePause, isHidden, gameState.isPlaying, currentSheet]);
 
   useEffect(() => {
     return () => {

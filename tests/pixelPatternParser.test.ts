@@ -1,0 +1,129 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  boostCharacterPalette,
+  buildPixelPatternFromPixels,
+  capDarkPaletteEntries,
+  convertImageSourceToPattern,
+  materializePatternPixels,
+} from '../src/features/perler/pixelPatternParser.ts';
+
+test('buildPixelPatternFromPixels creates palette entries and indexed cells', () => {
+  const pattern = buildPixelPatternFromPixels({
+    title: 'demo',
+    width: 2,
+    height: 2,
+    pixels: ['#FF0000', '#00FF00', '#0000FF', '#FF0000'],
+  });
+
+  assert.equal(pattern.palette.length, 3);
+  assert.deepEqual(pattern.cells, [0, 1, 2, 0]);
+  assert.equal(pattern.palette[0]?.count, 2);
+});
+
+test('materializePatternPixels restores the original pixel layout from cell indexes', () => {
+  const pattern = buildPixelPatternFromPixels({
+    title: 'demo',
+    width: 2,
+    height: 2,
+    pixels: ['#FF0000', '#00FF00', '#0000FF', '#FF0000'],
+  });
+
+  assert.deepEqual(materializePatternPixels(pattern), ['#FF0000', '#00FF00', '#0000FF', '#FF0000']);
+});
+
+test('convertImageSourceToPattern returns a fixed grid pattern for imported images', () => {
+  const pixels = new Uint8ClampedArray([
+    255, 0, 0, 255,
+    0, 255, 0, 255,
+    0, 0, 255, 255,
+    255, 255, 0, 255,
+  ]);
+
+  const pattern = convertImageSourceToPattern(
+    {
+      title: 'demo',
+      width: 2,
+      height: 2,
+      pixels,
+    },
+    4,
+    'standard',
+  );
+
+  assert.equal(pattern.cells.length, 4);
+  assert.equal(pattern.palette.length, 4);
+  assert.notEqual(pattern.cells[0], pattern.cells[1]);
+  assert.notEqual(pattern.cells[1], pattern.cells[2]);
+});
+
+test('convertImageSourceToPattern preserves major color groups instead of collapsing to grayscale', () => {
+  const width = 70;
+  const height = 70;
+  const pixels = new Uint8ClampedArray(width * height * 4);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const offset = (y * width + x) * 4;
+      const color =
+        y < 20
+          ? [40, 40, 40]
+          : x < 23
+            ? [220, 40, 40]
+            : x < 46
+              ? [40, 220, 40]
+              : [40, 40, 220];
+
+      pixels[offset] = color[0];
+      pixels[offset + 1] = color[1];
+      pixels[offset + 2] = color[2];
+      pixels[offset + 3] = 255;
+    }
+  }
+
+  const pattern = convertImageSourceToPattern(
+    { title: 'hero', width, height, pixels },
+    6,
+    'standard',
+  );
+
+  const palette = pattern.palette.map((entry) => entry.color);
+  assert.ok(palette.some((color) => color.startsWith('#D')));
+  assert.ok(palette.some((color) => color.includes('DC') || color.endsWith('DC')));
+  assert.ok(palette.some((color) => color[3] === 'D' || color[5] === 'D'));
+});
+
+test('boostCharacterPalette makes colorful character tones more vivid without altering neutrals wildly', () => {
+  const boosted = boostCharacterPalette(['#6E5A5A', '#5F6E9A', '#C8B8A0', '#3A3A3A'], 'vivid');
+
+  assert.equal(boosted.length, 4);
+  assert.equal(boosted[3], '#3A3A3A');
+  assert.notEqual(boosted[0], '#6E5A5A');
+  assert.notEqual(boosted[1], '#5F6E9A');
+});
+
+test('boostCharacterPalette ultra mode is stronger than vivid mode for character colors', () => {
+  const vivid = boostCharacterPalette(['#8A4B4B', '#4A5A8A'], 'vivid');
+  const ultra = boostCharacterPalette(['#8A4B4B', '#4A5A8A'], 'ultra');
+
+  assert.notDeepEqual(vivid, ultra);
+});
+
+test('capDarkPaletteEntries prevents dark colors from occupying most palette slots', () => {
+  const balanced = capDarkPaletteEntries(
+    ['#101010', '#1A1A1A', '#222222', '#2A2A2A', '#D94A4A', '#4AD96A', '#4A6AD9'],
+    6,
+  );
+
+  const darkCount = balanced.filter((color) => {
+    const r = Number.parseInt(color.slice(1, 3), 16);
+    const g = Number.parseInt(color.slice(3, 5), 16);
+    const b = Number.parseInt(color.slice(5, 7), 16);
+    return Math.max(r, g, b) < 70;
+  }).length;
+
+  assert.ok(darkCount <= 2);
+  assert.ok(balanced.includes('#D94A4A'));
+  assert.ok(balanced.includes('#4AD96A'));
+  assert.ok(balanced.includes('#4A6AD9'));
+});

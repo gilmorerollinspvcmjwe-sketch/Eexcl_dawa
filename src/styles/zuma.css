@@ -1,0 +1,1674 @@
+/* 祖玛模块样式。包含HUD、棋盘、选关面板、结算面板等组件样式。 */
+
+.zuma-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: #0d0d1a;
+  min-height: 100%;
+}
+
+.zuma-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  background: #1a1a2e;
+  border-radius: 4px;
+}
+
+.zuma-hud-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px;
+  background: #16213e;
+  border-radius: 3px;
+  min-width: 180px;
+}
+
+.zuma-hud-bar--overview {
+  flex: 1;
+  min-width: 200px;
+}
+
+.zuma-hud-bar--metrics {
+  flex: 2;
+  min-width: 300px;
+}
+
+.zuma-hud-bar--objectives {
+  flex: 1.4;
+  min-width: 240px;
+}
+
+.zuma-hud-bar--balls {
+  min-width: 120px;
+}
+
+.zuma-hud-bar--controls {
+  min-width: 150px;
+}
+
+.zuma-hud-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.zuma-hud-label {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-hud-title {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-hud-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.zuma-hud-chip {
+  padding: 2px 6px;
+  font-size: 11px;
+  background: #2a2a4e;
+  border-radius: 2px;
+  color: #ccc;
+}
+
+.zuma-hud-chip--danger.danger-safe {
+  background: #27ae60;
+  color: #fff;
+}
+
+.zuma-hud-chip--danger.danger-warning {
+  background: #f39c12;
+  color: #fff;
+}
+
+.zuma-hud-chip--danger.danger-critical {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.zuma-hud-chip--status.status-playing {
+  background: #3498db;
+  color: #fff;
+}
+
+.zuma-hud-chip--status.status-won {
+  background: #27ae60;
+  color: #fff;
+}
+
+.zuma-hud-chip--status.status-lost {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.zuma-hud-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.zuma-hud-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+  background: #1a1a3e;
+  border-radius: 2px;
+  min-width: 60px;
+}
+
+.zuma-hud-metric strong {
+  font-size: 10px;
+  color: #888;
+}
+
+.zuma-hud-metric span {
+  font-size: 13px;
+  color: #fff;
+}
+
+.zuma-hud-objectives {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.zuma-hud-objective {
+  padding: 6px 8px;
+  font-size: 11px;
+  color: #d7e3ff;
+  background: #1a1a3e;
+  border: 1px solid #2f3b63;
+  border-radius: 3px;
+}
+
+.zuma-hud-objective.is-complete {
+  border-color: #27ae60;
+  color: #d6ffe4;
+}
+
+.zuma-hud-objective.is-failed {
+  border-color: #e74c3c;
+  color: #ffd5d0;
+}
+
+.zuma-hud-balls-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.zuma-ball-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zuma-ball--red {
+  background: #e74c3c;
+}
+
+.zuma-ball--blue {
+  background: #3498db;
+}
+
+.zuma-ball--green {
+  background: #27ae60;
+}
+
+.zuma-ball--yellow {
+  background: #f1c40f;
+}
+
+.zuma-ball--purple {
+  background: #9b59b6;
+}
+
+.zuma-ball--orange {
+  background: #e67e22;
+}
+
+.zuma-ball--powerup {
+  background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+}
+
+.zuma-ball--unknown {
+  background: #888;
+}
+
+.zuma-ball-powerup-label {
+  font-size: 8px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.zuma-hud-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.zuma-hud-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.zuma-hud-btn:hover {
+  background: #3a3a6e;
+}
+
+.zuma-hud-btn:focus-visible {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+.zuma-speed-btn--fast {
+  background: #f39c12;
+  border-color: #f39c12;
+}
+
+.zuma-danger-alert {
+  padding: 8px 12px;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 3px;
+  animation: zuma-danger-pulse 1s infinite;
+}
+
+@keyframes zuma-danger-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.zuma-board-container {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  background: #1a1a2e;
+  border-radius: 4px;
+}
+
+.zuma-board-canvas {
+  border-radius: 4px;
+  cursor: crosshair;
+  max-width: 100%;
+  height: auto;
+}
+
+.zuma-setup-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: #1a1a2e;
+  border-radius: 4px;
+}
+
+.zuma-setup-panel.is-collapsed .zuma-setup-content {
+  display: none;
+}
+
+.zuma-setup-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #16213e;
+  border-radius: 3px;
+}
+
+.zuma-setup-toolbar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.zuma-setup-toolbar-copy strong {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-setup-toolbar-copy span {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-setup-toolbar-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.zuma-setup-toggle {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.zuma-start-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  background: #27ae60;
+  border: 1px solid #27ae60;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.zuma-start-btn:hover {
+  background: #2ecc71;
+}
+
+.zuma-start-btn:disabled {
+  background: #555;
+  border-color: #555;
+  cursor: not-allowed;
+}
+
+.zuma-setup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zuma-mode-tabs,
+.zuma-pack-tabs,
+.zuma-duration-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.zuma-mode-tab,
+.zuma-pack-tab,
+.zuma-duration-tab {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  border-radius: 3px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.zuma-mode-tab.active,
+.zuma-pack-tab.active,
+.zuma-duration-tab.active {
+  background: #3498db;
+  border-color: #3498db;
+  color: #fff;
+}
+
+.zuma-level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  background: #16213e;
+  border-radius: 3px;
+}
+
+.zuma-level-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  border-radius: 3px;
+  color: #ccc;
+  cursor: pointer;
+  text-align: left;
+}
+
+.zuma-level-card:hover {
+  background: #3a3a6e;
+}
+
+.zuma-level-card.active {
+  background: #3498db;
+  border-color: #3498db;
+  color: #fff;
+}
+
+.zuma-level-card.locked {
+  background: #1a1a3e;
+  border-color: #2a2a4e;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.zuma-level-card strong {
+  font-size: 13px;
+  color: inherit;
+}
+
+.zuma-level-card span {
+  font-size: 11px;
+  color: inherit;
+}
+
+.zuma-level-card small {
+  font-size: 10px;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.zuma-lock-hint {
+  color: #e74c3c;
+  opacity: 1;
+}
+
+.zuma-level-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #16213e;
+  border-radius: 3px;
+}
+
+.zuma-level-detail strong {
+  font-size: 13px;
+  color: #fff;
+}
+
+.zuma-level-detail span {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-game-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.zuma-control-btn {
+  padding: 8px 16px;
+  font-size: 12px;
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.zuma-control-btn:hover {
+  background: #3a3a6e;
+}
+
+.zuma-control-btn:disabled {
+  background: #555;
+  border-color: #555;
+  cursor: not-allowed;
+}
+
+.zuma-result-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.zuma-result-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #1a1a2e;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+}
+
+.zuma-result-panel--won {
+  border: 2px solid #27ae60;
+}
+
+.zuma-result-panel--lost {
+  border: 2px solid #e74c3c;
+}
+
+.zuma-result-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zuma-result-title {
+  font-size: 18px;
+  color: #fff;
+}
+
+.zuma-result-subtitle {
+  font-size: 13px;
+  color: #888;
+}
+
+.zuma-result-stars {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #16213e;
+  border-radius: 3px;
+}
+
+.zuma-result-stars-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.zuma-result-stars-display {
+  font-size: 16px;
+}
+
+.zuma-result-new-record {
+  font-size: 12px;
+  color: #f1c40f;
+  font-weight: bold;
+}
+
+.zuma-result-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.zuma-result-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  background: #2a2a4e;
+  border-radius: 3px;
+  min-width: 80px;
+}
+
+.zuma-result-stat strong {
+  font-size: 10px;
+  color: #888;
+}
+
+.zuma-result-stat span {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-result-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #16213e;
+  border-radius: 3px;
+}
+
+.zuma-result-summary span {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-result-objectives {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: #16213e;
+  border-radius: 3px;
+}
+
+.zuma-result-objectives strong {
+  font-size: 12px;
+  color: #9fb7ff;
+}
+
+.zuma-result-objective {
+  padding: 6px 8px;
+  font-size: 11px;
+  color: #d7e3ff;
+  background: #202b4a;
+  border: 1px solid #2f3b63;
+  border-radius: 3px;
+}
+
+.zuma-result-objective.is-complete {
+  border-color: #27ae60;
+  color: #d6ffe4;
+}
+
+.zuma-result-objective.is-failed {
+  border-color: #e74c3c;
+  color: #ffd5d0;
+}
+
+.zuma-result-failure-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: #2a2a4e;
+  border-radius: 3px;
+}
+
+.zuma-result-failure-reason {
+  font-size: 13px;
+  color: #e74c3c;
+}
+
+.zuma-result-failure-stats {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-result-practice-recommendations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.zuma-result-practice-recommendations strong {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-result-practice-tag {
+  padding: 2px 6px;
+  font-size: 10px;
+  background: #3498db;
+  border-radius: 2px;
+  color: #fff;
+}
+
+.zuma-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.zuma-result-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.zuma-result-btn--primary {
+  background: #27ae60;
+  border: 1px solid #27ae60;
+  color: #fff;
+}
+
+.zuma-result-btn--secondary {
+  background: #3498db;
+  border: 1px solid #3498db;
+  color: #fff;
+}
+
+.zuma-result-btn--tertiary {
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  color: #ccc;
+}
+
+.zuma-result-btn:hover {
+  opacity: 0.9;
+}
+
+.zuma-result-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.zuma-ball--burst {
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  animation: zuma-powerup-pulse 1s infinite;
+}
+
+.zuma-ball--lightning {
+  background: linear-gradient(135deg, #ffd93d, #ffbe0b);
+  animation: zuma-powerup-pulse 0.8s infinite;
+}
+
+.zuma-ball--slow {
+  background: linear-gradient(135deg, #6bcb77, #4ade80);
+  animation: zuma-powerup-pulse 1.2s infinite;
+}
+
+.zuma-ball--rewind {
+  background: linear-gradient(135deg, #4d96ff, #3b82f6);
+  animation: zuma-powerup-pulse 1s infinite;
+}
+
+.zuma-ball--wild {
+  background: linear-gradient(135deg, #c9b1ff, #a78bfa);
+  animation: zuma-powerup-pulse 0.6s infinite;
+}
+
+@keyframes zuma-powerup-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 8px 4px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.zuma-chain-rewinding {
+  animation: zuma-chain-rewind 0.3s ease-out;
+}
+
+@keyframes zuma-chain-rewind {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-10px);
+  }
+}
+
+.zuma-chain-slowed {
+  opacity: 0.7;
+  filter: brightness(0.8);
+}
+
+.zuma-chain-slowed::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(107, 203, 119, 0.3);
+  border-radius: inherit;
+  animation: zuma-slow-overlay 1s infinite;
+}
+
+@keyframes zuma-slow-overlay {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.zuma-finish-line-critical {
+  animation: zuma-finish-critical 0.5s infinite;
+}
+
+@keyframes zuma-finish-critical {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.zuma-finish-line-warning {
+  animation: zuma-finish-warning 1s infinite;
+}
+
+@keyframes zuma-finish-warning {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.zuma-score-popup {
+  position: absolute;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffd700;
+  animation: zuma-score-float 0.8s ease-out forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes zuma-score-float {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(1.2);
+  }
+}
+
+.zuma-chain-combo-indicator {
+  position: absolute;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, #f39c12, #e74c3c);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  animation: zuma-combo-pop 0.4s ease-out forwards;
+  pointer-events: none;
+  z-index: 15;
+}
+
+@keyframes zuma-combo-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) translateY(-20px);
+  }
+}
+
+.zuma-clear-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 200, 100, 0.6) 0%, transparent 70%);
+  animation: zuma-clear-expand 0.3s ease-out forwards;
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes zuma-clear-expand {
+  0% {
+    opacity: 1;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+.zuma-insert-effect {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  animation: zuma-insert-ring 0.2s ease-out forwards;
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes zuma-insert-ring {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+.zuma-powerup-effect {
+  position: absolute;
+  border-radius: 50%;
+  animation: zuma-powerup-burst 0.5s ease-out forwards;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.zuma-powerup-effect--burst {
+  background: radial-gradient(circle, rgba(255, 107, 107, 0.8) 0%, transparent 60%);
+}
+
+.zuma-powerup-effect--lightning {
+  background: radial-gradient(circle, rgba(255, 217, 61, 0.8) 0%, transparent 60%);
+}
+
+.zuma-powerup-effect--slow {
+  background: radial-gradient(circle, rgba(107, 203, 119, 0.8) 0%, transparent 60%);
+}
+
+.zuma-powerup-effect--rewind {
+  background: radial-gradient(circle, rgba(77, 150, 255, 0.8) 0%, transparent 60%);
+}
+
+.zuma-powerup-effect--wild {
+  background: radial-gradient(circle, rgba(201, 177, 255, 0.8) 0%, transparent 60%);
+}
+
+@keyframes zuma-powerup-burst {
+  0% {
+    opacity: 1;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+.zuma-danger-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.zuma-danger-overlay--critical {
+  background: radial-gradient(ellipse at center, rgba(231, 76, 60, 0.1) 0%, transparent 70%);
+  animation: zuma-danger-screen 0.5s infinite;
+}
+
+.zuma-danger-overlay--warning {
+  background: radial-gradient(ellipse at center, rgba(243, 156, 18, 0.05) 0%, transparent 70%);
+  animation: zuma-danger-screen 1s infinite;
+}
+
+@keyframes zuma-danger-screen {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.zuma-collection-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: #0d0d1a;
+  min-height: 100%;
+}
+
+.zuma-collection-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  background: #1a1a2e;
+  border-radius: 4px;
+}
+
+.zuma-collection-tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  border-radius: 3px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.zuma-collection-tab.active {
+  background: #3498db;
+  border-color: #3498db;
+  color: #fff;
+}
+
+.zuma-collection-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.zuma-collection-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #1a1a2e;
+  border-radius: 4px;
+}
+
+.zuma-collection-section h3 {
+  font-size: 16px;
+  color: #fff;
+  margin: 0;
+}
+
+.zuma-collection-intro {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+}
+
+.zuma-ball-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.zuma-ball-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.zuma-ball-card .zuma-ball-preview {
+  width: 32px;
+  height: 32px;
+}
+
+.zuma-ball-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zuma-ball-info strong {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-ball-info span {
+  font-size: 12px;
+  color: #888;
+}
+
+.zuma-tip {
+  font-size: 11px;
+  color: #3498db;
+  opacity: 0.9;
+}
+
+.zuma-rule-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 4px;
+  border: 1px solid #2a2a4e;
+}
+
+.zuma-rule-box h4 {
+  font-size: 13px;
+  color: #fff;
+  margin: 0;
+}
+
+.zuma-rule-box ul {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.zuma-rule-box li {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+}
+
+.zuma-powerup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.zuma-powerup-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.zuma-powerup-icon {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #2a2a4e;
+  border-radius: 4px;
+}
+
+.zuma-powerup-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.zuma-powerup-info strong {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-powerup-effect-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.zuma-powerup-strategy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #2a2a4e;
+  border-radius: 3px;
+}
+
+.zuma-powerup-strategy small {
+  font-size: 10px;
+  color: #666;
+}
+
+.zuma-powerup-strategy p {
+  font-size: 11px;
+  color: #3498db;
+  margin: 0;
+}
+
+.zuma-track-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.zuma-track-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.zuma-track-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zuma-track-header strong {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-intensity-badge {
+  padding: 2px 6px;
+  font-size: 10px;
+  border-radius: 2px;
+  font-weight: bold;
+}
+
+.intensity-S1 {
+  background: #27ae60;
+  color: #fff;
+}
+
+.intensity-S2 {
+  background: #f39c12;
+  color: #fff;
+}
+
+.intensity-S3 {
+  background: #e67e22;
+  color: #fff;
+}
+
+.intensity-S4 {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.intensity-S5 {
+  background: #c0392b;
+  color: #fff;
+}
+
+.zuma-track-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zuma-track-details span {
+  font-size: 12px;
+  color: #888;
+}
+
+.zuma-track-length {
+  color: #666;
+}
+
+.zuma-boss-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.zuma-boss-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.zuma-boss-phase {
+  font-size: 12px;
+  color: #f39c12;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.zuma-boss-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zuma-boss-info strong {
+  font-size: 13px;
+  color: #fff;
+}
+
+.zuma-boss-info span {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-practice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+.zuma-practice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.zuma-practice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zuma-practice-header strong {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-practice-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zuma-practice-details span {
+  font-size: 12px;
+  color: #888;
+}
+
+.zuma-practice-stats {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  background: #2a2a4e;
+  border-radius: 3px;
+}
+
+.zuma-practice-stats small {
+  font-size: 11px;
+  color: #666;
+}
+
+.zuma-practice-start-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  background: #27ae60;
+  border: 1px solid #27ae60;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.zuma-practice-start-btn:hover {
+  background: #2ecc71;
+}
+
+.zuma-progress-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.zuma-progress-summary h4 {
+  font-size: 13px;
+  color: #fff;
+  margin: 0;
+}
+
+.zuma-progress-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.zuma-progress-stats span {
+  font-size: 12px;
+  color: #888;
+}
+
+.zuma-practice-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: #0d0d1a;
+  min-height: 100%;
+}
+
+.zuma-practice-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #1a1a2e;
+  border-radius: 4px;
+  max-width: 500px;
+  margin: auto;
+}
+
+.zuma-practice-intro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zuma-practice-intro-header h2 {
+  font-size: 18px;
+  color: #fff;
+  margin: 0;
+}
+
+.zuma-practice-duration {
+  font-size: 12px;
+  color: #888;
+}
+
+.zuma-practice-description {
+  font-size: 14px;
+  color: #888;
+  line-height: 1.5;
+}
+
+.zuma-practice-objective {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.zuma-practice-objective strong {
+  font-size: 12px;
+  color: #f39c12;
+}
+
+.zuma-practice-objective span {
+  font-size: 13px;
+  color: #fff;
+}
+
+.zuma-practice-config {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  background: #2a2a4e;
+  border-radius: 3px;
+}
+
+.zuma-practice-config span {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-practice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.zuma-practice-exit-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  border-radius: 3px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.zuma-practice-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.zuma-practice-timer {
+  text-align: center;
+  padding: 8px;
+  font-size: 14px;
+  color: #f39c12;
+  background: #16213e;
+  border-radius: 3px;
+}
+
+.zuma-practice-result {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #1a1a2e;
+  border-radius: 4px;
+  max-width: 500px;
+  margin: auto;
+}
+
+.zuma-practice-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zuma-practice-result-header h2 {
+  font-size: 18px;
+  color: #fff;
+  margin: 0;
+}
+
+.zuma-result-badge {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.zuma-result-badge.completed {
+  background: #27ae60;
+  color: #fff;
+}
+
+.zuma-result-badge.partial {
+  background: #f39c12;
+  color: #fff;
+}
+
+.zuma-practice-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.zuma-practice-score strong {
+  font-size: 12px;
+  color: #888;
+}
+
+.zuma-score-value {
+  font-size: 32px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.zuma-practice-objectives {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zuma-practice-objectives h3 {
+  font-size: 14px;
+  color: #fff;
+  margin: 0;
+}
+
+.zuma-objective-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #2a2a4e;
+  border-radius: 3px;
+}
+
+.zuma-objective-item.achieved {
+  background: #27ae60;
+}
+
+.zuma-objective-item.missed {
+  background: #e74c3c;
+}
+
+.zuma-objective-name {
+  font-size: 12px;
+  color: #fff;
+}
+
+.zuma-objective-value {
+  font-size: 12px;
+  color: #fff;
+}
+
+.zuma-objective-status {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-practice-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zuma-practice-stats h3 {
+  font-size: 14px;
+  color: #fff;
+  margin: 0;
+}
+
+.zuma-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.zuma-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #2a2a4e;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.zuma-stat-item span {
+  font-size: 11px;
+  color: #888;
+}
+
+.zuma-stat-item strong {
+  font-size: 14px;
+  color: #fff;
+}
+
+.zuma-practice-retry-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  background: #27ae60;
+  border: 1px solid #27ae60;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.zuma-practice-error {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #1a1a2e;
+  border-radius: 4px;
+  max-width: 400px;
+  margin: auto;
+  text-align: center;
+}
+
+.zuma-practice-error h3 {
+  font-size: 16px;
+  color: #e74c3c;
+  margin: 0;
+}
+
+.zuma-practice-error p {
+  font-size: 13px;
+  color: #888;
+}
+
+.zuma-practice-error button {
+  padding: 8px 16px;
+  font-size: 13px;
+  background: #2a2a4e;
+  border: 1px solid #3a3a5e;
+  border-radius: 3px;
+  color: #ccc;
+  cursor: pointer;
+}

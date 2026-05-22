@@ -1,0 +1,33 @@
+- [x] 类型定义完整：`FantasyLaneUnitUnlockCondition`、`FantasyLaneBattleRewards` 类型已定义
+- [x] 兵种定义扩展：`FantasyLaneUnitDefinition` 已包含 `unlockCondition`、`baseUnit` 字段
+- [x] 关卡定义扩展：`FantasyLaneLevelDefinition` 已包含 `unlockRewards`、`fragmentRewards`、`starRewards` 字段
+- [x] 结算结果扩展：`FantasyLaneBattleResult` 已包含 `rewards` 字段
+- [x] 进度存储扩展：`FantasyLaneProgressData` 已包含 `unlockedUnits`、`unitFragments`、`unitStars` 字段
+- [x] 进度存储函数：`unlockUnit`、`addUnitFragment`、`upgradeUnitStar`、`isUnitUnlocked`、`getUnitFragmentCount` 函数已实现
+- [x] 进度存储兼容：`normalize` 函数正确处理新字段默认值，旧存档不会崩溃
+- [x] 新兵种注册：15 个新兵种已添加到 `fantasyLaneUnitRegistry.ts`，属性完整且通过校验
+- [x] 新兵种解锁条件：每个兵种配置了正确的解锁条件（关卡首次通关/三星奖励）
+- [x] 新关卡注册：2 个章节共 12 关已添加到 `fantasyLaneLevelCatalog.ts`
+- [x] 新关卡奖励：每关配置了正确的 `unlockRewards`、`fragmentRewards`、`starRewards`
+- [x] Boss 定义：暗影领主和风暴巨龙的 Boss 多阶段行为已定义
+- [x] 结算逻辑：`calculateBattleRewards` 函数已实现，正确计算奖励
+- [x] 结算逻辑：`finalizeBattle` 函数已附加 `rewards` 字段
+- [x] 结算逻辑：首次通关解锁兵种功能已实现
+- [x] 结算逻辑：碎片奖励发放功能已实现
+- [x] 结算逻辑：Boss 关三星解锁稀有兵种功能已实现
+- [x] 结算记录：`FantasyLaneSheet.tsx` 中结算后正确调用奖励发放函数
+- [x] 结算记录：进度存储中的 `unlockedUnits`、`unitFragments`、`unitStars` 正确更新
+- [x] 结算 UI：`FantasyLaneResultPanel.tsx` 显示兵种解锁信息
+- [x] 结算 UI：显示碎片获得数量
+- [x] 结算 UI：新兵种展示动画正常（飞入 + 金色光晕）
+- [x] 兵种图鉴 UI：显示兵种解锁状态（已解锁/未解锁）
+- [x] 兵种图鉴 UI：未解锁兵种显示灰色剪影 + 解锁条件提示
+- [x] 兵种图鉴 UI：显示兵种星级和碎片进度
+- [x] 兵种图鉴 UI：新增筛选选项（已解锁/未解锁）正常工作
+- [x] 样式：结算奖励展示样式已添加（`.fantasy-lane-rewards` 等）
+- [x] 样式：未解锁兵种灰色样式已添加（`.fantasy-lane-unit--locked`）
+- [x] 样式：动画关键帧已添加（`rewardFlyIn`、`glowPulse`）
+- [x] TypeScript 编译通过，无类型错误
+- [x] ESLint 检查通过，无 lint 错误
+- [x] 游戏可正常运行，无控制台错误
+- [x] 未修改其他游戏项目的文件

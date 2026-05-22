@@ -764,6 +764,29 @@
   background: #f0fdf4;
 }
 
+.excel-game-hub .excel-nav-btn--sub {
+  padding: 4px 10px;
+  font-size: 10px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.excel-game-hub .excel-nav-btn--sub:hover {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.excel-game-hub .hub-nav-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 4px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
 /* ==================== 响应式布局 ==================== */
 @media (max-width: 768px) {
   .excel-game-hub .excel-col-header {
@@ -885,4 +908,421 @@
   background: rgba(185, 28, 28, 1);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== Arcade hub extensions ==================== */
+.arcade-hub-layout {
+  background: #f3f3f3;
+}
+
+.arcade-sheet-wrapper {
+  gap: 0;
+}
+
+.hub-subtitle-cell {
+  color: #475569;
+  font-size: 12px;
+  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.hub-wide-cell {
+  min-height: 52px;
+  padding: 8px;
+}
+
+.hub-quick-row-wrap {
+  min-height: 56px;
+}
+
+.hub-quick-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) auto minmax(160px, 0.9fr);
+  gap: 8px;
+  width: 100%;
+  align-items: center;
+}
+
+.hub-quick-primary,
+.hub-quick-secondary,
+.hub-inline-btn {
+  border: 1px solid #b7c7ba;
+  background: white;
+  color: #0f172a;
+  border-radius: 2px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.hub-quick-primary {
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: white;
+  border-color: #0c5a2f;
+  font-weight: 600;
+}
+
+.hub-quick-primary:hover,
+.hub-quick-secondary:hover,
+.hub-inline-btn:hover:not(:disabled) {
+  border-color: #107c41;
+  background: #f0fdf4;
+  transform: translateY(-1px);
+}
+
+.hub-quick-primary:hover {
+  background: linear-gradient(135deg, #149452 0%, #0c5a2f 100%);
+  color: white;
+}
+
+.hub-inline-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hub-quick-note {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hub-main-row {
+  min-height: 360px;
+}
+
+.hub-main-cell {
+  align-items: stretch !important;
+  padding: 8px;
+}
+
+.hub-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.95fr);
+  gap: 10px;
+  width: 100%;
+  min-height: 100%;
+}
+
+.hub-primary-panel,
+.hub-side-panel {
+  display: flex;
+  flex-direction: column;
+  background: #fbfcfb;
+  border: 1px solid #d7dfd8;
+}
+
+.hub-primary-panel {
+  min-height: 320px;
+}
+
+.hub-secondary-column {
+  display: grid;
+  gap: 10px;
+}
+
+.hub-side-title {
+  background: linear-gradient(135deg, #107c41 0%, #0c5a2f 100%);
+  color: white;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hub-game-table,
+.hub-mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.hub-game-table th,
+.hub-game-table td,
+.hub-mini-table th,
+.hub-mini-table td {
+  border: 1px dotted #d4d4d4;
+  padding: 7px 8px;
+  text-align: left;
+  background: white;
+}
+
+.hub-game-table th,
+.hub-mini-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+}
+
+.hub-game-table tbody tr {
+  cursor: pointer;
+}
+
+.hub-game-table tbody tr:hover td {
+  background: #f7fbf8;
+}
+
+.hub-game-table tbody tr.selected td {
+  background: #edf7f0;
+}
+
+.hub-game-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.hub-mini-table .state-active td:first-child {
+  font-weight: 600;
+  color: #107c41;
+}
+
+.hub-kpi-table td:last-child {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.hub-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.hub-activity-list li {
+  padding: 7px 8px;
+  background: white;
+  border: 1px dotted #d4d4d4;
+}
+
+.hub-activity-list .tone-success {
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.hub-activity-list .tone-warning {
+  color: #9a3412;
+  background: #fff7ed;
+}
+
+.hub-workbench-row {
+  min-height: 130px;
+}
+
+.hub-workbench-cell {
+  padding: 10px;
+  align-items: stretch !important;
+}
+
+.hub-workbench-grid {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.hub-mode-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.excel-main-start-btn.compact {
+  padding: 10px 24px;
+  font-size: 14px;
+}
+
+.excel-main-start-btn.compact.perler {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  border-color: #6d28d9;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.28);
+}
+
+.hub-workbench-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.hub-perler-callout,
+.hub-coming-soon {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+.hub-perler-callout p,
+.hub-coming-soon p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  max-width: 640px;
+}
+
+.hub-footer-nav-cell {
+  background: #f8fafc;
+  gap: 14px;
+}
+
+@media (max-width: 1200px) {
+  .hub-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hub-quick-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hub-quick-note {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .hub-quick-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hub-perler-callout,
+  .hub-coming-soon {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.config-center-row {
+  min-height: 180px;
+}
+
+.config-center-cell {
+  align-items: stretch !important;
+  padding: 10px;
+}
+
+.config-center-grid {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+}
+
+/* ==================== Compact hub pass ==================== */
+.compact-sheet-wrapper {
+  gap: 0;
+}
+
+.compact-title-row {
+  min-height: 30px;
+}
+
+.compact-title-cell {
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 14px;
+}
+
+.compact-quick-row-wrap {
+  min-height: 40px;
+}
+
+.compact-quick-cell {
+  padding: 6px 8px;
+}
+
+.hub-quick-row.compact {
+  grid-template-columns: minmax(220px, 1.4fr) 96px 96px;
+  gap: 10px;
+  align-items: center;
+  justify-content: start;
+}
+
+.compact-main-row {
+  min-height: 420px;
+}
+
+.compact-main-cell {
+  padding: 6px;
+}
+
+.compact-main-grid {
+  grid-template-columns: minmax(0, 2.2fr) 210px;
+  gap: 8px;
+}
+
+.compact-primary-panel,
+.compact-panel {
+  border-color: #d4d4d4;
+  background: #fff;
+}
+
+.compact-secondary-column {
+  gap: 8px;
+  align-content: start;
+}
+
+.hub-game-table.compact {
+  font-size: 12px;
+}
+
+.hub-game-table.compact th,
+.hub-game-table.compact td {
+  padding: 8px 10px;
+}
+
+.hub-mini-table.compact {
+  font-size: 11px;
+}
+
+.hub-mini-table.compact td,
+.hub-mini-table.compact th {
+  padding: 6px 8px;
+}
+
+.compact-footer-nav-cell {
+  justify-content: flex-start;
+  padding: 6px 8px;
+}
+
+.compact-footer-nav-cell .excel-nav-buttons {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.compact-footer-nav-cell .excel-nav-btn {
+  min-width: 72px;
+  justify-content: center;
+}
+
+.hub-quick-row.compact .hub-quick-primary,
+.hub-quick-row.compact .hub-quick-secondary {
+  min-width: 0;
+  height: 34px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.compact-nav-row {
+  min-height: 34px;
+}
+
+@media (max-width: 1200px) {
+  .compact-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hub-quick-row.compact {
+    grid-template-columns: minmax(180px, 1fr) 92px 92px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hub-quick-row.compact {
+    grid-template-columns: 1fr;
+  }
 }

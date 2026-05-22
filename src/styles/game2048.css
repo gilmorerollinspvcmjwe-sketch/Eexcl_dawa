@@ -1,0 +1,148 @@
+.game2048-sheet {
+  display: grid;
+  gap: 16px;
+  padding: 12px;
+}
+
+.game2048-hud {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.game2048-stat-card {
+  border: 1px solid #d6d3d1;
+  background: linear-gradient(180deg, #fff 0%, #fafaf9 100%);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.game2048-stat-label {
+  font-size: 12px;
+  color: #78716c;
+}
+
+.game2048-main {
+  display: grid;
+  gap: 12px;
+}
+
+.game2048-title-block h2 {
+  margin: 0;
+  font-size: 28px;
+  color: #44403c;
+}
+
+.game2048-title-block p {
+  margin: 4px 0 0;
+  color: #78716c;
+  font-size: 12px;
+}
+
+.game2048-board-shell {
+  position: relative;
+  width: fit-content;
+  border: 1px solid #d6d3d1;
+  background: #bbada0;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.game2048-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.game2048-grid-row {
+  display: grid;
+  grid-template-columns: repeat(4, 88px);
+  gap: 10px;
+}
+
+.game2048-cell {
+  width: 88px;
+  height: 88px;
+  background: rgba(238, 228, 218, 0.35);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game2048-tile {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 28px;
+  color: #776e65;
+}
+
+.game2048-tile--2 { background: #eee4da; }
+.game2048-tile--4 { background: #ede0c8; }
+.game2048-tile--8 { background: #f2b179; color: #f9f6f2; }
+.game2048-tile--16 { background: #f59563; color: #f9f6f2; }
+.game2048-tile--32 { background: #f67c5f; color: #f9f6f2; }
+.game2048-tile--64 { background: #f65e3b; color: #f9f6f2; }
+.game2048-tile--128 { background: #edcf72; color: #f9f6f2; font-size: 24px; }
+.game2048-tile--256 { background: #edcc61; color: #f9f6f2; font-size: 24px; }
+.game2048-tile--512 { background: #edc850; color: #f9f6f2; font-size: 24px; }
+.game2048-tile--1024 { background: #edc53f; color: #f9f6f2; font-size: 20px; }
+.game2048-tile--2048 { background: #edc22e; color: #f9f6f2; font-size: 20px; }
+
+.game2048-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(250, 248, 239, 0.78);
+  border-radius: 12px;
+}
+
+.game2048-overlay-card {
+  background: #fff;
+  border: 1px solid #d6d3d1;
+  border-radius: 12px;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+  min-width: 260px;
+  text-align: center;
+}
+
+.game2048-overlay-card h3 {
+  margin: 0;
+  color: #44403c;
+}
+
+.game2048-overlay-card p {
+  margin: 0;
+  color: #57534e;
+}
+
+.game2048-overlay-actions,
+.game2048-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.game2048-toolbar button,
+.game2048-overlay-actions button {
+  border: 1px solid #d6d3d1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.game2048-help {
+  color: #78716c;
+  font-size: 12px;
+}

@@ -10,9 +10,7 @@ interface UseGameTimerProps {
   onEnd?: () => void;
 }
 
-interface UseGameTimerReturn {
-  // 计时器通过 props 回调，无返回值
-}
+type UseGameTimerReturn = Record<string, never>;
 
 export function useGameTimer(props: UseGameTimerProps): UseGameTimerReturn {
   const { isPlaying, isPaused, mode, onTick, onEnd } = props;

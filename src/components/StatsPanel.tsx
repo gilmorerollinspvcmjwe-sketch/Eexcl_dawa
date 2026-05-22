@@ -321,7 +321,7 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({ stats, onReset, onExit }
                 <td className="excel-cell" style={{ textAlign: 'center' }}>{game.accuracy.toFixed(1)}%</td>
                 <td className="excel-cell" style={{ textAlign: 'center', color: '#dc2626' }}>{game.headAccuracy.toFixed(1)}%</td>
                 <td className="excel-cell" style={{ textAlign: 'center', color: '#f97316' }}>{game.maxCombo}x</td>
-                <td className="excel-cell" style={{ textAlign: 'center' }}>{game.duration}s</td>
+                <td className="excel-cell" style={{ textAlign: 'center' }}>{game.duration}秒</td>
                 <td className="excel-cell" />
                 <td className="excel-cell" />
                 <td className="excel-cell" />
@@ -503,7 +503,7 @@ function generateShareText(data: {
 }): string {
   const evaluation = getEvaluation(data);
   
-  return `🎯 Excel Aim Trainer 训练报告 🎯
+  return `🎯 Excel 练枪训练报告 🎯
 
 ━━━━━━━━━━━━━━━━━━
 📊 本局成绩
@@ -527,7 +527,7 @@ function generateShareText(data: {
 "${evaluation}"
 
 🎮 来挑战我吧！
-#ExcelAimTrainer #摸鱼练枪`;
+#Excel练枪 #摸鱼练枪`;
 }
 
 function getEvaluation(data: { accuracy: number; maxCombo: number; headshotRate: number }): string {
